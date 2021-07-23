@@ -15,16 +15,6 @@ type Client struct {
 	knocker        Knocker
 }
 
-type Knocker interface {
-	Knock(uname string, pword string)
-}
-
-type PortKnocker struct {
-}
-
-func (sk *PortKnocker) Knock(uname string, pword string) {
-}
-
 func newClient(knocker Knocker) Client {
 	a := app.New()
 	w := a.NewWindow("Hello")
