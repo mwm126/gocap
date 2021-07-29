@@ -10,18 +10,15 @@ import (
 
 // Yubikey interface used by other code (can be real or faked)
 type Yubikey interface {
-	findSerial() int
-	// challengeResponse(chal [32]byte) [32]byte
-	challengeResponses(chal [32]byte) [32]byte
-	challengeResponseHMAC(chal [32]byte) [32]byte
+	findSerial() int32
+	challengeResponse(chal [16]byte) [16]byte
+	challengeResponseHMAC(chal SHADigest) [16]byte
 }
 
 // UsbYubikey implementation (for actual yubikey)
 type UsbYubikey struct{}
 
-func (yk *UsbYubikey) findSerial() int {
-	return 5417533
-
+func (yk *UsbYubikey) findSerial() int32 {
 	out, err := exec.Command("ykinfo", "-s", "-q").Output()
 	if err != nil {
 		log.Fatal(err)
@@ -31,32 +28,34 @@ func (yk *UsbYubikey) findSerial() int {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return i
+	return int32(i)
 }
 
-func (yk *UsbYubikey) challengeResponses(chal [32]byte) [32]byte {
-	log.Println("lenggggggggggggggth chal ", len(chal), chal)
-	var qwer [32]byte
-	return qwer
+func (yk *UsbYubikey) challengeResponse(chal [16]byte) [16]byte {
+	testval, err := hex.DecodeString("2ee619bc248bcefbe09e733d2cdda3be")
+	if err != nil {
+		log.Fatal(err)
+	}
+	var resp [16]byte
+	copy(resp[:], testval[:16])
+	return resp
 	out, err := exec.Command("ykchalresp", "-1", "-Y", "-x", string(chal[:])).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	response := strings.TrimSpace(string(out))
-	log.Println(response)
-	if len(response) != 32 {
+	responseStr := strings.TrimSpace(string(out))
+	log.Println(responseStr)
+	if len(responseStr) != 16 {
 		log.Fatal("Invalid ykchalresp")
 	}
-	resp := modhexDecode(response)
-	log.Println("lenggggggggggggggth resp ", len(resp))
-	log.Println("lenggggggggggggggth resp ", resp)
+	response := modhexDecode(responseStr)
 	if err != nil {
-		log.Fatal(resp, err)
+		log.Fatal(response, err)
 	}
-	return resp
+	return response
 }
 
-func modhexDecode(m string) [32]byte {
+func modhexDecode(m string) [16]byte {
 	mod2hex := map[rune]byte{
 		'c': 0x0,
 		'b': 0x1,
@@ -75,7 +74,7 @@ func modhexDecode(m string) [32]byte {
 		'u': 0xe,
 		'v': 0xf,
 	}
-	var h [32]byte
+	var h [16]byte
 	for i, c := range m {
 		h[i] = mod2hex[c]
 	}
@@ -83,26 +82,22 @@ func modhexDecode(m string) [32]byte {
 
 }
 
-func (yk *UsbYubikey) challengeResponseHMAC(chal [32]byte) [32]byte {
-
-	var qwer [32]byte
-	return qwer
-
+func (yk *UsbYubikey) challengeResponseHMAC(chal SHADigest) [16]byte {
 	out, err := exec.Command("ykchalresp", "-2", "-H", "-x", string(chal[:])).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	response := strings.TrimSpace(string(out))
-	log.Println(response)
-	if len(response) != 40 {
-		log.Fatal("Invalid ykchalresp")
-	}
-	resp, err := hex.DecodeString(response)
+	responseHex := strings.TrimSpace(string(out))
+	log.Println(responseHex)
+	// if len(responseHex) != 40 {
+	// 	log.Fatal("Invalid ykchalresp")
+	// }
+	response, err := hex.DecodeString(responseHex)
 	if err != nil {
-		log.Fatal(resp, err)
+		log.Fatal(response, err)
 	}
 
-	var hmac [32]byte
-	copy(hmac[:], resp)
+	var hmac [16]byte
+	copy(hmac[:], response)
 	return hmac
 }

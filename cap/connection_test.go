@@ -8,14 +8,12 @@ import (
 )
 
 func TestCapConnection(t *testing.T) {
-	log.Fatal("alkqdvkzjdkfj3")
-	// username := "mmeredith"
-	// password := "xUZv!jA&TgHTkw#!3$bUVcDXxW3sY"
 	username := "mark"
 	password := "markmark"
 	server := "localhost:22"
 
-	conn := newCapConnection(username, password, server)
+	knckr := &FakeYubikey{}
+	conn := newCapConnection(username, password, server, knckr)
 	defer conn.close()
 
 	guis := conn.listGUIs()

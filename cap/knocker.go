@@ -6,12 +6,19 @@ package cap
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
+	"github.com/beevik/ntp"
 	"log"
-	"math/rand"
+	"net"
 	"time"
 )
+
+type OneTimePassword [16]byte
+type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
@@ -20,291 +27,135 @@ type Knocker interface {
 
 // PortKnocker for actual Knocker implementation
 type PortKnocker struct {
-	username string
-	password string
-	yubikey  Yubikey
+	yubikey Yubikey
+	entropy [32]byte
 }
 
-// Shared secret seed values for initial MAC test
-func getSeedHeaderList() [32]byte {
-	return [32]byte{
-		0xEF,
-		0xA8,
-		0xFE,
-		0x36,
-		0xEB,
-		0x80,
-		0x02,
-		0x5C,
-		0x0F,
-		0xFD,
-		0x09,
-		0x1A,
-		0xA9,
-		0x1C,
-		0x50,
-		0xF8,
-		0x3E,
-		0xEB,
-		0x52,
-		0x74,
-		0x9C,
-		0x56,
-		0xA4,
-		0x44,
-		0x7B,
-		0x31,
-		0x6C,
-		0x1A,
-		0xE5,
-		0xBC,
-		0xF7,
-		0x5D,
+func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) []byte {
+	OTP := getOTP(sk.yubikey, sk.entropy[:])
+
+	var initVec [16]byte
+	digest := makeSHADigest(sk.entropy[:], OTP[:])
+	copy(initVec[:], digest[:16])
+	challenge, response := getChallengeResponse(sk.yubikey, OTP, sk.entropy[:])
+	serial := sk.yubikey.findSerial()
+
+	var user [32]byte
+	var auth [16]byte
+	var ssh [16]byte
+	var server [16]byte
+	copy(user[:], []byte(uname))
+	var buf bytes.Buffer
+	copy(auth[12:], net.ParseIP("74.109.234.77").To4())
+	copy(ssh[12:], net.ParseIP("74.109.234.77").To4())
+	copy(server[12:], net.ParseIP("104.154.139.11").To4())
+
+	buf.Write(auth[:])
+	buf.Write(ssh[:])
+	buf.Write(server[:])
+	buf.Write(OTP[:])
+	buf.Write(user[:])
+	buf.Write(sk.entropy[:])
+	plainBlock := plainBlockWithChecksum(buf.Bytes())
+
+	aeskey := makeSHADigest(response[:], challenge[:])
+
+	key := []byte(aeskey[:])
+	plaintext := plainBlock
+	if len(plaintext)%aes.BlockSize != 0 {
+		panic("plaintext is not a multiple of the block size")
 	}
-}
-
-func getSeedFooterList() [32]byte {
-	return [32]byte{
-		0x42,
-		0x3C,
-		0x05,
-		0xF2,
-		0xC4,
-		0x9B,
-		0x8C,
-		0x3E,
-		0x79,
-		0x16,
-		0xBA,
-		0xD2,
-		0x54,
-		0xD7,
-		0x92,
-		0x48,
-		0xC2,
-		0x55,
-		0xBA,
-		0x8C,
-		0xE2,
-		0xE5,
-		0xE5,
-		0xD2,
-		0x1B,
-		0x1A,
-		0x1C,
-		0xBC,
-		0x49,
-		0xAB,
-		0x28,
-		0x18,
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
 	}
-}
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	iv := []byte(initVec[:])
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(ciphertext[aes.BlockSize:], plaintext)
 
-// class PacketSender:
-//     def __init__(
-//         self, configuration: Configuration, login_info: LoginInfo, yk: YubikeyInterface
-//     ) -> None:
-//         self._conf = configuration
-//         self._login_info = login_info
-//         self._yk = yk
+	var trimmedCiphertext [160]byte
+	copy(trimmedCiphertext[:], ciphertext[16:])
 
-func (sk *PortKnocker) makePacket(uname, pword string) []byte {
-	//         Prepare data for CAP packet
+	buf = bytes.Buffer{}
+	binary.Write(&buf, binary.LittleEndian, timestamp)
+	binary.Write(&buf, binary.LittleEndian, serial)
+	binary.Write(&buf, binary.LittleEndian, initVec)
+	binary.Write(&buf, binary.LittleEndian, challenge)
+	binary.Write(&buf, binary.LittleEndian, trimmedCiphertext)
 
-	time.Sleep(1 * time.Second)
-	//         serial = self._yk.find_serial()
-	//         serverAddressTxt = self._conf.serverAddressTxt
-	//         authAddressTxt = self._conf.externalAddress
+	header, _ := hex.DecodeString("823220d0df9234263797c5d0c5fee27ab087f86e76f82efe0bb386cc65ae879f")
+	macBlock := buf.Bytes()
+	footer, _ := hex.DecodeString("50266198ce6bae2069546cbcae0f80ba847598f674f5d7343f90e6c6e56dfa8a")
+	digest = makeSHADigest(header, macBlock, footer)
 
-	timeOffset := 1234
-	log.Println("timeOffset: ", timeOffset)
-	timestamp := int(time.Now().Unix()) + timeOffset
-	timestamp = 1627324072
-	log.Println("timestamp: ", timestamp)
-
-	plainBlock := make([]byte, 240)
-	// buf := new(bytes.Buffer)
-
-	entropy := make([]byte, 32)
-	rand.Read(entropy)
-	OTP := getOTP(sk.yubikey, entropy)
-
-	initVec := makeSHADigest(entropy, OTP[:])
-	challenge, response := getChallengeResponse(sk.yubikey, OTP, entropy)
-	serial := 1234
-
-	// createPacket(serial int, initVec, chal, resp [32]byte, plainBlock []byte, timestamp int) []byte {
-	var chal [32]byte
-	chal = challenge
-	var resp [32]byte
-	resp = response
-
-	pack := sk.createPacket(serial, initVec, chal, resp, plainBlock, timestamp)
-
-	// sk.createPacket(serial,
-	// 	make([]byte, 32), make([]byte, 32), make([]byte, 32),
-	// 	plainBlock, timestamp)
-	// pack := sk.createPacket(sk.yubikey.findSerial(), initVec, challenge, response, plainBlock, timestamp)
-
-	//         addresses = Addresses(serverAddressTxt, authAddressTxt, self._conf.externalAddress)
-	//         plainBlock = ChecksumBlock(addresses, OTP, self._login_info.username, entropy).plainBlock()
-
-	log.Println(
-		"Sending CAP packet to ",
-		//             self._conf.serverAddressTxt,
-		":",
-		//             self._conf.serverPort,
-		" with ",
-	//             self._login_info.username,
-	)
-
-	buf := &bytes.Buffer{}
-	err := binary.Write(buf, binary.LittleEndian, pack)
+	buf = bytes.Buffer{}
+	err = binary.Write(&buf, binary.LittleEndian, macBlock)
 	if err != nil {
 		log.Fatal(err)
 	}
-	timestamp = 1627324072
-	err = binary.Write(buf, binary.LittleEndian, int64(timestamp))
+	err = binary.Write(&buf, binary.LittleEndian, digest)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("HERE IS THE BUFFFFFF", buf)
 	return buf.Bytes()
 }
 
 func (sk *PortKnocker) Knock(uname, pword string) {
-	//         Send off CAP UDP packet
-	//         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	// binary.Write(buf, binary.LittleEndian, plainBlock)
-	// binary.Write(buf, binary.LittleEndian, timestamp)
-	//         sock.sendto(
-	//             pack.packet(plainBlock, timestamp), (self._conf.serverAddressTxt, self._conf.serverPort)
-	//         )
-}
 
-func getOTP(yk Yubikey, entropy []byte) [32]byte {
-	// Get Yubico OTP response from client.connection.yubikey
-	yubicoChal := makeSHADigest([]byte("yubicoChal"), entropy)
 	time.Sleep(1 * time.Second)
-	log.Println("lenggggggggggggggth  ", len(yubicoChal))
-	log.Println("LENGGGGGGGGGGGGGGTH  ", yubicoChal)
-	var qwer [32]byte
-	return qwer
-	asdf := yk.challengeResponses(yubicoChal)
-	log.Println("asdffffffffffff  ", asdf)
-	return asdf
+
+	response, err := ntp.Query("pool.ntp.org")
+	timestamp := int32(time.Now().Add(response.ClockOffset).Unix())
+
+	packet := sk.makePacket(uname, pword, timestamp)
+
+	conn, err := net.Dial("udp", "127.0.0.1:1234")
+	if err != nil {
+		log.Printf("Some error %v", err)
+		return
+	}
+
+	buf := bytes.Buffer{}
+	binary.Write(&buf, binary.LittleEndian, timestamp)
+	timestampBytes := buf.Bytes()
+
+	conn.Write(packet)
+	conn.Write(timestampBytes)
+	conn.Close()
 }
 
-func getChallengeResponse(yk Yubikey, OTP [32]byte, entropy []byte) ([32]byte, [32]byte) {
+func getOTP(yk Yubikey, entropy []byte) OneTimePassword {
+	// Get Yubico OTP response from client.connection.yubikey
+	digest := makeSHADigest([]byte("yubicoChal"), entropy)
+	var yubicoChal [16]byte
+	copy(yubicoChal[:], digest[:16])
+	time.Sleep(1 * time.Second)
+	return yk.challengeResponse(yubicoChal)
+}
+
+func getChallengeResponse(yk Yubikey, OTP OneTimePassword, entropy []byte) (SHADigest, [16]byte) {
 	// Build challenge using entropy and OTP so it is unique
 	challenge := makeSHADigest([]byte("SHA1-HMACChallenge"), OTP[:], entropy)
 	// Get HMAC-SHA1 response from client.connection.yubikey
 	time.Sleep(1 * time.Second)
-	var qwer [32]byte
-	return challenge, qwer
 	response := yk.challengeResponseHMAC(challenge)
-	//         return challenge, response
 	return challenge, response
 }
 
-type PacketFactory struct {
-	serial    []byte
-	initVec   []byte
-	challenge []byte
-	response  []byte
-	//     def __init__(self, serial: int, init_vec: bytes, chal: bytes, resp: bytes) -> None:
-	//         self.serial = serial
-	//         self.init_vec = init_vec
-	//         self.challenge = chal
-	//         self.response = resp
-}
-
-func (sk *PortKnocker) createPacket(serial int, initVec, chal, resp [32]byte, plainBlock []byte, timestamp int) []byte {
-	return make([]byte, 234)
-}
-
-//     def packet(self, plainBlock: bytes, timestamp: int) -> bytes:
-//         """Assemble packet"""
-//         MACBlock = struct.pack(
-//             "<ll16s32s160s",
-//             timestamp,
-//             self.serial,
-//             self.init_vec,
-//             self.challenge,
-//             self.encryptedBlock(plainBlock),
-//         )
-//         sha = SHA256.new()
-//         sha.update(getHeaderSecret())
-//         sha.update(MACBlock)
-//         sha.update(getFooterSecret())
-//         MAC = sha.digest()
-//         return MACBlock + MAC
-
-func encryptedBlock(plainBlock []byte) []byte {
-	//         """Encrypt payload with aes256key"""
-	//         encBlock = b""
-	//         cipher = AES.new(self._aes256key(), AES.MODE_CBC, self.init_vec)
-	//         for i in range(0, 10):
-	//             chunk = plainBlock[16 * i : 16 * (i + 1)]
-	//             encBlock += cipher.encrypt(chunk)
-	return make([]byte, 32)
-}
-
-//     def _aes256key(self) -> bytes:
-//         """Build AES256 encryption key using response+challenge"""
-//         return makeSHADigest(self.response, self.challenge)
-
-// def getHeaderSecret() -> bytes:
-//     """Derive shared secret from seed values and generator"""
-//     headerSecret = bytearray()
-//     generator = 0x55
-//     for byte in SEED_HEADER_LIST:
-//         generator = (generator * byte + 0x12) % 256
-//         headerSecret.append(generator ^ byte)
-//     return headerSecret
-
-// def getFooterSecret() -> bytes:
-//     """Derive shared secret from seed values and generator"""
-//     footerSecret = bytearray()
-//     generator = 0x18
-//     for byte in SEED_FOOTER_LIST:
-//         generator = (generator * byte + 0xE2) % 256
-//         footerSecret.append(generator ^ byte)
-//     return footerSecret
-
-// class ChecksumBlock:
-//     def __init__(self, addr: "Addresses", OTP: bytes, user: str, ent: bytes) -> None:
-//         self.OTP = OTP
-//         self.user = user
-//         self.entropy = ent
-//         self.addresses = addr
-
-func getChecksumBlock() []byte {
+func plainBlockWithChecksum(plainBlock []byte) []byte {
 	var buf bytes.Buffer
-
-	//             self.addresses.auth(),
-	//             self.addresses.ssh(),
-	//             self.addresses.server(),
-	//             self.OTP,
-	//             self.user.encode("utf-8"),
-	//             self.entropy,
-
-	// buf.Write()
-	return buf.Bytes()
-}
-
-func plainBlock() []byte {
-	var buf bytes.Buffer
-	checksumBlock := getChecksumBlock()
-	chksum := makeSHADigest(checksumBlock)
-	buf.Write(checksumBlock)
+	chksum := makeSHADigest(plainBlock)
+	buf.Write(plainBlock)
 	buf.Write(chksum[:])
 
 	return buf.Bytes()
 
 }
 
-func makeSHADigest(args ...[]byte) [32]byte {
+func makeSHADigest(args ...[]byte) SHADigest {
 	var buf bytes.Buffer
 
 	for _, arg := range args {

@@ -1,6 +1,7 @@
 package cap
 
 import (
+	"crypto/rand"
 	"golang.org/x/crypto/ssh"
 	"log"
 )
@@ -34,10 +35,17 @@ func (conn *CapConnection) close() {
 	conn.client.Close()
 }
 
-func newCapConnection(user, pass, server string) CapConnection {
-	knckr := PortKnocker{}
+func newCapConnection(user, pass, server string, yk Yubikey) CapConnection {
+
+	entropyBuf := make([]byte, 32)
+	rand.Read(entropyBuf)
+
+	var entropy [32]byte
+	copy(entropy[:], entropyBuf)
+
+	knckr := &PortKnocker{yk, entropy}
 	log.Println("Sending CAP packet...")
-	knckr.Knock("mmeredith", "whatever")
+	knckr.Knock(user, pass)
 	log.Println("Opening SSH Connection...")
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
