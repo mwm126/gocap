@@ -35,7 +35,7 @@ func (conn *CapConnection) close() {
 	conn.client.Close()
 }
 
-func newCapConnection(user, pass, server string, yk Yubikey) CapConnection {
+func newCapConnection(user, pass, netwk, server string, yk Yubikey) CapConnection {
 
 	entropyBuf := make([]byte, 32)
 	rand.Read(entropyBuf)
@@ -45,7 +45,7 @@ func newCapConnection(user, pass, server string, yk Yubikey) CapConnection {
 
 	knckr := &PortKnocker{yk, entropy}
 	log.Println("Sending CAP packet...")
-	knckr.Knock(user, pass)
+	knckr.Knock(user, pass, netwk)
 	log.Println("Opening SSH Connection...")
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

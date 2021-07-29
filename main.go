@@ -5,34 +5,37 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
 // Client represents the Main window of CAP client
 type Client struct {
-	window        fyne.Window
-	usernameEntry *widget.Entry
-	passwordEntry *widget.Entry
-	loginBtn      *widget.Button
-	knocker       cap.Knocker
+	window   fyne.Window
+	jouleTab cap.JouleTab
+	wattTab  cap.WattTab
+	knocker  cap.Knocker
 }
 
 func newClient(knocker cap.Knocker) Client {
 	a := app.New()
-	w := a.NewWindow("Hello")
+	w := a.NewWindow("CAP Client")
+	w.Resize(fyne.NewSize(300, 200))
 
-	username := widget.NewEntry()
-	username.SetPlaceHolder("Enter username...")
-	password := widget.NewEntry()
-	password.SetPlaceHolder("Enter password...")
-	login := widget.NewButton("Login", func() {
-		knocker.Knock(username.Text, password.Text)
-	})
-	content := container.NewVBox(username, password, login)
+	joule := cap.NewJouleTab(knocker)
+	watt := cap.NewWattTab(knocker)
 
-	w.SetContent(container.NewVBox(content))
+	tabs := container.NewAppTabs(
+		joule.Tab,
+		watt.Tab,
+	)
+	tabs.SetTabLocation(container.TabLocationLeading)
 
-	return Client{w, username, password, login, knocker}
+	w.SetContent(tabs)
+
+	tabs.Append(container.NewTabItemWithIcon("Home", theme.HomeIcon(), widget.NewLabel("The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.")))
+	return Client{w, joule, watt, knocker}
+
 }
 
 func main() {

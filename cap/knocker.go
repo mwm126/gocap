@@ -22,7 +22,7 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
-	Knock(username, password string)
+	Knock(username, password, network string)
 }
 
 // PortKnocker for actual Knocker implementation
@@ -31,7 +31,7 @@ type PortKnocker struct {
 	entropy [32]byte
 }
 
-func (sk *PortKnocker) Knock(uname, pword string) {
+func (sk *PortKnocker) Knock(uname, pword, netwk string) {
 	time.Sleep(1 * time.Second)
 	response, err := ntp.Query("pool.ntp.org")
 	timestamp := int32(time.Now().Add(response.ClockOffset).Unix())
