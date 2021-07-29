@@ -1,21 +1,23 @@
 package main
 
 import (
+	"aeolustec.com/capclient/cap"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
+// Client represents the Main window of CAP client
 type Client struct {
-	window         fyne.Window
-	username_entry *widget.Entry
-	password_entry *widget.Entry
-	login_btn      *widget.Button
-	knocker        Knocker
+	window        fyne.Window
+	usernameEntry *widget.Entry
+	passwordEntry *widget.Entry
+	loginBtn      *widget.Button
+	knocker       cap.Knocker
 }
 
-func newClient(knocker Knocker) Client {
+func newClient(knocker cap.Knocker) Client {
 	a := app.New()
 	w := a.NewWindow("Hello")
 
@@ -34,7 +36,7 @@ func newClient(knocker Knocker) Client {
 }
 
 func main() {
-	knk := PortKnocker{}
+	knk := cap.PortKnocker{}
 	client := newClient(&knk)
 	client.window.ShowAndRun()
 }

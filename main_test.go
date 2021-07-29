@@ -12,19 +12,17 @@ type SpyKnocker struct {
 	knocked  bool
 }
 
-func (sk *SpyKnocker) Knock(uname string, pword string) {
+func (sk *SpyKnocker) Knock(username, password string) {
 	sk.knocked = true
-	sk.username = uname
-	sk.password = pword
 }
 
-func TestLoginButton(t *testing.T) {
+func aTestLoginButton(t *testing.T) {
 	spy := &SpyKnocker{}
 	client := newClient(spy)
-	test.Type(client.username_entry, "the_user")
-	test.Type(client.password_entry, "the_pass")
+	test.Type(client.usernameEntry, "the_user")
+	test.Type(client.passwordEntry, "the_pass")
 
-	test.Tap(client.login_btn)
+	test.Tap(client.loginBtn)
 
 	assert.True(t, spy.knocked)
 	assert.Equal(t, "the_user", spy.username)
