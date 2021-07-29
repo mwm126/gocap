@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run:   |
               if [ "$RUNNER_OS" == "Linux" ]; then
-                    apt install -y libgl1-mesa-dev xorg-dev
+                    sudo apt install -y libgl1-mesa-dev xorg-dev
               fi
 
       - name: Test
