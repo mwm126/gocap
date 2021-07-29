@@ -33,10 +33,6 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
-        pre_release: true
-        automatic_release_tag: "latest"
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        title: "Development Build"
-        # if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: capclient*
