@@ -18,6 +18,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name:  Install Dependencies
+        run:   |
+              if [ "$RUNNER_OS" == "Linux" ]; then
+                    apt install -y libgl1-mesa-dev xorg-dev
+
       - name: Test
         run: go test -v ./...
 
