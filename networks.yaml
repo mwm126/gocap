@@ -35,6 +35,7 @@ alb_scientific:
   wattAddress: "204.154.140.10"
 
 external:
+  disableNTP: True
   externalAddress: ""
   fe261Address: "204.154.140.51"
   jouleAddress: "204.154.139.11"
