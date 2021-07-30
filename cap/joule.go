@@ -16,7 +16,7 @@ type JouleTab struct {
 func NewJouleTab(knocker Knocker) JouleTab {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
-	password := widget.NewEntry()
+	password := widget.NewPasswordEntry()
 	password.SetPlaceHolder("Enter password...")
 	network := widget.NewSelect(getNetworkNames(), func(s string) {})
 	network.SetSelected("external")
