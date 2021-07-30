@@ -18,7 +18,8 @@ func NewWattTab(knocker Knocker) WattTab {
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewEntry()
 	password.SetPlaceHolder("Enter password...")
-	network := widget.NewSelect([]string{"external"}, func(s string) {})
+	network := widget.NewSelect(getNetworkNames(), func(s string) {})
+	network.SetSelected("external")
 	login := widget.NewButton("Login", func() {
 		knocker.Knock(username.Text, password.Text, network.Selected)
 	})

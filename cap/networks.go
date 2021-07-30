@@ -36,3 +36,12 @@ func getNetworks() map[string]Network {
 	}
 	return data
 }
+func getNetworkNames() []string {
+	netMap := getNetworks()
+	names := make([]string, 0, len(netMap))
+
+	for name := range netMap {
+		names = append(names, name)
+	}
+	return names
+}
