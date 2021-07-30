@@ -24,7 +24,8 @@ func NewJouleTab(knocker Knocker) JouleTab {
 		knocker.Knock(username.Text, password.Text, network.Selected)
 	})
 	jouleContent := container.NewVBox(username, password, network, login)
-	tab := container.NewTabItem("Joule", jouleContent)
+	card := widget.NewCard("Login to Joule", "(NETL HPC system)", jouleContent)
+	tab := container.NewTabItem("Joule", card)
 	joule := JouleTab{tab, network, username, password, login}
 	return joule
 }

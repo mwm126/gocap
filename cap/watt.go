@@ -24,7 +24,8 @@ func NewWattTab(knocker Knocker) WattTab {
 		knocker.Knock(username.Text, password.Text, network.Selected)
 	})
 	wattContent := container.NewVBox(username, password, network, login)
-	tab := container.NewTabItem("Watt", wattContent)
+	card := widget.NewCard("Login to Watt", "(NETL Machine Learning system)", wattContent)
+	tab := container.NewTabItem("Watt", card)
 	watt := WattTab{tab, network, username, password, login}
 	return watt
 }
