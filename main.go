@@ -2,6 +2,7 @@ package main
 
 import (
 	"aeolustec.com/capclient/cap"
+	"crypto/rand"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -20,7 +21,6 @@ type Client struct {
 func newClient(knocker cap.Knocker) Client {
 	a := app.New()
 	w := a.NewWindow("CAP Client")
-	w.Resize(fyne.NewSize(300, 200))
 
 	joule := cap.NewJouleTab(knocker)
 	watt := cap.NewWattTab(knocker)
@@ -39,7 +39,12 @@ func newClient(knocker cap.Knocker) Client {
 }
 
 func main() {
-	knk := cap.PortKnocker{}
+	var entropy [32]byte
+	rand.Read(entropy[:])
+
+	yk := cap.UsbYubikey{}
+	knk := cap.NewPortKnocker(&yk, entropy)
+
 	client := newClient(&knk)
 	client.window.ShowAndRun()
 }

@@ -47,5 +47,5 @@ func TestWattLoginButton(t *testing.T) {
 	assert.True(t, spy.knocked)
 	assert.Equal(t, "the_user", spy.username)
 	assert.Equal(t, "the_pass", spy.password)
-	assert.Equal(t, "external", spy.network)
+	assert.Equal(t, "204.154.140.10", spy.network)
 }
