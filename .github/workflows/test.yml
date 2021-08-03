@@ -22,17 +22,16 @@ jobs:
         shell: bash
         run:   |
               if [ "$RUNNER_OS" == "Linux" ]; then
-                    sudo apt install -y libgl1-mesa-dev xorg-dev libglfw3-dev
+                    sudo apt install -y libgl1-mesa-dev xorg-dev
               fi
-
-      - name: Test
-        run: env DISPLAY=:0 go test -v ./...
 
       - name: Build
         run: go build .
 
+      - name: Test
+        run: go test -v ./...
+
       - name: Release
-        # uses: softprops/action-gh-release@v1
         uses: wangyoucao577/go-release-action@v1.19
         if: startsWith(github.ref, 'refs/tags/')
         with:
