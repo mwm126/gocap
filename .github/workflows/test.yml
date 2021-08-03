@@ -1,4 +1,4 @@
-on: [push, pull_request, release]
+on: [push, pull_request]
 name: Test
 jobs:
   build:
@@ -30,11 +30,3 @@ jobs:
 
       - name: Test
         run: go test -v ./...
-
-      - name: Release
-        uses: wangyoucao577/go-release-action@v1.19
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: ${{ matrix.goos }}
-          goarch: ${{ matrix.goarch }}
-          extra_files: README.md
