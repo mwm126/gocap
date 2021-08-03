@@ -24,7 +24,7 @@ type Network struct {
 }
 
 func getNetworks() map[string]Network {
-	yfile, err := ioutil.ReadFile("/home/mark/repos/gocap/networks.yaml")
+	yfile, err := ioutil.ReadFile("networks.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -16,6 +16,7 @@ type Client struct {
 	jouleTab cap.JouleTab
 	wattTab  cap.WattTab
 	knocker  cap.Knocker
+	app      fyne.App
 }
 
 func newClient(knocker cap.Knocker) Client {
@@ -23,7 +24,7 @@ func newClient(knocker cap.Knocker) Client {
 	w := a.NewWindow("CAP Client")
 
 	joule := cap.NewJouleTab(knocker)
-	watt := cap.NewWattTab(knocker)
+	watt := cap.NewWattTab(knocker, a)
 
 	tabs := container.NewAppTabs(
 		joule.Tab,
@@ -34,7 +35,7 @@ func newClient(knocker cap.Knocker) Client {
 	w.SetContent(tabs)
 
 	tabs.Append(container.NewTabItemWithIcon("Home", theme.HomeIcon(), widget.NewLabel("The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.")))
-	return Client{w, joule, watt, knocker}
+	return Client{w, joule, watt, knocker, a}
 
 }
 
