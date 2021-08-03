@@ -1,7 +1,6 @@
 package cap
 
 import (
-	"crypto/rand"
 	"golang.org/x/crypto/ssh"
 	"log"
 )
@@ -26,7 +25,7 @@ type ConnectionInfo struct {
 func (conn *CapConnection) listGUIs() string {
 	out, err := conn.session.CombinedOutput("ls /etc/passwd")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return string(out)
 }
@@ -35,25 +34,18 @@ func (conn *CapConnection) close() {
 	conn.client.Close()
 }
 
-func newCapConnection(user, pass, server string, yk Yubikey) CapConnection {
-
-	entropyBuf := make([]byte, 32)
-	rand.Read(entropyBuf)
-
-	var entropy [32]byte
-	copy(entropy[:], entropyBuf)
-
-	knckr := &PortKnocker{yk, entropy}
+func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection, error) {
 	log.Println("Sending CAP packet...")
-	knckr.Knock(user, pass)
+	knckr.Knock(user, pass, server)
 	log.Println("Opening SSH Connection...")
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
 	client, session, err := connectToHost(user, pass, "localhost:22")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+	return nil, err
 
 	//     password_checker = PasswordChecker(self.ssh, self._login_info.passwd)
 	log.Println("Checking for expired password...")
@@ -63,7 +55,7 @@ func newCapConnection(user, pass, server string, yk Yubikey) CapConnection {
 
 	//     return (self._conn_event.value, self.get_connection())
 	conn := getConnection(client, session)
-	return conn
+	return &conn, nil
 }
 
 func connectToHost(user, pass, host string) (*ssh.Client, *ssh.Session, error) {

@@ -22,7 +22,7 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
-	Knock(username, password string)
+	Knock(username, password, network string)
 }
 
 // PortKnocker for actual Knocker implementation
@@ -31,12 +31,25 @@ type PortKnocker struct {
 	entropy [32]byte
 }
 
-func (sk *PortKnocker) Knock(uname, pword string) {
+func NewPortKnocker(yk Yubikey, ent [32]byte) PortKnocker {
+	return PortKnocker{yk, ent}
+}
+
+func (sk *PortKnocker) Knock(uname, pword, netwk string) {
+	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	response, err := ntp.Query("pool.ntp.org")
+	if err != nil {
+		log.Printf("Some NTP error %v", err)
+		return
+	}
 	timestamp := int32(time.Now().Add(response.ClockOffset).Unix())
 
-	packet := sk.makePacket(uname, pword, timestamp)
+	packet, err := sk.makePacket(uname, pword, timestamp)
+	if err != nil {
+		log.Printf("Could not make CAP packet: %v", err)
+		return
+	}
 
 	conn, err := net.Dial("udp", "127.0.0.1:1234")
 	if err != nil {
@@ -53,13 +66,17 @@ func (sk *PortKnocker) Knock(uname, pword string) {
 	conn.Close()
 }
 
-func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) []byte {
+func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) ([]byte, error) {
 	OTP := getOTP(sk.yubikey, sk.entropy[:])
 
 	var initVec [16]byte
 	digest := makeSHADigest(sk.entropy[:], OTP[:])
 	copy(initVec[:], digest[:16])
-	challenge, response := getChallengeResponse(sk.yubikey, OTP, sk.entropy[:])
+	challenge, response, err := getChallengeResponse(sk.yubikey, OTP, sk.entropy[:])
+	if err != nil {
+		log.Println("could not get challenge response", err)
+		return nil, err
+	}
 	aeskey := makeSHADigest(response[:], challenge[:])
 
 	var user [32]byte
@@ -86,7 +103,7 @@ func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) []byte {
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	// The IV needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
@@ -98,7 +115,11 @@ func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) []byte {
 	var trimmedCiphertext [160]byte
 	copy(trimmedCiphertext[:], ciphertext[16:])
 
-	serial := sk.yubikey.findSerial()
+	serial, err := sk.yubikey.findSerial()
+	if err != nil {
+		log.Println("Unable to get yubikey serial number: ", err)
+		return nil, err
+	}
 
 	buf = bytes.Buffer{}
 	binary.Write(&buf, binary.LittleEndian, timestamp)
@@ -115,7 +136,7 @@ func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) []byte {
 	buf = bytes.Buffer{}
 	binary.Write(&buf, binary.LittleEndian, macBlock)
 	binary.Write(&buf, binary.LittleEndian, digest)
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
 
 func getOTP(yk Yubikey, entropy []byte) OneTimePassword {
@@ -127,13 +148,17 @@ func getOTP(yk Yubikey, entropy []byte) OneTimePassword {
 	return yk.challengeResponse(yubicoChal)
 }
 
-func getChallengeResponse(yk Yubikey, OTP OneTimePassword, entropy []byte) (SHADigest, [16]byte) {
+func getChallengeResponse(yk Yubikey, OTP OneTimePassword, entropy []byte) (SHADigest, [16]byte, error) {
 	// Build challenge using entropy and OTP so it is unique
 	challenge := makeSHADigest([]byte("SHA1-HMACChallenge"), OTP[:], entropy)
 	// Get HMAC-SHA1 response from client.connection.yubikey
 	time.Sleep(1 * time.Second)
-	response := yk.challengeResponseHMAC(challenge)
-	return challenge, response
+	response, err := yk.challengeResponseHMAC(challenge)
+	if err != nil {
+		log.Printf("Error getting challenge response %v", err)
+		return challenge, response, err
+	}
+	return challenge, response, nil
 }
 
 func plainBlockWithChecksum(plainBlock []byte) []byte {
