@@ -2,7 +2,6 @@ package cap
 
 import (
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"log"
 )
 
@@ -24,13 +23,9 @@ type Network struct {
 }
 
 func getNetworks() map[string]Network {
-	yfile, err := ioutil.ReadFile("networks.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	data := make(map[string]Network)
-	err = yaml.Unmarshal(yfile, &data)
+
+	err := yaml.Unmarshal([]byte(networks_yaml), &data)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,3 +40,131 @@ func getNetworkNames() []string {
 	}
 	return names
 }
+
+var networks_yaml = `
+alb_admin:
+  disableNTP: True
+  externalAddress: "198.99.249.252"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+alb_foreign_national:
+  disableNTP: True
+  externalAddress: "205.254.146.76"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+alb_research:
+  disableNTP: True
+  externalAddress: "198.99.249.252"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+alb_scientific:
+  disableNTP: True
+  externalAddress: "198.99.249.248"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+external:
+  disableNTP: True
+  externalAddress: ""
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+mgn_admin:
+  fe261Address: "204.154.140.51"
+  wattAddress: "204.154.140.10"
+  sessionMgtFwdAddr: "172.16.0.1"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  externalAddress: "204.154.136.254"
+  disableNTP: True
+
+mgn_foreign_national:
+  disableNTP: True
+  externalAddress: "205.254.146.76"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+mgn_research:
+  disableNTP: True
+  externalAddress: "204.154.136.254"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+mgn_scientific:
+  disableNTP: True
+  externalAddress: "204.154.139.10"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+pgh_admin:
+  disableNTP: True
+  externalAddress: "204.154.137.254"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+pgh_foreign_national:
+  disableNTP: True
+  externalAddress: "204.154.137.254"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+pgh_research:
+  disableNTP: True
+  externalAddress: "204.154.137.254"
+  fe261Address: "204.154.140.51"
+  jouleAddress: "204.154.139.11"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "204.154.140.10"
+
+pgh_scientific:
+  disableNTP: True
+  externalAddress: "198.99.246.197"
+  fe261Address: "198.99.246.146"
+  jouleAddress: "198.99.246.146"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "198.99.246.146"
+
+vpn:
+  disableNTP: True
+  externalAddress: "199.249.243.253"
+  fe261Address: "198.99.246.146"
+  jouleAddress: "198.99.246.146"
+  serverPort: 62201
+  sessionMgtFwdAddr: "172.16.0.1"
+  wattAddress: "199.249.243.253"
+`
