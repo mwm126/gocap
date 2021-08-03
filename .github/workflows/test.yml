@@ -26,7 +26,7 @@ jobs:
               fi
 
       - name: Test
-        run: go test -v ./...
+        run: env DISPLAY=:0 go test -v ./...
 
       - name: Build
         run: go build .
