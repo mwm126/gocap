@@ -32,15 +32,17 @@ func NewWattTab(knocker Knocker, a fyne.App) WattTab {
 	var wattLogin, wattConnecting, wattConnected *fyne.Container
 	login := widget.NewButton("Login", func() {
 		card.SetContent(wattConnecting)
-		conn, err := newCapConnection(username.Text, password.Text, networks[network.Selected].WattAddress, knocker)
-		if err != nil {
-			log.Println("Unable to make CAP Connection")
-			card.SetContent(wattLogin)
-			return
-		}
-		watt.connection = conn
-		time.Sleep(1 * time.Second)
-		card.SetContent(wattConnected)
+		go func() {
+			conn, err := newCapConnection(username.Text, password.Text, networks[network.Selected].WattAddress, knocker)
+			if err != nil {
+				log.Println("Unable to make CAP Connection")
+				card.SetContent(wattLogin)
+				return
+			}
+			watt.connection = conn
+			time.Sleep(1 * time.Second)
+			card.SetContent(wattConnected)
+		}()
 	})
 	wattLogin = container.NewVBox(username, password, network, login)
 

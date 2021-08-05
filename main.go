@@ -23,7 +23,7 @@ func newClient(knocker cap.Knocker) Client {
 	a := app.New()
 	w := a.NewWindow("CAP Client")
 
-	joule := cap.NewJouleTab(knocker)
+	joule := cap.NewJouleTab(knocker, a)
 	watt := cap.NewWattTab(knocker, a)
 
 	tabs := container.NewAppTabs(
