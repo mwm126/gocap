@@ -14,6 +14,8 @@ type CapConnection struct {
 
 // ConnectionInfo stores info about the connection
 type ConnectionInfo struct {
+	username string
+	password string
 	// _login_info,
 	uid          string
 	loginName    string
@@ -43,9 +45,9 @@ func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection,
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
 	client, session, err := connectToHost(user, pass, "localhost:22")
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
-	return nil, err
 
 	//     password_checker = PasswordChecker(self.ssh, self._login_info.passwd)
 	log.Println("Checking for expired password...")
@@ -54,7 +56,7 @@ func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection,
 	//         return (ConnectionEvent.GET_NEW_PASSWORD.value, password_checker)
 
 	//     return (self._conn_event.value, self.get_connection())
-	conn := getConnection(client, session)
+	conn := getConnection(client, session, user, pass)
 	return &conn, nil
 }
 
@@ -68,12 +70,14 @@ func connectToHost(user, pass, host string) (*ssh.Client, *ssh.Session, error) {
 
 	client, err := ssh.Dial("tcp", host, sshConfig)
 	if err != nil {
+		log.Fatal(err)
 		return nil, nil, err
 	}
 
 	session, err := client.NewSession()
 	if err != nil {
 		client.Close()
+		log.Fatal(err)
 		return nil, nil, err
 	}
 
@@ -82,7 +86,7 @@ func connectToHost(user, pass, host string) (*ssh.Client, *ssh.Session, error) {
 
 const webLocalPort = 10080
 
-func getConnection(client *ssh.Client, session *ssh.Session) CapConnection {
+func getConnection(client *ssh.Client, session *ssh.Session, user, pass string) CapConnection {
 
 	log.Println("Getting connection info...")
 	loginName := getHostname()
@@ -97,6 +101,8 @@ func getConnection(client *ssh.Client, session *ssh.Session) CapConnection {
 	log.Println("Connected.")
 	//     sess_man = SessionManager(self._config, uid, session_mgt_port, session_mgt_secret)
 	connInfo := ConnectionInfo{
+		user,
+		pass,
 		// _login_info,
 		uid,
 		loginName,

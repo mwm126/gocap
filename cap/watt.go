@@ -1,11 +1,12 @@
 package cap
 
 import (
+	"log"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"log"
-	"time"
 )
 
 type WattTab struct {
@@ -53,7 +54,6 @@ func NewWattTab(knocker Knocker, a fyne.App) WattTab {
 	wattConnecting = container.NewVBox(connecting, cancel)
 
 	ssh := widget.NewButton("Connect SSH", func() {
-		ConnectSsh(a, "localhost", username.Text, password.Text)
 	})
 	close := widget.NewButton("Close", func() {
 		card.SetContent(wattLogin)
