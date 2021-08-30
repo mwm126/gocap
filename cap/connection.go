@@ -1,8 +1,12 @@
 package cap
 
 import (
+	"fmt"
+	"github.com/elliotchance/sshtunnel"
 	"golang.org/x/crypto/ssh"
 	"log"
+	"os"
+	"time"
 )
 
 // A CapConnection represents a successful SSH connection after the port knock
@@ -21,7 +25,8 @@ type ConnectionInfo struct {
 	loginName    string
 	loginAddr    string
 	webLocalPort int
-	sshLocalPort string
+	sshLocalPort int
+	mgtPort      sshtunnel.SSHTunnel
 }
 
 func (conn *CapConnection) listGUIs() string {
@@ -92,10 +97,10 @@ func getConnection(client *ssh.Client, session *ssh.Session, user, pass string) 
 	loginName := getHostname()
 	loginAddr := getLoginIP(loginName)
 	uid := getUID()
-	sshLocalPort := openSSHTunnel()
+	sshLocalPort := openSSHTunnel(user, pass)
 
 	log.Println("Starting session manager...")
-	//     session_mgt_port = self._openSessionManagementForward()
+	session_mgt_port := openSessionManagementForward(user, pass)
 	//     session_mgt_secret = self._readSessionManagerSecret()
 
 	log.Println("Connected.")
@@ -108,7 +113,8 @@ func getConnection(client *ssh.Client, session *ssh.Session, user, pass string) 
 		loginName,
 		loginAddr,
 		webLocalPort,
-		sshLocalPort,
+		sshLocalPort.Local.Port,
+		session_mgt_port,
 	}
 	//     return HpcConnection(self.ssh, conn_info, sess_man)
 	conn := CapConnection{client, session, connInfo}
@@ -139,59 +145,87 @@ func getUID() string {
 	return "THE_UID"
 }
 
-func openSSHTunnel() string {
+const SSH_LOCAL_PORT = "10022"
+const SSH_FWD_ADDR = "localhost"
+const SSH_FWD_PORT = 22
+
+func openSSHTunnel(user, pass string) sshtunnel.SSHTunnel {
 	//     Open forward to the login SSH daemon
 	log.Println("Opening Tunnel")
-	//     ssh_port = check_free_port(SSH_LOCAL_PORT)
-	//     self._ssh_tunnel = Thread(
-	//         target=tunnelTCP,
-	//         args=(ssh_port, SSH_FWD_ADDR, SSH_FWD_PORT, self.ssh.get_transport()),
-	//     )
-	//     self._ssh_tunnel.daemon = True
-	//     self._ssh_tunnel.start()
-	return "ssh_port"
+
+	// ssh_port := check_free_port(SSH_LOCAL_PORT)
+	ssh_port := SSH_LOCAL_PORT
+
+	tunnel := sshtunnel.NewSSHTunnel(
+		// User and host of tunnel server, it will default to port 22
+		// if not specified.
+		fmt.Sprintf("%s@%s", user, "localhost"),
+
+		// Pick ONE of the following authentication methods:
+		// sshtunnel.PrivateKeyFile("path/to/private/key.pem"), // 1. private key
+		ssh.Password(pass), // 2. password
+		// sshtunnel.SSHAgent(),                                // 3. ssh-agent
+
+		// The destination host and port of the actual server.
+		fmt.Sprintf("%s:%d", SSH_FWD_ADDR, SSH_FWD_PORT),
+
+		// The local port you want to bind the remote port to.
+		// Specifying "0" will lead to a random port.
+		ssh_port,
+	)
+
+	tunnel.Log = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+	go tunnel.Start()
+	time.Sleep(100 * time.Millisecond)
+	log.Println("tunnel is ", tunnel)
+	return *tunnel
 }
 
-func openSessionManagementForward() int {
-	//     Open forward to the session management server
+func openSessionManagementForward(user, pass string) sshtunnel.SSHTunnel {
 	log.Println("Connecting to session manager")
-	//     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-	//         s.bind(("", 0))
-	//         session_mgt_port = s.getsockname()[1]
 
-	//     self._session_mgt_tunnel = Thread(
-	//         target=tunnelTCP,
-	//         args=(
-	//             session_mgt_port,
-	//             SESSION_MGT_FWD_ADDR,
-	//             SESSION_MGT_FWD_PORT,
-	//             self.ssh.get_transport(),
-	//         ),
-	//     )
-	//     self._session_mgt_tunnel.daemon = True
-	//     self._session_mgt_tunnel.start()
-	//     return session_mgt_port
-	return 1234
+	// ssh_port := check_free_port(SSH_LOCAL_PORT)
+	ssh_port := SSH_LOCAL_PORT
+
+	tunnel := sshtunnel.NewSSHTunnel(
+		// User and host of tunnel server, it will default to port 22
+		// if not specified.
+		fmt.Sprintf("%s@%s", user, "localhost"),
+
+		// Pick ONE of the following authentication methods:
+		// sshtunnel.PrivateKeyFile("path/to/private/key.pem"), // 1. private key
+		ssh.Password(pass), // 2. password
+		// sshtunnel.SSHAgent(),                                // 3. ssh-agent
+
+		// The destination host and port of the actual server.
+		fmt.Sprintf("%s:%d", SSH_FWD_ADDR, SSH_FWD_PORT),
+
+		// The local port you want to bind the remote port to.
+		// Specifying "0" will lead to a random port.
+		ssh_port,
+	)
+
+	tunnel.Log = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+	go tunnel.Start()
+	time.Sleep(100 * time.Millisecond)
+	log.Println("tunnel is ", tunnel)
+	return *tunnel
 }
 
-func readSessionManagerSecret() []byte {
-	//     Read session manager secret
-	//     command = "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
-	//     _, stdout, stderr = self._cleanExec(command)
+func readSessionManagerSecret(conn CapConnection) []byte {
+	command := "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
+	out, err := conn.session.CombinedOutput(command)
 
-	//     errorOut = stderr.read()
-	//     if errorOut == "":
-	//         LOG.debug("Reading .sessionManager secret")
-	//         return stdout.read()
+	if err == nil {
+		log.Println("Reading .sessionManager secret")
+		return out
+	}
 
-	//     LOG.debug("Error:  %s", repr(errorOut))
-	//     LOG.debug("Creating new .sessionManager secret")
-	//     command = (
-	//         "dd if=/dev/urandom bs=1 count=1024|sha256sum|"
-	//         "awk \x27{print $1}\x27> ~/.sessionManager;"
-	//         "cat ~/.sessionManager;chmod 0400 ~/.sessionManager"
-	//     )
-	//     _, stdout, _ = self._cleanExec(command)
-	//     return stdout.read()
-	return []byte{1, 2, 3, 4, 5}
+	log.Println("Error:  ", err)
+	log.Println("Creating new .sessionManager secret")
+	command = `dd if=/dev/urandom bs=1 count=1024|sha256sum|
+               awk \x27{print $1}\x27> ~/.sessionManager;
+               cat ~/.sessionManager;chmod 0400 ~/.sessionManager`
+	out, err = conn.session.CombinedOutput(command)
+	return out
 }

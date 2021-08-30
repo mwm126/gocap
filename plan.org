@@ -1,0 +1,16 @@
+#+TITLE: Development Plan
+
+
+[ ] Is packet correct?
+[x] Can tunnel port LOCALP:REMOTEH:REMOTEP?
+ + Run sshd localhost:22
+ + Run ssh localhost:22
+ * Run capclient 2222:localhost:22
+ * Run ssh localhost:2222
+
+[x] Can Spawn tunnel from GUI ?
+
+Yes; can open gnome-terminal with SSH inside it.
+
+Can I use sshtunnel to open forwards from localhost:10022?
+Or do I need to use the same crypto/ssh/Session object?

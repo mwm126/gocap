@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"log"
+	"os/exec"
 	"time"
 )
 
@@ -48,6 +49,8 @@ func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
 	})
 
 	jouleConnected = NewJouleConnected(a, joule, func() {
+		joule.connection.close()
+		joule.connection = nil
 		card.SetContent(jouleLogin)
 	})
 
@@ -85,6 +88,12 @@ func NewJouleConnected(a fyne.App, joule *JouleTab, close_cb func()) *fyne.Conta
 		log.Println(joule)
 		log.Println(joule.connection)
 		log.Println(joule.connection.connectionInfo)
+
+		cmd := exec.Command("gnome-terminal", "--", "ssh", "localhost", "-p", "10022")
+		err := cmd.Run()
+		if err != nil {
+			log.Println("gnome-terminal FAIL", err)
+		}
 	})
 	card = widget.NewCard("Connect SSH", "(NETL Machine Learning system)", ssh)
 	close := widget.NewButton("Close", func() {
