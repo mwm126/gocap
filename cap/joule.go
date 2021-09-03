@@ -1,12 +1,14 @@
 package cap
 
 import (
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
+	"fmt"
 	"log"
 	"os/exec"
 	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 )
 
 type JouleTab struct {
@@ -95,10 +97,11 @@ func NewJouleConnected(a fyne.App, joule *JouleTab, close_cb func()) *fyne.Conta
 			log.Println("gnome-terminal FAIL", err)
 		}
 	})
+	label := widget.NewLabel(fmt.Sprintf("or run in a terminal:  ssh localhost -p %d", SSH_LOCAL_PORT))
 	card = widget.NewCard("Connect SSH", "(NETL Machine Learning system)", ssh)
 	close := widget.NewButton("Close", func() {
 		close_cb()
 	})
-	jouleConnected := container.NewVBox(widget.NewLabel("Connected!"), card, close)
+	jouleConnected := container.NewVBox(widget.NewLabel("Connected!"), card, label, close)
 	return jouleConnected
 }

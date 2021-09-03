@@ -1,18 +1,20 @@
 package cap
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/elliotchance/sshtunnel"
-	"golang.org/x/crypto/ssh"
 	"log"
 	"os"
+	"strconv"
 	"time"
+
+	"github.com/elliotchance/sshtunnel"
+	"golang.org/x/crypto/ssh"
 )
 
 // A CapConnection represents a successful SSH connection after the port knock
 type CapConnection struct {
 	client         *ssh.Client
-	session        *ssh.Session
 	connectionInfo ConnectionInfo
 }
 
@@ -30,7 +32,7 @@ type ConnectionInfo struct {
 }
 
 func (conn *CapConnection) listGUIs() string {
-	out, err := conn.session.CombinedOutput("ls /etc/passwd")
+	out, err := cleanExec(conn.client, "ls /etc/passwd")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +50,7 @@ func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection,
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
-	client, session, err := connectToHost(user, pass, "localhost:22")
+	client, err := connectToHost(user, pass, "localhost:22")
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -61,47 +63,75 @@ func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection,
 	//         return (ConnectionEvent.GET_NEW_PASSWORD.value, password_checker)
 
 	//     return (self._conn_event.value, self.get_connection())
-	conn := getConnection(client, session, user, pass)
+	conn := getConnection(client, user, pass)
 	return &conn, nil
 }
 
-func connectToHost(user, pass, host string) (*ssh.Client, *ssh.Session, error) {
+func connectToHost(user, pass, host string) (*ssh.Client, error) {
 
-	sshConfig := &ssh.ClientConfig{
+	// var hostKey ssh.PublicKey
+	// An SSH client is represented with a ClientConn.
+	//
+	// To authenticate with the remote server you must pass at least one
+	// implementation of AuthMethod via the Auth field in ClientConfig,
+	// and provide a HostKeyCallback.
+	config := &ssh.ClientConfig{
 		User: user,
-		Auth: []ssh.AuthMethod{ssh.Password(pass)},
+		Auth: []ssh.AuthMethod{
+			ssh.Password(pass),
+		},
+		// HostKeyCallback: ssh.FixedHostKey(hostKey),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
-
-	client, err := ssh.Dial("tcp", host, sshConfig)
+	client, err := ssh.Dial("tcp", host, config)
 	if err != nil {
-		log.Fatal(err)
-		return nil, nil, err
+		log.Fatal("Failed to dial: ", err)
+		return nil, err
 	}
+	// defer client.Close()
+	return client, nil
+}
 
+func cleanExec(client *ssh.Client, cmd string) (string, error) {
+
+	// Each ClientConn can support multiple interactive sessions,
+	// represented by a Session.
 	session, err := client.NewSession()
 	if err != nil {
-		client.Close()
-		log.Fatal(err)
-		return nil, nil, err
+		log.Fatal("Failed to create session: ", err)
 	}
+	defer session.Close()
 
-	return client, session, nil
+	// Once a Session is created, you can execute a single command on
+	// the remote side using the Run method.
+	var b bytes.Buffer
+	session.Stdout = &b
+	if err := session.Run(cmd); err != nil {
+		log.Fatal("Failed to run: " + err.Error())
+		return "", err
+	}
+	return b.String(), nil
 }
 
 const webLocalPort = 10080
 
-func getConnection(client *ssh.Client, session *ssh.Session, user, pass string) CapConnection {
+func getConnection(client *ssh.Client, user, pass string) CapConnection {
 
 	log.Println("Getting connection info...")
-	loginName := getHostname()
-	loginAddr := getLoginIP(loginName)
-	uid := getUID()
+	loginName, err := cleanExec(client, "hostname")
+	if err != nil {
+		log.Fatal("Failed hostname")
+	}
+	loginAddr, err := getLoginIP(client, loginName)
+	if err != nil {
+		log.Fatal("Failed to lookup login IP")
+	}
+	uid, err := getUID(client)
 	sshLocalPort := openSSHTunnel(user, pass)
 
 	log.Println("Starting session manager...")
 	session_mgt_port := openSessionManagementForward(user, pass)
-	//     session_mgt_secret = self._readSessionManagerSecret()
+	// session_mgt_secret = self._readSessionManagerSecret()
 
 	log.Println("Connected.")
 	//     sess_man = SessionManager(self._config, uid, session_mgt_port, session_mgt_secret)
@@ -117,35 +147,26 @@ func getConnection(client *ssh.Client, session *ssh.Session, user, pass string) 
 		session_mgt_port,
 	}
 	//     return HpcConnection(self.ssh, conn_info, sess_man)
-	conn := CapConnection{client, session, connInfo}
-	return conn
+	return CapConnection{client, connInfo}
 }
 
-func getHostname() string {
-	log.Println("Getting hostname")
-	return "hostname"
-}
-
-func getLoginIP(loginName string) string {
+func getLoginIP(client *ssh.Client, loginName string) (string, error) {
 	//     Get the login IP Address
 	log.Println("Getting login IP")
-	//     command = (
-	//         f"ping -c 1 {loginName}"
-	//         "| grep PING|awk \x27{print $3}\x27"
-	//         "| sed \x22s/(//\x22|sed \x22s/)//\x22"
-	//     )
-	return "DO PING"
+	command := ("ping -c 1 " +
+		loginName + "| grep PING|awk \x27{print $3}\x27" + "| sed \x22s/(//\x22|sed \x22s/)//\x22")
+	return cleanExec(client, command)
 }
 
-func getUID() string {
+func getUID(client *ssh.Client) (string, error) {
 	//     Get uid for user
 	//     # id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'
 	log.Println("Getting login UID")
-	// command := "id|sed \x22s/uid=//\x22|sed \x22s/(/ /\x22" + "|awk \x27{print $1}\x27"
-	return "THE_UID"
+	command := "id|sed \x22s/uid=//\x22|sed \x22s/(/ /\x22" + "|awk \x27{print $1}\x27"
+	return cleanExec(client, command)
 }
 
-const SSH_LOCAL_PORT = "10022"
+const SSH_LOCAL_PORT = 10022
 const SSH_FWD_ADDR = "localhost"
 const SSH_FWD_PORT = 22
 
@@ -154,7 +175,7 @@ func openSSHTunnel(user, pass string) sshtunnel.SSHTunnel {
 	log.Println("Opening Tunnel")
 
 	// ssh_port := check_free_port(SSH_LOCAL_PORT)
-	ssh_port := SSH_LOCAL_PORT
+	ssh_port := strconv.Itoa(SSH_LOCAL_PORT)
 
 	tunnel := sshtunnel.NewSSHTunnel(
 		// User and host of tunnel server, it will default to port 22
@@ -185,7 +206,7 @@ func openSessionManagementForward(user, pass string) sshtunnel.SSHTunnel {
 	log.Println("Connecting to session manager")
 
 	// ssh_port := check_free_port(SSH_LOCAL_PORT)
-	ssh_port := SSH_LOCAL_PORT
+	ssh_port := strconv.Itoa(SSH_LOCAL_PORT)
 
 	tunnel := sshtunnel.NewSSHTunnel(
 		// User and host of tunnel server, it will default to port 22
@@ -212,9 +233,9 @@ func openSessionManagementForward(user, pass string) sshtunnel.SSHTunnel {
 	return *tunnel
 }
 
-func readSessionManagerSecret(conn CapConnection) []byte {
+func readSessionManagerSecret(conn CapConnection) string {
 	command := "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
-	out, err := conn.session.CombinedOutput(command)
+	out, err := cleanExec(conn.client, command)
 
 	if err == nil {
 		log.Println("Reading .sessionManager secret")
@@ -226,6 +247,6 @@ func readSessionManagerSecret(conn CapConnection) []byte {
 	command = `dd if=/dev/urandom bs=1 count=1024|sha256sum|
                awk \x27{print $1}\x27> ~/.sessionManager;
                cat ~/.sessionManager;chmod 0400 ~/.sessionManager`
-	out, err = conn.session.CombinedOutput(command)
+	out, err = cleanExec(conn.client, command)
 	return out
 }
