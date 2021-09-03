@@ -34,7 +34,7 @@ func newClient(knocker cap.Knocker) Client {
 
 	w.SetContent(tabs)
 
-	tabs.Append(container.NewTabItemWithIcon("Home", theme.HomeIcon(), widget.NewLabel("The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.")))
+	tabs.Append(container.NewTabItemWithIcon("About", theme.HomeIcon(), widget.NewLabel("The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.")))
 	return Client{w, joule, watt, knocker, a}
 
 }
