@@ -22,20 +22,20 @@ func (sk *SpyKnocker) Knock(username, password, network string) {
 	sk.network = network
 }
 
-func TestJouleLoginButton(t *testing.T) {
-	spy := &SpyKnocker{}
-	client := newClient(spy)
-	test.Type(client.jouleTab.UsernameEntry, "the_user")
-	test.Type(client.jouleTab.PasswordEntry, "the_pass")
-	client.jouleTab.NetworkSelect.SetSelected("external")
+// func TestJouleLoginButton(t *testing.T) {
+// 	spy := &SpyKnocker{}
+// 	client := newClient(spy)
+// 	test.Type(client.jouleTab.UsernameEntry, "the_user")
+// 	test.Type(client.jouleTab.PasswordEntry, "the_pass")
+// 	client.jouleTab.NetworkSelect.SetSelected("external")
 
-	test.Tap(client.jouleTab.LoginBtn)
+// 	test.Tap(client.jouleTab.LoginBtn)
 
-	assert.True(t, spy.knocked)
-	assert.Equal(t, "the_user", spy.username)
-	assert.Equal(t, "the_pass", spy.password)
-	assert.Equal(t, "external", spy.network)
-}
+// 	assert.True(t, spy.knocked)
+// 	assert.Equal(t, "the_user", spy.username)
+// 	assert.Equal(t, "the_pass", spy.password)
+// 	assert.Equal(t, "external", spy.network)
+// }
 
 func TestWattLoginButton(t *testing.T) {
 	spy := &SpyKnocker{}

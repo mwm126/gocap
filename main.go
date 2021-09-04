@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"log"
 )
 
 // Client represents the Main window of CAP client
@@ -45,6 +46,11 @@ func main() {
 
 	yk := cap.UsbYubikey{}
 	knk := cap.NewPortKnocker(&yk, entropy)
+
+	cfg := cap.GetConfig()
+	cfg.Enable_joule = true
+	cfg.Enable_watt = true
+	cap.WriteConfig(cfg)
 
 	client := newClient(&knk)
 	client.window.ShowAndRun()

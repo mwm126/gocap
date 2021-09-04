@@ -115,7 +115,7 @@ func newJouleHome(close_cb func()) *container.TabItem {
 
 func newJouleSsh() *container.TabItem {
 	ssh := widget.NewButton("New SSH Session", func() {
-		cmd := exec.Command("gnome-terminal", "--", "ssh", "localhost", "-p", strconv.Itoa(SSH_LOCAL_PORT))
+		cmd := exec.Command("x-terminal-emulator", "--", "ssh", "localhost", "-p", strconv.Itoa(SSH_LOCAL_PORT))
 		err := cmd.Run()
 		if err != nil {
 			log.Println("gnome-terminal FAIL: ", err)
@@ -133,6 +133,10 @@ func newJouleFwds(app fyne.App) *container.TabItem {
 			"20022:localhost:33",
 		},
 	)
+	cfg := GetConfig()
+	for _, fwd := range cfg.Joule_Forwards {
+		forwards.Append(fwd)
+	}
 	var to_be_removed widget.ListItemID
 
 	add := widget.NewButton("Add", func() { addJouleFwd(app, forwards) })
@@ -162,7 +166,7 @@ func newJouleFwds(app fyne.App) *container.TabItem {
 	}
 
 	box := container.NewBorder(add, remove, nil, nil, list)
-	return container.NewTabItem("Port Fowards", box)
+	return container.NewTabItem("Port Forwards", box)
 }
 
 func addJouleFwd(app fyne.App, forwards binding.StringList) {
@@ -185,6 +189,8 @@ func addJouleFwd(app fyne.App, forwards binding.StringList) {
 			new_fwd := fmt.Sprintf("%s:%s:%s", local_p.Text, remote_h.Text, remote_p.Text)
 			log.Println("Adding forward:", new_fwd)
 			forwards.Append(new_fwd)
+			fwds, _ := forwards.Get()
+			saveForwards(fwds)
 			win.Close()
 		},
 		OnCancel:   func() { win.Close() },
@@ -204,4 +210,11 @@ func removeForward(forwards binding.StringList, to_be_removed int) {
 		}
 	}
 	forwards.Set(fwds)
+	saveForwards(fwds)
+}
+
+func saveForwards(fwds []string) {
+	cfg := GetConfig()
+	cfg.Joule_Forwards = fwds[2:]
+	WriteConfig(cfg)
 }

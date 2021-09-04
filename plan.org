@@ -1,6 +1,6 @@
 #+TITLE: Development Plan
 
-
+* TODO items
 [ ] Is packet correct?
 [x] Can tunnel port LOCALP:REMOTEH:REMOTEP?
  + Run sshd localhost:22
@@ -17,3 +17,18 @@ Or do I need to use the same crypto/ssh/Session object?
 
 [ ] Can Spawn tunnel from GUI on Windows?
 Not yet.  How does Putty figure into things?
+
+* Save list of forwards
+** Read capclient.toml file on startup (if exists)
+** (Over)Write capclient.toml file on startup (log warning if already exists, but reading failed)
+** Start SSH forwards (on startup)
+** Start SSH forward (When updating Forward List)
+** End SSH forward (When removing from Forward List)
+* SSH GUI
+** On Windows, Download Putty.exe automatically
+** If On Ubuntu, use if x-terminal-emulator
+** On other Linux, check if gnome-terminal exists (before enabling New Session button)
+** On Mac, ????
+* File Transfer GUI (TODO)
+* Joule Launch VNC (TODO)
+* Watt Launch Web Interface (TODO)
