@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	fyne.io/fyne/v2 v2.0.4
-	github.com/BurntSushi/toml v0.4.1 // indirect
+	github.com/BurntSushi/toml v0.4.1
 	github.com/beevik/ntp v0.3.0
 	github.com/elliotchance/sshtunnel v1.3.0
 	github.com/stretchr/testify v1.6.1
