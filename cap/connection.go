@@ -20,23 +20,14 @@ type CapConnection struct {
 
 // ConnectionInfo stores info about the connection
 type ConnectionInfo struct {
-	username string
-	password string
-	// _login_info,
+	username     string
+	password     string
 	uid          string
 	loginName    string
 	loginAddr    string
 	webLocalPort int
 	sshLocalPort int
 	mgtPort      sshtunnel.SSHTunnel
-}
-
-func (conn *CapConnection) listGUIs() string {
-	out, err := cleanExec(conn.client, "ls /etc/passwd")
-	if err != nil {
-		log.Fatal(err)
-	}
-	return string(out)
 }
 
 func (conn *CapConnection) close() {
@@ -67,13 +58,7 @@ func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection,
 }
 
 func connectToHost(user, pass, host string) (*ssh.Client, error) {
-
 	// var hostKey ssh.PublicKey
-	// An SSH client is represented with a ClientConn.
-	//
-	// To authenticate with the remote server you must pass at least one
-	// implementation of AuthMethod via the Auth field in ClientConfig,
-	// and provide a HostKeyCallback.
 	config := &ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
@@ -92,7 +77,6 @@ func connectToHost(user, pass, host string) (*ssh.Client, error) {
 }
 
 func cleanExec(client *ssh.Client, cmd string) (string, error) {
-
 	// Each ClientConn can support multiple interactive sessions,
 	// represented by a Session.
 	session, err := client.NewSession()
@@ -115,7 +99,6 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 const webLocalPort = 10080
 
 func getConnection(client *ssh.Client, user, pass string) CapConnection {
-
 	log.Println("Getting connection info...")
 	loginName, err := cleanExec(client, "hostname")
 	if err != nil {
@@ -128,16 +111,14 @@ func getConnection(client *ssh.Client, user, pass string) CapConnection {
 	uid, err := getUID(client)
 	sshLocalPort := openSSHTunnel(user, pass)
 
-	log.Println("Starting session manager...")
 	session_mgt_port := openSessionManagementForward(user, pass)
-	// session_mgt_secret = self._readSessionManagerSecret()
+	// session_mgt_secret := readSessionManagerSecret(client)
 
 	log.Println("Connected.")
 	//     sess_man = SessionManager(self._config, uid, session_mgt_port, session_mgt_secret)
 	connInfo := ConnectionInfo{
 		user,
 		pass,
-		// _login_info,
 		uid,
 		loginName,
 		loginAddr,
@@ -145,7 +126,6 @@ func getConnection(client *ssh.Client, user, pass string) CapConnection {
 		sshLocalPort.Local.Port,
 		session_mgt_port,
 	}
-	//     return HpcConnection(self.ssh, conn_info, sess_man)
 	return CapConnection{client, connInfo}
 }
 
@@ -202,7 +182,7 @@ func openSSHTunnel(user, pass string) sshtunnel.SSHTunnel {
 }
 
 func openSessionManagementForward(user, pass string) sshtunnel.SSHTunnel {
-	log.Println("Connecting to session manager")
+	log.Println("Starting session manager...")
 
 	// ssh_port := check_free_port(SSH_LOCAL_PORT)
 	ssh_port := strconv.Itoa(SSH_LOCAL_PORT)
@@ -232,9 +212,9 @@ func openSessionManagementForward(user, pass string) sshtunnel.SSHTunnel {
 	return *tunnel
 }
 
-func readSessionManagerSecret(conn CapConnection) string {
+func readSessionManagerSecret(client *ssh.Client) string {
 	command := "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
-	out, err := cleanExec(conn.client, command)
+	out, err := cleanExec(client, command)
 
 	if err == nil {
 		log.Println("Reading .sessionManager secret")
@@ -246,6 +226,6 @@ func readSessionManagerSecret(conn CapConnection) string {
 	command = `dd if=/dev/urandom bs=1 count=1024|sha256sum|
                awk \x27{print $1}\x27> ~/.sessionManager;
                cat ~/.sessionManager;chmod 0400 ~/.sessionManager`
-	out, err = cleanExec(conn.client, command)
+	out, err = cleanExec(client, command)
 	return out
 }

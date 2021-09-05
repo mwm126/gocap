@@ -13,8 +13,12 @@ import (
 )
 
 type JouleTab struct {
-	Tab        *container.TabItem
-	connection *CapConnection
+	Tab           *container.TabItem
+	connection    *CapConnection
+	networkSelect *widget.Select
+	usernameEntry *widget.Entry
+	passwordEntry *widget.Entry
+	loginBtn      *widget.Button
 }
 
 func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
@@ -23,7 +27,7 @@ func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
 	var jouleLogin, jouleConnecting, jouleConnected *fyne.Container
 	connect_cancelled := false
 
-	jouleLogin = NewJouleLogin(func(user, pass, host string) {
+	jouleLogin = joule.NewJouleLogin(func(user, pass, host string) {
 		card.SetContent(jouleConnecting)
 		conn, err := newCapConnection(user, pass, host, knocker)
 
@@ -63,7 +67,7 @@ func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
 	return *joule
 }
 
-func NewJouleLogin(connect_cb func(user, pass, host string)) *fyne.Container {
+func (t *JouleTab) NewJouleLogin(connect_cb func(user, pass, host string)) *fyne.Container {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
@@ -74,6 +78,10 @@ func NewJouleLogin(connect_cb func(user, pass, host string)) *fyne.Container {
 	login := widget.NewButton("Login", func() {
 		go connect_cb(username.Text, password.Text, networks[network.Selected].JouleAddress)
 	})
+	t.networkSelect = network
+	t.usernameEntry = username
+	t.passwordEntry = password
+	t.loginBtn = login
 	return container.NewVBox(username, password, network, login)
 }
 

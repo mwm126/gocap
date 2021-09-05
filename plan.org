@@ -1,34 +1,34 @@
-#+TITLE: Development Plan
+#+TITLE: Cap Client (golang) Development Plan
 
 * TODO items
-[ ] Is packet correct?
-[x] Can tunnel port LOCALP:REMOTEH:REMOTEP?
+** TODO Is packet correct?
+** [x] Can tunnel port LOCALP:REMOTEH:REMOTEP?
  + Run sshd localhost:22
  + Run ssh localhost:22
  * Run capclient 2222:localhost:22
  * Run ssh localhost:2222
 
-[x] Can Spawn tunnel from GUI on Linux?
+** DONE Can Spawn tunnel from GUI on Linux?
 
 Yes; can open gnome-terminal with SSH inside it.
 
 Can I use sshtunnel to open forwards from localhost:10022?
 Or do I need to use the same crypto/ssh/Session object?
 
-[ ] Can Spawn tunnel from GUI on Windows?
+** TODO Can Spawn tunnel from GUI on Windows?
 Not yet.  How does Putty figure into things?
 
 * Save list of forwards
-** Read capclient.toml file on startup (if exists)
-** (Over)Write capclient.toml file on startup (log warning if already exists, but reading failed)
-** Start SSH forwards (on startup)
-** Start SSH forward (When updating Forward List)
-** End SSH forward (When removing from Forward List)
+** DONE Read capclient.toml file on startup (if exists)
+** DONE (Over)Write capclient.toml file on startup (log warning if already exists, but reading failed)
+** TODO Start SSH forwards (on startup)
+** TODO Start SSH forward (When updating Forward List)
+** TODO End SSH forward (When removing from Forward List)
 * SSH GUI
-** On Windows, Download Putty.exe automatically
-** If On Ubuntu, use if x-terminal-emulator
-** On other Linux, check if gnome-terminal exists (before enabling New Session button)
-** On Mac, ????
-* File Transfer GUI (TODO)
-* Joule Launch VNC (TODO)
-* Watt Launch Web Interface (TODO)
+** TODO On Windows, Download Putty.exe automatically
+** TODO If On Ubuntu, use if x-terminal-emulator
+** TODO On other Linux, check if gnome-terminal exists (before enabling New Session button)
+** TODO On Mac, ????
+* TODO File Transfer GUI
+* TODO Joule Launch VNC
+* TODO Watt Launch Web Interface
