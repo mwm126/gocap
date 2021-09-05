@@ -44,9 +44,8 @@ func (conn *CapConnection) close() {
 }
 
 func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection, error) {
-	log.Println("Sending CAP packet...")
-	knckr.Knock(user, pass, server)
 	log.Println("Opening SSH Connection...")
+	knckr.Knock(user, pass, server)
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
