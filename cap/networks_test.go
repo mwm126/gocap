@@ -18,3 +18,9 @@ func TestCapConnection(t *testing.T) {
 		("204.154.140.10"),
 	}, networks["external"])
 }
+
+func TestGetExternalIp(t *testing.T) {
+	ip := GetExternalIp()
+
+	assert.NotEqual(t, ip.String(), "127.0.0.1")
+}

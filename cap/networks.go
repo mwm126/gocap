@@ -1,8 +1,11 @@
 package cap
 
 import (
-	"gopkg.in/yaml.v3"
 	"log"
+	"net"
+
+	"github.com/glendc/go-external-ip"
+	"gopkg.in/yaml.v3"
 )
 
 type User struct {
@@ -168,3 +171,12 @@ vpn:
   sessionMgtFwdAddr: "172.16.0.1"
   wattAddress: "199.249.243.253"
 `
+
+func GetExternalIp() net.IP {
+	consensus := externalip.DefaultConsensus(nil, nil)
+	ip, err := consensus.ExternalIP()
+	if err != nil {
+		log.Println("Warning: Could not find external IP, ", err)
+	}
+	return ip
+}
