@@ -1,6 +1,7 @@
 package cap
 
 import (
+	"net"
 	"testing"
 	"time"
 
@@ -12,15 +13,15 @@ import (
 type WattSpyKnocker struct {
 	username string
 	password string
-	network  string
+	address  net.IP
 	knocked  bool
 }
 
-func (sk *WattSpyKnocker) Knock(username, password, network string) {
+func (sk *WattSpyKnocker) Knock(username, password string, address net.IP) {
 	sk.knocked = true
 	sk.username = username
 	sk.password = password
-	sk.network = network
+	sk.address = address
 }
 
 func TestWattLoginButton(t *testing.T) {
@@ -29,7 +30,7 @@ func TestWattLoginButton(t *testing.T) {
 	wattTab := NewWattTab(spy, a)
 	test.Type(wattTab.UsernameEntry, "the_user")
 	test.Type(wattTab.PasswordEntry, "the_pass")
-	wattTab.NetworkSelect.SetSelected("external")
+	wattTab.NetworkSelect.SetSelected("vpn")
 
 	test.Tap(wattTab.LoginBtn)
 
@@ -37,5 +38,5 @@ func TestWattLoginButton(t *testing.T) {
 	assert.True(t, spy.knocked)
 	assert.Equal(t, "the_user", spy.username)
 	assert.Equal(t, "the_pass", spy.password)
-	assert.Equal(t, "204.154.140.10", spy.network)
+	assert.Equal(t, net.IPv4(199, 249, 243, 253), spy.address)
 }

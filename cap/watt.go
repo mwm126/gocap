@@ -2,6 +2,7 @@ package cap
 
 import (
 	"log"
+	"net"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -24,8 +25,14 @@ func NewWattTab(knocker Knocker, a fyne.App) WattTab {
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
 	password.SetPlaceHolder("Enter password...")
-	network := widget.NewSelect(getNetworkNames(), func(s string) {})
-	networks := getNetworks()
+
+	cfg := GetConfig()
+	networkNames := make([]string, 0, len(cfg.Watt_Ips))
+	for network := range cfg.Watt_Ips {
+		networkNames = append(networkNames, network)
+	}
+
+	network := widget.NewSelect(networkNames, func(s string) {})
 	network.SetSelected("external")
 
 	var card *widget.Card
@@ -34,7 +41,13 @@ func NewWattTab(knocker Knocker, a fyne.App) WattTab {
 	login := widget.NewButton("Login", func() {
 		card.SetContent(wattConnecting)
 		go func() {
-			conn, err := newCapConnection(username.Text, password.Text, networks[network.Selected].WattAddress, knocker)
+			var addr net.IP
+			if network.Selected == "external" {
+				addr = GetExternalIp()
+			} else {
+				addr = net.ParseIP(cfg.Watt_Ips[network.Selected])
+			}
+			conn, err := newCapConnection(username.Text, password.Text, addr, knocker)
 			if err != nil {
 				log.Println("Unable to make CAP Connection")
 				card.SetContent(wattLogin)

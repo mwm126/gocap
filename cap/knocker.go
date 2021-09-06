@@ -22,7 +22,7 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
-	Knock(username, password, network string)
+	Knock(username, password string, network net.IP)
 }
 
 // PortKnocker for actual Knocker implementation
@@ -35,7 +35,7 @@ func NewPortKnocker(yk Yubikey, ent [32]byte) PortKnocker {
 	return PortKnocker{yk, ent}
 }
 
-func (sk *PortKnocker) Knock(uname, pword, netwk string) {
+func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	response, err := ntp.Query("pool.ntp.org")

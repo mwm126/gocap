@@ -3,6 +3,7 @@ package cap
 import (
 	"fmt"
 	"log"
+	"net"
 	"os/exec"
 	"strconv"
 	"time"
@@ -23,7 +24,7 @@ func NewFe261Tab(knocker Knocker, a fyne.App) Fe261Tab {
 	var login, connecting, connected *fyne.Container
 	connect_cancelled := false
 
-	login = NewLogin(func(user, pass, host string) {
+	login = NewLogin(func(user, pass string, host net.IP) {
 		card.SetContent(connecting)
 		conn, err := newCapConnection(user, pass, host, knocker)
 
@@ -63,16 +64,28 @@ func NewFe261Tab(knocker Knocker, a fyne.App) Fe261Tab {
 	return *fe261
 }
 
-func NewLogin(connect_cb func(user, pass, host string)) *fyne.Container {
+func NewLogin(connect_cb func(user, pass string, host net.IP)) *fyne.Container {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
 	password.SetPlaceHolder("Enter password...")
-	network := widget.NewSelect(getNetworkNames(), func(s string) {})
-	networks := getNetworks()
+
+	cfg := GetConfig()
+	networkNames := make([]string, 0, len(cfg.Watt_Ips))
+	for network := range cfg.Watt_Ips {
+		networkNames = append(networkNames, network)
+	}
+
+	network := widget.NewSelect(networkNames, func(s string) {})
 	network.SetSelected("external")
 	login := widget.NewButton("Login", func() {
-		go connect_cb(username.Text, password.Text, networks[network.Selected].Fe261Address)
+		var addr net.IP
+		if network.Selected == "external" {
+			addr = GetExternalIp()
+		} else {
+			addr = net.ParseIP(cfg.Fe261_Ips[network.Selected])
+		}
+		go connect_cb(username.Text, password.Text, addr)
 	})
 	return container.NewVBox(username, password, network, login)
 }

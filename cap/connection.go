@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -34,7 +35,7 @@ func (conn *CapConnection) close() {
 	conn.client.Close()
 }
 
-func newCapConnection(user, pass, server string, knckr Knocker) (*CapConnection, error) {
+func newCapConnection(user, pass string, server net.IP, knckr Knocker) (*CapConnection, error) {
 	log.Println("Opening SSH Connection...")
 	knckr.Knock(user, pass, server)
 

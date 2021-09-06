@@ -3,6 +3,7 @@ package cap
 import (
 	"fmt"
 	"log"
+	"net"
 	"os/exec"
 	"strconv"
 	"time"
@@ -27,7 +28,7 @@ func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
 	var jouleLogin, jouleConnecting, jouleConnected *fyne.Container
 	connect_cancelled := false
 
-	jouleLogin = joule.NewJouleLogin(func(user, pass, host string) {
+	jouleLogin = joule.NewJouleLogin(func(user, pass string, host net.IP) {
 		card.SetContent(jouleConnecting)
 		conn, err := newCapConnection(user, pass, host, knocker)
 
@@ -67,16 +68,28 @@ func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
 	return *joule
 }
 
-func (t *JouleTab) NewJouleLogin(connect_cb func(user, pass, host string)) *fyne.Container {
+func (t *JouleTab) NewJouleLogin(connect_cb func(user, pass string, host net.IP)) *fyne.Container {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
 	password.SetPlaceHolder("Enter password...")
-	network := widget.NewSelect(getNetworkNames(), func(s string) {})
-	networks := getNetworks()
+
+	cfg := GetConfig()
+	networkNames := make([]string, 0, len(cfg.Joule_Ips))
+	for network := range cfg.Joule_Ips {
+		networkNames = append(networkNames, network)
+	}
+	network := widget.NewSelect(networkNames, func(s string) {})
+
 	network.SetSelected("external")
 	login := widget.NewButton("Login", func() {
-		go connect_cb(username.Text, password.Text, networks[network.Selected].JouleAddress)
+		var addr net.IP
+		if network.Selected == "external" {
+			addr = GetExternalIp()
+		} else {
+			addr = net.ParseIP(cfg.Joule_Ips[network.Selected])
+		}
+		go connect_cb(username.Text, password.Text, addr)
 	})
 	t.networkSelect = network
 	t.usernameEntry = username

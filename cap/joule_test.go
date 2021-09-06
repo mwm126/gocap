@@ -1,6 +1,7 @@
 package cap
 
 import (
+	"net"
 	"testing"
 	"time"
 
@@ -12,15 +13,15 @@ import (
 type JouleSpyKnocker struct {
 	username string
 	password string
-	network  string
+	address  net.IP
 	knocked  bool
 }
 
-func (sk *JouleSpyKnocker) Knock(username, password, network string) {
+func (sk *JouleSpyKnocker) Knock(username, password string, address net.IP) {
 	sk.knocked = true
 	sk.username = username
 	sk.password = password
-	sk.network = network
+	sk.address = address
 }
 
 func TestJouleLoginButton(t *testing.T) {
@@ -29,7 +30,7 @@ func TestJouleLoginButton(t *testing.T) {
 	jouleTab := NewJouleTab(spy, a)
 	test.Type(jouleTab.usernameEntry, "the_user")
 	test.Type(jouleTab.passwordEntry, "the_pass")
-	jouleTab.networkSelect.SetSelected("external")
+	jouleTab.networkSelect.SetSelected("alb_admin")
 
 	test.Tap(jouleTab.loginBtn)
 
@@ -37,5 +38,5 @@ func TestJouleLoginButton(t *testing.T) {
 	assert.True(t, spy.knocked)
 	assert.Equal(t, "the_user", spy.username)
 	assert.Equal(t, "the_pass", spy.password)
-	assert.Equal(t, "external", spy.network)
+	assert.Equal(t, net.IPv4(204, 154, 139, 11), spy.address)
 }
