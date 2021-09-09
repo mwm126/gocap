@@ -43,7 +43,7 @@ func newCapConnection(user, pass string, server net.IP, knckr Knocker) (*CapConn
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
 	client, err := connectToHost(user, pass, "localhost:22")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -70,7 +70,7 @@ func connectToHost(user, pass, host string) (*ssh.Client, error) {
 	}
 	client, err := ssh.Dial("tcp", host, config)
 	if err != nil {
-		log.Fatal("Failed to dial: ", err)
+		log.Println("Failed to dial: ", err)
 		return nil, err
 	}
 	// defer client.Close()
