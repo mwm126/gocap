@@ -13,28 +13,24 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type JouleTab struct {
-	Tab           *container.TabItem
-	connection    *CapConnection
-	networkSelect *widget.Select
-	usernameEntry *widget.Entry
-	passwordEntry *widget.Entry
-	loginBtn      *widget.Button
+type Fe261Tab struct {
+	Tab        *container.TabItem
+	connection *CapConnection
 }
 
-func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
-	joule := &JouleTab{}
+func NewFe261Tab(knocker Knocker, a fyne.App) Fe261Tab {
+	fe261 := &Fe261Tab{}
 	var card *widget.Card
-	var jouleLogin, jouleConnecting, jouleConnected *fyne.Container
+	var login, connecting, connected *fyne.Container
 	connect_cancelled := false
 
-	jouleLogin = joule.NewJouleLogin(func(user, pass string, host net.IP) {
-		card.SetContent(jouleConnecting)
+	login = NewLogin(func(user, pass string, host net.IP) {
+		card.SetContent(connecting)
 		conn, err := newCapConnection(user, pass, host, knocker)
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
-			card.SetContent(jouleLogin)
+			card.SetContent(login)
 			connect_cancelled = false
 			return
 		}
@@ -46,59 +42,55 @@ func NewJouleTab(knocker Knocker, a fyne.App) JouleTab {
 			return
 		}
 
-		joule.connection = conn
+		fe261.connection = conn
 		time.Sleep(1 * time.Second)
-		card.SetContent(jouleConnected)
+		card.SetContent(connected)
 	})
 
-	jouleConnecting = NewJouleConnecting(func() {
+	connecting = NewConnecting(func() {
 		connect_cancelled = true
-		card.SetContent(jouleLogin)
+		card.SetContent(login)
 	})
 
-	jouleConnected = NewJouleConnected(a, joule, func() {
-		joule.connection.close()
-		joule.connection = nil
-		card.SetContent(jouleLogin)
+	connected = NewConnected(a, fe261, func() {
+		fe261.connection.close()
+		fe261.connection = nil
+		card.SetContent(login)
 	})
 
-	card = widget.NewCard("Joule 2.0", "NETL Supercomputer", jouleLogin)
+	card = widget.NewCard("FE 261 system", "fe 261", login)
 
-	joule.Tab = container.NewTabItem("Joule", card)
-	return *joule
+	fe261.Tab = container.NewTabItem("FE261", card)
+	return *fe261
 }
 
-func (t *JouleTab) NewJouleLogin(connect_cb func(user, pass string, host net.IP)) *fyne.Container {
+func NewLogin(connect_cb func(user, pass string, host net.IP)) *fyne.Container {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
 	password.SetPlaceHolder("Enter password...")
 
 	cfg := GetConfig()
-	networkNames := make([]string, 0, len(cfg.Joule_Ips))
-	for network := range cfg.Joule_Ips {
+	networkNames := make([]string, 0, len(cfg.Watt_Ips))
+	for network := range cfg.Watt_Ips {
 		networkNames = append(networkNames, network)
 	}
-	network := widget.NewSelect(networkNames, func(s string) {})
 
+	network := widget.NewSelect(networkNames, func(s string) {})
 	network.SetSelected("external")
 	login := widget.NewButton("Login", func() {
 		var addr net.IP
 		if network.Selected == "external" {
 			addr = GetExternalIp()
 		} else {
-			addr = net.ParseIP(cfg.Joule_Ips[network.Selected])
+			addr = net.ParseIP(cfg.Fe261_Ips[network.Selected])
 		}
 		go connect_cb(username.Text, password.Text, addr)
 	})
-	t.networkSelect = network
-	t.usernameEntry = username
-	t.passwordEntry = password
-	t.loginBtn = login
 	return container.NewVBox(username, password, network, login)
 }
 
-func NewJouleConnecting(cancel_cb func()) *fyne.Container {
+func NewConnecting(cancel_cb func()) *fyne.Container {
 	connecting := widget.NewLabel("Connecting......")
 	cancel := widget.NewButton("Cancel", func() {
 		cancel_cb()
@@ -106,31 +98,27 @@ func NewJouleConnecting(cancel_cb func()) *fyne.Container {
 	return container.NewVBox(connecting, cancel)
 }
 
-func NewJouleConnected(app fyne.App, joule *JouleTab, close_cb func()) *fyne.Container {
+func NewConnected(app fyne.App, tab *Fe261Tab, close_cb func()) *fyne.Container {
 
-	homeTab := newJouleHome(close_cb)
-	sshTab := newJouleSsh()
-
-	vcard := widget.NewCard("GUI", "TODO", nil)
-	vncTab := container.NewTabItem("VNC", vcard)
+	homeTab := newHome(close_cb)
+	sshTab := newSsh()
 
 	cfg := GetConfig()
-	fwdTab := newPortForwardTab(app, cfg.Joule_Forwards, func(fwds []string) {
+	fwdTab := newPortForwardTab(app, cfg.Fe261_Forwards, func(fwds []string) {
 		cfg := GetConfig()
-		cfg.Joule_Forwards = fwds[2:]
+		cfg.Fe261_Forwards = fwds[2:]
 		WriteConfig(cfg)
 	})
 
 	tabs := container.NewAppTabs(
 		homeTab,
 		sshTab,
-		vncTab,
 		fwdTab,
 	)
 	return container.NewMax(tabs)
 }
 
-func newJouleHome(close_cb func()) *container.TabItem {
+func newHome(close_cb func()) *container.TabItem {
 	close := widget.NewButton("Disconnect", func() {
 		close_cb()
 	})
@@ -138,7 +126,7 @@ func newJouleHome(close_cb func()) *container.TabItem {
 	return container.NewTabItem("Home", box)
 }
 
-func newJouleSsh() *container.TabItem {
+func newSsh() *container.TabItem {
 	ssh := widget.NewButton("New SSH Session", func() {
 		cmd := exec.Command("x-terminal-emulator", "--", "ssh", "localhost", "-p", strconv.Itoa(SSH_LOCAL_PORT))
 		err := cmd.Run()
@@ -149,10 +137,4 @@ func newJouleSsh() *container.TabItem {
 	label := widget.NewLabel(fmt.Sprintf("or run in a terminal:  ssh localhost -p %d", SSH_LOCAL_PORT))
 	box := container.NewVBox(widget.NewLabel("To create new Terminal (SSH) Session in gnome-terminal:"), ssh, label)
 	return container.NewTabItem("SSH", box)
-}
-
-func saveForwards(fwds []string) {
-	cfg := GetConfig()
-	cfg.Joule_Forwards = fwds[2:]
-	WriteConfig(cfg)
 }
