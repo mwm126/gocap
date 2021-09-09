@@ -121,12 +121,18 @@ func GetConfig() config {
 	cfg_path := get_cfg_path()
 
 	conf := NewConfig()
+
+	if _, err := os.Stat("/path/to/whatever"); os.IsNotExist(err) {
+		log.Println("Config file does not exist; using defaults")
+		return conf
+	}
+
 	data, err := ioutil.ReadFile(cfg_path)
 	if err != nil {
 		log.Println("Warning: Could not read config file: ", cfg_path)
-	} else {
-		toml.Unmarshal(data, &conf)
+		return conf
 	}
+	toml.Unmarshal(data, &conf)
 	return conf
 }
 
