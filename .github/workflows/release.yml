@@ -1,6 +1,8 @@
 name: Release CAP Client binaries
 
 on:
+  push:
+    branches: [ main, mwm/ci ]
   release:
     types: [created]
 
