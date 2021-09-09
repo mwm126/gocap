@@ -8,8 +8,8 @@ import (
 )
 
 func TestCapConnection(t *testing.T) {
-	username := "mark"
-	password := "markmark"
+	username := "testusername"
+	password := "testpassword"
 	server := "localhost:22"
 
 	knckr := &FakeYubikey{}
