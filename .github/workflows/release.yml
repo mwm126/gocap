@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run:   |
               if [ "$RUNNER_OS" == "Linux" ]; then
-                    sudo apt install -y gcc libgl1-mesa-dev xorg-dev x11-dev
+                    sudo apt install -y gcc libgl1-mesa-dev xorg-dev libx11-dev
               fi
 
       - name: Test
