@@ -6,6 +6,7 @@ before:
     - go generate ./...
 builds:
   - id: linux-x64
+    main: ./
     env:
       - CGO_ENABLED=1
     flags:
@@ -16,16 +17,30 @@ builds:
     goarch:
       - amd64
   - id: windows-x64
+    main: ./
     env:
       - CGO_ENABLED=1
       - CC=x86_64-w64-mingw32-gcc
     flags:
-      - '-ldflags'
-      - '-extldflags "-static"'
+      - -mod=readonly
+    ldflags:
+      - -s -w -X main.version={{.Version}}
     goos:
       - windows
     goarch:
       - amd64
+  # - id: darwin-amd64
+  #   main: ./
+  #   binary: golang-cross
+  #   env:
+  #     - PKG_CONFIG_SYSROOT_DIR=/sysroot/macos/amd64
+  #     - PKG_CONFIG_PATH=/sysroot/macos/amd64/usr/local/lib/pkgconfig
+  #     - CC=o64-clang
+  #     - CXX=o64-clang++
+  #   goos:
+  #     - darwin
+  #   goarch:
+  #     - amd64
 archives:
   - replacements:
       linux: Linux
