@@ -1,0 +1,44 @@
+project_name: capclient
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+builds:
+  - id: linux-x64
+    env:
+      - CGO_ENABLED=1
+    flags:
+      - '-ldflags'
+      - '-extldflags "-static"'
+    goos:
+      - linux
+    goarch:
+      - amd64
+  - id: windows-x64
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+    flags:
+      - '-ldflags'
+      - '-extldflags "-static"'
+    goos:
+      - windows
+    goarch:
+      - amd64
+archives:
+  - replacements:
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
