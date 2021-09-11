@@ -14,7 +14,12 @@ import (
 )
 
 type CapConnectionManager struct {
+	knocker    Knocker
 	connection *CapConnection
+}
+
+func NewCapConnectionManager(knocker Knocker) *CapConnectionManager {
+	return &CapConnectionManager{knocker, nil}
 }
 
 func (t *CapConnectionManager) GetConnection() *CapConnection {

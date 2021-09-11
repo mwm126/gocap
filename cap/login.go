@@ -1,7 +1,6 @@
 package cap
 
 import (
-	"embed"
 	"log"
 	"net"
 	"time"
@@ -14,7 +13,6 @@ import (
 type CapTab struct {
 	Tab                *container.TabItem
 	connection_manager *CapConnectionManager
-	knocker            Knocker
 	networkSelect      *widget.Select
 	usernameEntry      *widget.Entry
 	passwordEntry      *widget.Entry
@@ -28,10 +26,7 @@ type CapTab struct {
 func NewCapTab(tabname,
 	desc string,
 	ips map[string]string,
-	knocker Knocker,
 	conn_man *CapConnectionManager,
-	a fyne.App,
-	content embed.FS,
 	connected *fyne.Container) CapTab {
 	tab := &CapTab{}
 	// var login, connecting *fyne.Container
@@ -39,7 +34,7 @@ func NewCapTab(tabname,
 
 	tab.login = tab.NewLogin(ips, func(user, pass string, host net.IP) {
 		tab.card.SetContent(tab.connecting)
-		conn, err := newCapConnection(user, pass, host, knocker)
+		conn, err := newCapConnection(user, pass, host, conn_man.knocker)
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
@@ -69,7 +64,6 @@ func NewCapTab(tabname,
 	tab.card = widget.NewCard(tabname, desc, tab.login)
 
 	tab.Tab = container.NewTabItem(tabname, tab.card)
-	tab.knocker = knocker
 	tab.connection_manager = conn_man
 	return *tab
 }

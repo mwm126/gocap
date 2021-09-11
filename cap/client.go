@@ -26,23 +26,24 @@ func NewClient(knocker Knocker, content embed.FS) Client {
 	about_tab := container.NewTabItemWithIcon("About", theme.HomeIcon(), widget.NewLabel("The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol."))
 	tabs := container.NewAppTabs(about_tab)
 
-	conn_man := &CapConnectionManager{}
-
 	if cfg.Enable_joule {
+		conn_man := NewCapConnectionManager(knocker)
 		var joule CapTab
-		joule = NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, knocker, conn_man, a, content,
+		joule = NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
 			NewJouleConnected(a, conn_man, content, joule.closeConnection))
 		tabs.Append(joule.Tab)
 	}
 	if cfg.Enable_watt {
+		conn_man := NewCapConnectionManager(knocker)
 		var watt CapTab
-		watt = NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, knocker, conn_man, a, content,
+		watt = NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, conn_man,
 			NewWattConnected(a, conn_man, content, watt.closeConnection))
 		tabs.Append(watt.Tab)
 	}
 	if cfg.Enable_fe261 {
+		conn_man := NewCapConnectionManager(knocker)
 		var fe261 CapTab
-		fe261 = NewCapTab("FE261", "NETL system", cfg.Fe261_Ips, knocker, conn_man, a, content,
+		fe261 = NewCapTab("FE261", "NETL system", cfg.Fe261_Ips, conn_man,
 			NewFe261Connected(a, conn_man, content, fe261.closeConnection))
 		tabs.Append(fe261.Tab)
 	}

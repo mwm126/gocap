@@ -36,9 +36,7 @@ func NewJouleConnected(app fyne.App,
 }
 
 func newJouleHome(close_cb func()) *container.TabItem {
-	close := widget.NewButton("Disconnect", func() {
-		close_cb()
-	})
+	close := widget.NewButton("Disconnect", close_cb)
 	box := container.NewVBox(widget.NewLabel("Connected!"), close)
 	return container.NewTabItem("Home", box)
 }
