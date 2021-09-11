@@ -1,107 +1,20 @@
 package cap
 
 import (
-	"fmt"
-	"log"
-	"net"
-	"os/exec"
-	"strconv"
-	"time"
+	"embed"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
-type Fe261Tab struct {
-	Tab        *container.TabItem
-	connection *CapConnection
-}
-
-func NewFe261Tab(knocker Knocker, a fyne.App) Fe261Tab {
-	fe261 := &Fe261Tab{}
-	var card *widget.Card
-	var login, connecting, connected *fyne.Container
-	connect_cancelled := false
-
-	login = NewLogin(func(user, pass string, host net.IP) {
-		card.SetContent(connecting)
-		conn, err := newCapConnection(user, pass, host, knocker)
-
-		if err != nil {
-			log.Println("Unable to make CAP Connection")
-			card.SetContent(login)
-			connect_cancelled = false
-			return
-		}
-
-		if connect_cancelled {
-			log.Println("CAP Connection cancelled.")
-			conn.close()
-			connect_cancelled = false
-			return
-		}
-
-		fe261.connection = conn
-		time.Sleep(1 * time.Second)
-		card.SetContent(connected)
-	})
-
-	connecting = NewConnecting(func() {
-		connect_cancelled = true
-		card.SetContent(login)
-	})
-
-	connected = NewConnected(a, fe261, func() {
-		fe261.connection.close()
-		fe261.connection = nil
-		card.SetContent(login)
-	})
-
-	card = widget.NewCard("FE 261 system", "fe 261", login)
-
-	fe261.Tab = container.NewTabItem("FE261", card)
-	return *fe261
-}
-
-func NewLogin(connect_cb func(user, pass string, host net.IP)) *fyne.Container {
-	username := widget.NewEntry()
-	username.SetPlaceHolder("Enter username...")
-	password := widget.NewPasswordEntry()
-	password.SetPlaceHolder("Enter password...")
-
-	cfg := GetConfig()
-	networkNames := make([]string, 0, len(cfg.Watt_Ips))
-	for network := range cfg.Watt_Ips {
-		networkNames = append(networkNames, network)
-	}
-
-	network := widget.NewSelect(networkNames, func(s string) {})
-	network.SetSelected("external")
-	login := widget.NewButton("Login", func() {
-		var addr net.IP
-		if network.Selected == "external" {
-			addr = GetExternalIp()
-		} else {
-			addr = net.ParseIP(cfg.Fe261_Ips[network.Selected])
-		}
-		go connect_cb(username.Text, password.Text, addr)
-	})
-	return container.NewVBox(username, password, network, login)
-}
-
-func NewConnecting(cancel_cb func()) *fyne.Container {
-	connecting := widget.NewLabel("Connecting......")
-	cancel := widget.NewButton("Cancel", func() {
-		cancel_cb()
-	})
-	return container.NewVBox(connecting, cancel)
-}
-
-func NewConnected(app fyne.App, tab *Fe261Tab, close_cb func()) *fyne.Container {
+func NewFe261Connected(app fyne.App,
+	conn_man *CapConnectionManager,
+	content embed.FS,
+	close_cb func()) *fyne.Container {
 
 	homeTab := newHome(close_cb)
-	sshTab := newSsh()
+	sshTab := newSsh(*conn_man, content)
 
 	cfg := GetConfig()
 	fwdTab := newPortForwardTab(app, cfg.Fe261_Forwards, func(fwds []string) {
@@ -124,17 +37,4 @@ func newHome(close_cb func()) *container.TabItem {
 	})
 	box := container.NewVBox(widget.NewLabel("Connected!"), close)
 	return container.NewTabItem("Home", box)
-}
-
-func newSsh() *container.TabItem {
-	ssh := widget.NewButton("New SSH Session", func() {
-		cmd := exec.Command("x-terminal-emulator", "--", "ssh", "localhost", "-p", strconv.Itoa(SSH_LOCAL_PORT))
-		err := cmd.Run()
-		if err != nil {
-			log.Println("gnome-terminal FAIL: ", err)
-		}
-	})
-	label := widget.NewLabel(fmt.Sprintf("or run in a terminal:  ssh localhost -p %d", SSH_LOCAL_PORT))
-	box := container.NewVBox(widget.NewLabel("To create new Terminal (SSH) Session in gnome-terminal:"), ssh, label)
-	return container.NewTabItem("SSH", box)
 }

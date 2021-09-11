@@ -3,6 +3,7 @@ package main
 import (
 	"aeolustec.com/capclient/cap"
 	"crypto/rand"
+	"embed"
 )
 
 func main() {
@@ -17,6 +18,11 @@ func main() {
 	cfg.Enable_watt = true
 	cap.WriteConfig(cfg)
 
-	client := cap.NewClient(&knk)
+	client := cap.NewClient(&knk, content)
 	client.Run()
 }
+
+//go:generate go run gen.go
+
+//go:embed embeds/*
+var content embed.FS

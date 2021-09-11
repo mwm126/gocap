@@ -13,6 +13,23 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+type CapConnectionManager struct {
+	connection *CapConnection
+}
+
+func (t *CapConnectionManager) GetConnection() *CapConnection {
+	return t.connection
+}
+
+func (t *CapConnectionManager) CloseConnection() {
+	if t.connection == nil {
+		log.Println("Cannot close connection (connection missing)")
+		return
+	}
+	t.connection.close()
+	t.connection = nil
+}
+
 // A CapConnection represents a successful SSH connection after the port knock
 type CapConnection struct {
 	client         *ssh.Client
