@@ -14,7 +14,7 @@ func NewFe261Connected(app fyne.App,
 	close_cb func()) *fyne.Container {
 
 	homeTab := newHome(close_cb)
-	sshTab := newSsh(*conn_man, content)
+	sshTab := newSsh(conn_man, content)
 
 	cfg := GetConfig()
 	fwdTab := newPortForwardTab(app, cfg.Fe261_Forwards, func(fwds []string) {

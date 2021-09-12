@@ -57,9 +57,9 @@ func (conn *CapConnection) close() {
 	conn.client.Close()
 }
 
-func newCapConnection(user, pass string, server net.IP, knckr Knocker) (*CapConnection, error) {
+func (cm *CapConnectionManager) newCapConnection(user, pass string, server net.IP) (*CapConnection, error) {
 	log.Println("Opening SSH Connection...")
-	knckr.Knock(user, pass, server)
+	cm.knocker.Knock(user, pass, server)
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
@@ -76,8 +76,8 @@ func newCapConnection(user, pass string, server net.IP, knckr Knocker) (*CapConn
 	//         return (ConnectionEvent.GET_NEW_PASSWORD.value, password_checker)
 
 	//     return (self._conn_event.value, self.get_connection())
-	conn := getConnection(client, user, pass)
-	return &conn, nil
+	cm.connection = getConnection(client, user, pass)
+	return cm.connection, nil
 }
 
 func connectToHost(user, pass, host string) (*ssh.Client, error) {
@@ -121,7 +121,7 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 
 const webLocalPort = 10080
 
-func getConnection(client *ssh.Client, user, pass string) CapConnection {
+func getConnection(client *ssh.Client, user, pass string) *CapConnection {
 	log.Println("Getting connection info...")
 	loginName, err := cleanExec(client, "hostname")
 	if err != nil {
@@ -149,7 +149,7 @@ func getConnection(client *ssh.Client, user, pass string) CapConnection {
 		sshLocalPort.Local.Port,
 		session_mgt_port,
 	}
-	return CapConnection{client, connInfo}
+	return &CapConnection{client, connInfo}
 }
 
 func getLoginIP(client *ssh.Client, loginName string) (string, error) {

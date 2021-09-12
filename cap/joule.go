@@ -14,7 +14,7 @@ func NewJouleConnected(app fyne.App,
 	close_cb func()) *fyne.Container {
 
 	homeTab := newJouleHome(close_cb)
-	sshTab := newSsh(*conn_man, content)
+	sshTab := newSsh(conn_man, content)
 
 	vcard := widget.NewCard("GUI", "TODO", nil)
 	vncTab := container.NewTabItem("VNC", vcard)

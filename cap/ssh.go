@@ -3,17 +3,18 @@ package cap
 import (
 	"embed"
 	"fmt"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
+
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 )
 
-func newSsh(conn_man CapConnectionManager, content embed.FS) *container.TabItem {
+func newSsh(conn_man *CapConnectionManager, content embed.FS) *container.TabItem {
 	ssh := widget.NewButton("New SSH Session", func() {
 		os := runtime.GOOS
 		switch os {
@@ -43,9 +44,14 @@ func run_ssh() {
 	}
 }
 
-func run_putty(conn_man CapConnectionManager, content embed.FS) {
-	username := conn_man.GetConnection().connectionInfo.username
-	password := conn_man.GetConnection().connectionInfo.password
+func run_putty(conn_man *CapConnectionManager, content embed.FS) {
+	conn := conn_man.GetConnection()
+	if conn == nil {
+		log.Println("Warning: no connection; unable to run Putty", conn_man)
+		return
+	}
+	username := conn.connectionInfo.username
+	password := conn.connectionInfo.password
 	file, err := ioutil.TempFile("", "putty.*.exe")
 	defer os.Remove(file.Name())
 	if err != nil {
@@ -57,6 +63,7 @@ func run_putty(conn_man CapConnectionManager, content embed.FS) {
 		log.Fatal("Could not get embed", err)
 	}
 	file.Write(the_putty)
+	file.Close()
 	cmd := exec.Command(file.Name(),
 		"127.0.0.1",
 		"-l",

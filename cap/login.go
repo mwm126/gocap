@@ -29,12 +29,12 @@ func NewCapTab(tabname,
 	conn_man *CapConnectionManager,
 	connected *fyne.Container) CapTab {
 	tab := &CapTab{}
-	// var login, connecting *fyne.Container
 	connect_cancelled := false
 
+	tab.connection_manager = conn_man
 	tab.login = tab.NewLogin(ips, func(user, pass string, host net.IP) {
 		tab.card.SetContent(tab.connecting)
-		conn, err := newCapConnection(user, pass, host, conn_man.knocker)
+		conn, err := tab.connection_manager.newCapConnection(user, pass, host)
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
@@ -50,17 +50,15 @@ func NewCapTab(tabname,
 			return
 		}
 
-		tab.connection_manager = &CapConnectionManager{}
-		tab.connection_manager.connection = conn
 		time.Sleep(1 * time.Second)
 		tab.card.SetContent(connected)
 	})
 
-	tab.connecting = NewConnecting(func() {
+	cancel_cb := func() {
 		connect_cancelled = true
 		tab.card.SetContent(tab.login)
-	})
-
+	}
+	tab.connecting = NewConnecting(cancel_cb)
 	tab.card = widget.NewCard(tabname, desc, tab.login)
 
 	tab.Tab = container.NewTabItem(tabname, tab.card)
@@ -101,9 +99,7 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 
 func NewConnecting(cancel_cb func()) *fyne.Container {
 	connecting := widget.NewLabel("Connecting......")
-	cancel := widget.NewButton("Cancel", func() {
-		cancel_cb()
-	})
+	cancel := widget.NewButton("Cancel", cancel_cb)
 	return container.NewVBox(connecting, cancel)
 }
 
