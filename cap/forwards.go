@@ -24,8 +24,8 @@ func newPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *container.
 		save: cb,
 		forwards: binding.BindStringList(
 			&[]string{
-				"10022:localhost:22",
-				"20022:localhost:33",
+				"20022:localhost:22",
+				"20080:localhost:80",
 			},
 		),
 	}
