@@ -128,9 +128,13 @@ func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) ([]byte,
 	binary.Write(&buf, binary.LittleEndian, challenge)
 	binary.Write(&buf, binary.LittleEndian, trimmedCiphertext)
 
-	header, _ := hex.DecodeString("823220d0df9234263797c5d0c5fee27ab087f86e76f82efe0bb386cc65ae879f")
+	header, _ := hex.DecodeString(
+		"823220d0df9234263797c5d0c5fee27ab087f86e76f82efe0bb386cc65ae879f",
+	)
 	macBlock := buf.Bytes()
-	footer, _ := hex.DecodeString("50266198ce6bae2069546cbcae0f80ba847598f674f5d7343f90e6c6e56dfa8a")
+	footer, _ := hex.DecodeString(
+		"50266198ce6bae2069546cbcae0f80ba847598f674f5d7343f90e6c6e56dfa8a",
+	)
 	digest = makeSHADigest(header, macBlock, footer)
 
 	buf = bytes.Buffer{}
@@ -148,7 +152,11 @@ func getOTP(yk Yubikey, entropy []byte) OneTimePassword {
 	return yk.challengeResponse(yubicoChal)
 }
 
-func getChallengeResponse(yk Yubikey, OTP OneTimePassword, entropy []byte) (SHADigest, [16]byte, error) {
+func getChallengeResponse(
+	yk Yubikey,
+	OTP OneTimePassword,
+	entropy []byte,
+) (SHADigest, [16]byte, error) {
 	// Build challenge using entropy and OTP so it is unique
 	challenge := makeSHADigest([]byte("SHA1-HMACChallenge"), OTP[:], entropy)
 	// Get HMAC-SHA1 response from client.connection.yubikey

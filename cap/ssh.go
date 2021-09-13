@@ -31,13 +31,26 @@ func newSsh(conn_man *CapConnectionManager, content embed.FS) *container.TabItem
 		}
 
 	})
-	label := widget.NewLabel(fmt.Sprintf("or run in a terminal:  ssh localhost -p %d", SSH_LOCAL_PORT))
-	box := container.NewVBox(widget.NewLabel("To create new Terminal (SSH) Session in gnome-terminal:"), ssh, label)
+	label := widget.NewLabel(
+		fmt.Sprintf("or run in a terminal:  ssh localhost -p %d", SSH_LOCAL_PORT),
+	)
+	box := container.NewVBox(
+		widget.NewLabel("To create new Terminal (SSH) Session in gnome-terminal:"),
+		ssh,
+		label,
+	)
 	return container.NewTabItem("SSH", box)
 }
 
 func run_ssh() {
-	cmd := exec.Command("x-terminal-emulator", "--", "ssh", "localhost", "-p", strconv.Itoa(SSH_LOCAL_PORT))
+	cmd := exec.Command(
+		"x-terminal-emulator",
+		"--",
+		"ssh",
+		"localhost",
+		"-p",
+		strconv.Itoa(SSH_LOCAL_PORT),
+	)
 	err := cmd.Run()
 	if err != nil {
 		log.Println("gnome-terminal FAIL: ", err)

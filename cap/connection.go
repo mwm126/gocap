@@ -57,7 +57,10 @@ func (conn *CapConnection) close() {
 	conn.client.Close()
 }
 
-func (cm *CapConnectionManager) newCapConnection(user, pass string, server net.IP) (*CapConnection, error) {
+func (cm *CapConnectionManager) newCapConnection(
+	user, pass string,
+	server net.IP,
+) (*CapConnection, error) {
 	log.Println("Opening SSH Connection...")
 	cm.knocker.Knock(user, pass, server)
 

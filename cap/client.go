@@ -23,7 +23,13 @@ func NewClient(knocker Knocker, content embed.FS) Client {
 	w := a.NewWindow("CAP Client")
 
 	cfg := GetConfig()
-	about_tab := container.NewTabItemWithIcon("About", theme.HomeIcon(), widget.NewLabel("The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol."))
+	about_tab := container.NewTabItemWithIcon(
+		"About",
+		theme.HomeIcon(),
+		widget.NewLabel(
+			"The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.",
+		),
+	)
 	tabs := container.NewAppTabs(about_tab)
 
 	if cfg.Enable_joule {
