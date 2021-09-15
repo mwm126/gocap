@@ -1,3 +1,4 @@
+//go:build yubikey
 // +build yubikey
 
 package cap

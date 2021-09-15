@@ -7,7 +7,6 @@ require (
 	github.com/beevik/ntp v0.3.0
 	github.com/elliotchance/sshtunnel v1.3.0
 	github.com/glendc/go-external-ip v0.0.0-20200601212049-c872357d968e
-	github.com/melbahja/got v0.5.0 // indirect
 	github.com/pelletier/go-toml v1.9.3
 	github.com/stretchr/testify v1.7.1-0.20210427113832-6241f9ab9942
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
