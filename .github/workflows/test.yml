@@ -25,6 +25,9 @@ jobs:
                     sudo apt install -y libgl1-mesa-dev xorg-dev
               fi
 
+      - name: Generate
+        run: go generate .
+
       - name: Build
         run: go build .
 
