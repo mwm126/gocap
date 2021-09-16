@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/elliotchance/sshtunnel"
@@ -39,6 +40,7 @@ func (t *CapConnectionManager) CloseConnection() {
 type CapConnection struct {
 	client         *ssh.Client
 	connectionInfo ConnectionInfo
+	forwards       map[string]sshtunnel.SSHTunnel
 }
 
 // ConnectionInfo stores info about the connection
@@ -53,7 +55,47 @@ type ConnectionInfo struct {
 	mgtPort      sshtunnel.SSHTunnel
 }
 
+func (conn *CapConnection) UpdateForwards(fwds []string) {
+	for _, fwd := range fwds {
+		if _, missing := conn.forwards[fwd]; missing {
+			conn.forwards[fwd] = conn.forward(fwd)
+		}
+	}
+	for forward, tunnel := range conn.forwards {
+		found := false
+		for _, fwd := range fwds {
+			if forward == fwd {
+				found = true
+				break
+			}
+		}
+		if !found {
+			tunnel.Close()
+			delete(conn.forwards, forward)
+		}
+	}
+}
+
+func (conn *CapConnection) forward(fwd string) sshtunnel.SSHTunnel {
+
+	result := strings.Split(fwd, ",")
+	local_p, err := strconv.Atoi(result[0])
+	if err != nil {
+		log.Println("Warning:  bad local port", err)
+	}
+	remote_h := result[1]
+	remote_p, err := strconv.Atoi(result[2])
+	if err != nil {
+		log.Println("Warning:  bad remote port", err)
+	}
+	return openSSHTunnel(conn.connectionInfo.username,
+		conn.connectionInfo.password, local_p, remote_h, remote_p)
+}
+
 func (conn *CapConnection) close() {
+	for _, fwd := range conn.forwards {
+		fwd.Close()
+	}
 	conn.client.Close()
 }
 
@@ -135,7 +177,7 @@ func getConnection(client *ssh.Client, user, pass string) *CapConnection {
 		log.Fatal("Failed to lookup login IP")
 	}
 	uid, err := getUID(client)
-	sshLocalPort := openSSHTunnel(user, pass)
+	sshLocalPort := openSSHTunnel(user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	session_mgt_port := openSessionManagementForward(user, pass)
 	// session_mgt_secret := readSessionManagerSecret(client)
@@ -152,7 +194,8 @@ func getConnection(client *ssh.Client, user, pass string) *CapConnection {
 		sshLocalPort.Local.Port,
 		session_mgt_port,
 	}
-	return &CapConnection{client, connInfo}
+	var fwds map[string]sshtunnel.SSHTunnel
+	return &CapConnection{client, connInfo, fwds}
 }
 
 func getLoginIP(client *ssh.Client, loginName string) (string, error) {
@@ -175,12 +218,16 @@ const SSH_LOCAL_PORT = 10022
 const SSH_FWD_ADDR = "localhost"
 const SSH_FWD_PORT = 22
 
-func openSSHTunnel(user, pass string) sshtunnel.SSHTunnel {
+func openSSHTunnel(
+	user, pass string,
+	local_port int,
+	remote_addr string,
+	remote_port int,
+) sshtunnel.SSHTunnel {
 	//     Open forward to the login SSH daemon
 	log.Println("Opening Tunnel")
 
 	// ssh_port := check_free_port(SSH_LOCAL_PORT)
-	ssh_port := strconv.Itoa(SSH_LOCAL_PORT)
 
 	tunnel := sshtunnel.NewSSHTunnel(
 		// User and host of tunnel server, it will default to port 22
@@ -193,11 +240,11 @@ func openSSHTunnel(user, pass string) sshtunnel.SSHTunnel {
 		// sshtunnel.SSHAgent(),                                // 3. ssh-agent
 
 		// The destination host and port of the actual server.
-		fmt.Sprintf("%s:%d", SSH_FWD_ADDR, SSH_FWD_PORT),
+		fmt.Sprintf("%s:%d", remote_addr, remote_port),
 
 		// The local port you want to bind the remote port to.
 		// Specifying "0" will lead to a random port.
-		ssh_port,
+		strconv.Itoa(local_port),
 	)
 
 	tunnel.Log = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)

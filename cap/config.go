@@ -161,3 +161,9 @@ func get_cfg_path() string {
 	dir := filepath.Dir(exe)
 	return filepath.Join(dir, "capclient.toml")
 }
+
+func SaveForwards(fwds []string) {
+	cfg := GetConfig()
+	cfg.Joule_Forwards = fwds[2:]
+	WriteConfig(cfg)
+}

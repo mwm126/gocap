@@ -17,10 +17,10 @@ func NewJouleConnected(app fyne.App,
 	vncTab := container.NewTabItem("VNC", vcard)
 
 	cfg := GetConfig()
+	conn := conn_man.connection
 	fwdTab := newPortForwardTab(app, cfg.Joule_Forwards, func(fwds []string) {
-		cfg := GetConfig()
-		cfg.Joule_Forwards = fwds[2:]
-		WriteConfig(cfg)
+		conn.UpdateForwards(fwds)
+		SaveForwards(fwds)
 	})
 
 	tabs := container.NewAppTabs(
@@ -36,10 +36,4 @@ func newJouleHome(close_cb func()) *container.TabItem {
 	close := widget.NewButton("Disconnect", close_cb)
 	box := container.NewVBox(widget.NewLabel("Connected!"), close)
 	return container.NewTabItem("Home", box)
-}
-
-func saveForwards(fwds []string) {
-	cfg := GetConfig()
-	cfg.Joule_Forwards = fwds[2:]
-	WriteConfig(cfg)
 }
