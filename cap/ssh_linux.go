@@ -1,13 +1,12 @@
 package cap
 
 import (
-	"exec"
-	"fmt"
 	"log"
+	"os/exec"
 	"strconv"
 )
 
-func run_ssh() {
+func run_ssh(conn_man *CapConnectionManager) {
 	cmd := exec.Command(
 		"x-terminal-emulator",
 		"--",
