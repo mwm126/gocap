@@ -1,7 +1,6 @@
 package cap
 
 import (
-	"embed"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -18,7 +17,7 @@ type Client struct {
 	app     fyne.App
 }
 
-func NewClient(knocker Knocker, content embed.FS) Client {
+func NewClient(knocker Knocker) Client {
 	a := app.New()
 	w := a.NewWindow("CAP Client")
 
@@ -36,21 +35,21 @@ func NewClient(knocker Knocker, content embed.FS) Client {
 		conn_man := NewCapConnectionManager(knocker)
 		var joule CapTab
 		joule = NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
-			NewJouleConnected(a, conn_man, content, joule.closeConnection))
+			NewJouleConnected(a, conn_man, joule.closeConnection))
 		tabs.Append(joule.Tab)
 	}
 	if cfg.Enable_watt {
 		conn_man := NewCapConnectionManager(knocker)
 		var watt CapTab
 		watt = NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, conn_man,
-			NewWattConnected(a, conn_man, content, watt.closeConnection))
+			NewWattConnected(a, conn_man, watt.closeConnection))
 		tabs.Append(watt.Tab)
 	}
 	if cfg.Enable_fe261 {
 		conn_man := NewCapConnectionManager(knocker)
 		var fe261 CapTab
 		fe261 = NewCapTab("FE261", "NETL system", cfg.Fe261_Ips, conn_man,
-			NewFe261Connected(a, conn_man, content, fe261.closeConnection))
+			NewFe261Connected(a, conn_man, fe261.closeConnection))
 		tabs.Append(fe261.Tab)
 	}
 

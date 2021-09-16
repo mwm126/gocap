@@ -1,8 +1,6 @@
 package cap
 
 import (
-	"embed"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -10,11 +8,10 @@ import (
 
 func NewJouleConnected(app fyne.App,
 	conn_man *CapConnectionManager,
-	content embed.FS,
 	close_cb func()) *fyne.Container {
 
 	homeTab := newJouleHome(close_cb)
-	sshTab := newSsh(conn_man, content)
+	sshTab := newSsh(conn_man)
 
 	vcard := widget.NewCard("GUI", "TODO", nil)
 	vncTab := container.NewTabItem("VNC", vcard)

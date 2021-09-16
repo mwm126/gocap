@@ -1,8 +1,6 @@
 package cap
 
 import (
-	"embed"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -10,11 +8,10 @@ import (
 
 func NewFe261Connected(app fyne.App,
 	conn_man *CapConnectionManager,
-	content embed.FS,
 	close_cb func()) *fyne.Container {
 
 	homeTab := newHome(close_cb)
-	sshTab := newSsh(conn_man, content)
+	sshTab := newSsh(conn_man)
 
 	cfg := GetConfig()
 	fwdTab := newPortForwardTab(app, cfg.Fe261_Forwards, func(fwds []string) {
