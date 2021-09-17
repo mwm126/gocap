@@ -35,7 +35,7 @@ func TestPacketFactory(t *testing.T) {
 	copy(entropy[:], entropyBuf)
 
 	pk := &PortKnocker{&FakeYubikey{}, [32]byte(entropy)}
-	timestamp := int64(1627324072)
+	timestamp := int32(1627324072)
 	pkt, _ := pk.makePacket("mmeredith", "xUZv!jA&TgHTkw#!3$bUVcDXxW3sY", timestamp)
 	hexstring := hex.EncodeToString(pkt)
 
@@ -56,6 +56,6 @@ func TestPacketFactory(t *testing.T) {
 func TestNtp(t *testing.T) {
 	time, err := getNtpTime()
 	assert.Equal(t, err, nil)
-	assert.Greater(t, time, int64(1631907374))
-	assert.Less(t, time, int64(1731907374)) // Will fail in a year
+	assert.Less(t, int32(1631907374), time)
+	assert.Less(t, time, int32(2100000000)) // Good until 2036
 }

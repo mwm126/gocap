@@ -67,12 +67,12 @@ func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) error {
 	return nil
 }
 
-func getNtpTime() (int64, error) {
+func getNtpTime() (int32, error) {
 	timestamp, err := ntp.Time("0.pool.ntp.org")
-	return timestamp.Unix(), err
+	return int32(timestamp.Unix()), err
 }
 
-func (sk *PortKnocker) makePacket(uname, pword string, timestamp int64) ([]byte, error) {
+func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) ([]byte, error) {
 	OTP := getOTP(sk.yubikey, sk.entropy[:])
 
 	var initVec [16]byte
