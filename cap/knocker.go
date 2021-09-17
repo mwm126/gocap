@@ -22,7 +22,7 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
-	Knock(username, password string, network net.IP)
+	Knock(username, password string, network net.IP) error
 }
 
 // PortKnocker for actual Knocker implementation
@@ -31,30 +31,30 @@ type PortKnocker struct {
 	entropy [32]byte
 }
 
-func NewPortKnocker(yk Yubikey, ent [32]byte) PortKnocker {
-	return PortKnocker{yk, ent}
+func NewPortKnocker(yk Yubikey, ent [32]byte) *PortKnocker {
+	return &PortKnocker{yk, ent}
 }
 
-func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) {
+func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	response, err := ntp.Query("pool.ntp.org")
 	if err != nil {
-		log.Printf("Some NTP error %v", err)
-		return
+		log.Printf("Unable to get NTP time:  %v", err)
+		return err
 	}
 	timestamp := int32(time.Now().Add(response.ClockOffset).Unix())
 
 	packet, err := sk.makePacket(uname, pword, timestamp)
 	if err != nil {
-		log.Printf("Could not make CAP packet: %v", err)
-		return
+		log.Printf("Could not make CAP packet:  %v", err)
+		return err
 	}
 
 	conn, err := net.Dial("udp", "127.0.0.1:1234")
 	if err != nil {
-		log.Printf("Some error %v", err)
-		return
+		log.Printf("Unable to connect to CAP server:  %v", err)
+		return err
 	}
 
 	buf := bytes.Buffer{}
@@ -64,6 +64,8 @@ func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) {
 	conn.Write(packet)
 	conn.Write(timestampBytes)
 	conn.Close()
+	time.Sleep(1 * time.Second)
+	return nil
 }
 
 func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) ([]byte, error) {

@@ -20,17 +20,26 @@ type JouleSpyKnocker struct {
 	knocked  bool
 }
 
-func (sk *JouleSpyKnocker) Knock(username, password string, address net.IP) {
+func (sk *JouleSpyKnocker) Knock(username, password string, address net.IP) error {
 	sk.knocked = true
 	sk.username = username
 	sk.password = password
 	sk.address = address
+	return nil
 }
 
 func TestJouleLoginButton(t *testing.T) {
 	spy := &JouleSpyKnocker{}
 	a := app.New()
-	jouleTab := NewJouleTab(spy, a)
+
+	var fake_yk FakeYubikey
+	var entropy [32]byte
+	fake_kckr := NewPortKnocker(&fake_yk, entropy)
+	conn_man := NewCapConnectionManager(fake_kckr)
+	cfg := GetConfig()
+	jouleTab := NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
+		NewJouleConnected(a, conn_man, func() {}))
+
 	test.Type(jouleTab.usernameEntry, "the_user")
 	test.Type(jouleTab.passwordEntry, "the_pass")
 	jouleTab.networkSelect.SetSelected("alb_admin")

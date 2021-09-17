@@ -17,6 +17,6 @@ func main() {
 	cfg.Enable_watt = true
 	cap.WriteConfig(cfg)
 
-	client := cap.NewClient(&knk)
+	client := cap.NewClient(knk)
 	client.Run()
 }

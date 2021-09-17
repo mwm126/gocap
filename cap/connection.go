@@ -104,18 +104,23 @@ func (cm *CapConnectionManager) newCapConnection(
 	server net.IP,
 ) (*CapConnection, error) {
 	log.Println("Opening SSH Connection...")
-	cm.knocker.Knock(user, pass, server)
+	err := cm.knocker.Knock(user, pass, server)
+	if err != nil {
+		return nil, err
+	}
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
 	client, err := connectToHost(user, pass, "localhost:22")
+	// host := fmt.Sprintf("{}:{}", server, "22")
+	// client, err := connectToHost(user, pass, host)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
 	//     password_checker = PasswordChecker(self.ssh, self._login_info.passwd)
-	log.Println("Checking for expired password...")
+	// log.Println("Checking for expired password...")
 	//     if password_checker.is_pw_expired():
 	//         self.status_signal.emit("Password expired.")
 	//         return (ConnectionEvent.GET_NEW_PASSWORD.value, password_checker)
