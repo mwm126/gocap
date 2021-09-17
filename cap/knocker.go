@@ -38,12 +38,11 @@ func NewPortKnocker(yk Yubikey, ent [32]byte) *PortKnocker {
 func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
-	response, err := ntp.Query("pool.ntp.org")
+	timestamp, err := getNtpTime()
 	if err != nil {
 		log.Printf("Unable to get NTP time:  %v", err)
 		return err
 	}
-	timestamp := int32(time.Now().Add(response.ClockOffset).Unix())
 
 	packet, err := sk.makePacket(uname, pword, timestamp)
 	if err != nil {
@@ -68,7 +67,12 @@ func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) error {
 	return nil
 }
 
-func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) ([]byte, error) {
+func getNtpTime() (int64, error) {
+	timestamp, err := ntp.Time("0.pool.ntp.org")
+	return timestamp.Unix(), err
+}
+
+func (sk *PortKnocker) makePacket(uname, pword string, timestamp int64) ([]byte, error) {
 	OTP := getOTP(sk.yubikey, sk.entropy[:])
 
 	var initVec [16]byte
