@@ -32,9 +32,9 @@ func NewCapTab(tabname,
 	connect_cancelled := false
 
 	tab.connection_manager = conn_man
-	tab.login = tab.NewLogin(ips, func(user, pass string, host net.IP) {
+	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		conn, err := tab.connection_manager.newCapConnection(user, pass, host)
+		conn, err := tab.connection_manager.newCapConnection(user, pass, ext_ip, srv_ip)
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
@@ -67,7 +67,7 @@ func NewCapTab(tabname,
 }
 
 func (t *CapTab) NewLogin(network_ips map[string]string,
-	connect_cb func(user, pass string, host net.IP)) *fyne.Container {
+	connect_cb func(user, pass string, ext_ip, srv_ip net.IP)) *fyne.Container {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
@@ -81,14 +81,14 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 
 	network.SetSelected("external")
 	login := widget.NewButton("Login", func() {
-		var addr net.IP
+		var ext_addr, server_addr net.IP
 		if network.Selected == "external" {
-			addr = GetExternalIp()
+			ext_addr = GetExternalIp()
 		} else {
-			addr = net.ParseIP(network_ips[network.Selected])
+			ext_addr = net.ParseIP(network_ips[network.Selected])
 		}
-
-		go connect_cb(username.Text, password.Text, addr)
+		server_addr = net.ParseIP(GetConfig().External_Ips[network.Selected])
+		go connect_cb(username.Text, password.Text, ext_addr, server_addr)
 	})
 	t.networkSelect = network
 	t.usernameEntry = username

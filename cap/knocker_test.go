@@ -3,6 +3,7 @@ package cap
 import (
 	"encoding/hex"
 	"github.com/stretchr/testify/assert"
+	"net"
 	"testing"
 )
 
@@ -36,7 +37,18 @@ func TestPacketFactory(t *testing.T) {
 
 	pk := &PortKnocker{&FakeYubikey{}, [32]byte(entropy)}
 	timestamp := int32(1627324072)
-	pkt, _ := pk.makePacket("mmeredith", "xUZv!jA&TgHTkw#!3$bUVcDXxW3sY", timestamp)
+	auth_addr := net.ParseIP("74.109.234.77").To4()
+	ssh_addr := net.ParseIP("74.109.234.77").To4()
+	server_addr := net.ParseIP("104.154.139.11").To4()
+
+	pkt, _ := pk.makePacket(
+		"mmeredith",
+		"xUZv!jA&TgHTkw#!3$bUVcDXxW3sY",
+		timestamp,
+		auth_addr,
+		ssh_addr,
+		server_addr,
+	)
 	hexstring := hex.EncodeToString(pkt)
 
 	assert.Equal(

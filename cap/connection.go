@@ -101,10 +101,11 @@ func (conn *CapConnection) close() {
 
 func (cm *CapConnectionManager) newCapConnection(
 	user, pass string,
+	ext_addr,
 	server net.IP,
 ) (*CapConnection, error) {
 	log.Println("Opening SSH Connection...")
-	err := cm.knocker.Knock(user, pass, server)
+	err := cm.knocker.Knock(user, pass, ext_addr, server)
 	if err != nil {
 		return nil, err
 	}

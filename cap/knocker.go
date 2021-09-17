@@ -11,10 +11,12 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/beevik/ntp"
+	"fmt"
 	"log"
 	"net"
 	"time"
+
+	"github.com/beevik/ntp"
 )
 
 type OneTimePassword [16]byte
@@ -22,7 +24,7 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
-	Knock(username, password string, network net.IP) error
+	Knock(username, password string, ext_addr, server_addr net.IP) error
 }
 
 // PortKnocker for actual Knocker implementation
@@ -35,7 +37,7 @@ func NewPortKnocker(yk Yubikey, ent [32]byte) *PortKnocker {
 	return &PortKnocker{yk, ent}
 }
 
-func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) error {
+func (sk *PortKnocker) Knock(uname, pword string, ext_addr, server_addr net.IP) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	timestamp, err := getNtpTime()
@@ -44,13 +46,20 @@ func (sk *PortKnocker) Knock(uname, pword string, addr net.IP) error {
 		return err
 	}
 
-	packet, err := sk.makePacket(uname, pword, timestamp)
+	auth_addr := ext_addr
+	ssh_addr := ext_addr
+	packet, err := sk.makePacket(uname, pword, timestamp, auth_addr, ssh_addr, server_addr)
 	if err != nil {
 		log.Printf("Could not make CAP packet:  %v", err)
 		return err
 	}
 
-	conn, err := net.Dial("udp", "127.0.0.1:1234")
+	cfg := GetConfig()
+	addrPort := fmt.Sprintf("%s:%d", server_addr, cfg.CapPort)
+	log.Println("addrPort === ", addrPort)
+	return nil
+
+	conn, err := net.Dial("udp", addrPort)
 	if err != nil {
 		log.Printf("Unable to connect to CAP server:  %v", err)
 		return err
@@ -72,7 +81,11 @@ func getNtpTime() (int32, error) {
 	return int32(timestamp.Unix()), err
 }
 
-func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) ([]byte, error) {
+func (sk *PortKnocker) makePacket(
+	uname, pword string,
+	timestamp int32,
+	auth_addr, ssh_addr, server_addr net.IP,
+) ([]byte, error) {
 	OTP := getOTP(sk.yubikey, sk.entropy[:])
 
 	var initVec [16]byte
@@ -90,9 +103,9 @@ func (sk *PortKnocker) makePacket(uname, pword string, timestamp int32) ([]byte,
 	var ssh [16]byte
 	var server [16]byte
 	copy(user[:], []byte(uname))
-	copy(auth[12:], net.ParseIP("74.109.234.77").To4())
-	copy(ssh[12:], net.ParseIP("74.109.234.77").To4())
-	copy(server[12:], net.ParseIP("104.154.139.11").To4())
+	copy(auth[12:], auth_addr)
+	copy(ssh[12:], ssh_addr)
+	copy(server[12:], server_addr)
 
 	var buf bytes.Buffer
 	buf.Write(auth[:])

@@ -32,22 +32,14 @@ func (yk *UsbYubikey) findSerial() (int32, error) {
 }
 
 func (yk *UsbYubikey) challengeResponse(chal [16]byte) [16]byte {
-	testval, err := hex.DecodeString("2ee619bc248bcefbe09e733d2cdda3be")
-	if err != nil {
-		log.Fatal(err)
-	}
-	var resp [16]byte
-	copy(resp[:], testval[:16])
-	return resp
+	challengeArgument := hex.EncodeToString(chal[:])
+	log.Println("ykchalresp", "-1", "-Y", "-x", challengeArgument)
 	out, err := exec.Command("ykchalresp", "-1", "-Y", "-x", string(chal[:])).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
 	responseStr := strings.TrimSpace(string(out))
 	log.Println(responseStr)
-	if len(responseStr) != 16 {
-		log.Fatal("Invalid ykchalresp")
-	}
 	response := modhexDecode(responseStr)
 	if err != nil {
 		log.Fatal(response, err)
