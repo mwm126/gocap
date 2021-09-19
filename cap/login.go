@@ -20,7 +20,6 @@ type CapTab struct {
 	card               *widget.Card
 	login              *fyne.Container
 	connecting         *fyne.Container
-	connected          *fyne.Container
 }
 
 func NewCapTab(tabname,

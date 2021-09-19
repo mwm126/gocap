@@ -66,11 +66,21 @@ func (sk *PortKnocker) Knock(uname, pword string, ext_addr, server_addr net.IP) 
 	}
 
 	buf := bytes.Buffer{}
-	binary.Write(&buf, binary.LittleEndian, timestamp)
+	err = binary.Write(&buf, binary.LittleEndian, timestamp)
+	if err != nil {
+		return err
+	}
+
 	timestampBytes := buf.Bytes()
 
-	conn.Write(packet)
-	conn.Write(timestampBytes)
+	_, err = conn.Write(packet)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Write(timestampBytes)
+	if err != nil {
+		return err
+	}
 	conn.Close()
 	time.Sleep(1 * time.Second)
 	return nil
@@ -107,7 +117,7 @@ func (sk *PortKnocker) makePacket(
 	copy(ssh[12:], ssh_addr)
 	copy(server[12:], server_addr)
 
-	var buf bytes.Buffer
+	buf := new(bytes.Buffer)
 	buf.Write(auth[:])
 	buf.Write(ssh[:])
 	buf.Write(server[:])
@@ -140,12 +150,13 @@ func (sk *PortKnocker) makePacket(
 		return nil, err
 	}
 
-	buf = bytes.Buffer{}
-	binary.Write(&buf, binary.LittleEndian, timestamp)
-	binary.Write(&buf, binary.LittleEndian, serial)
-	binary.Write(&buf, binary.LittleEndian, initVec)
-	binary.Write(&buf, binary.LittleEndian, challenge)
-	binary.Write(&buf, binary.LittleEndian, trimmedCiphertext)
+	buf = new(bytes.Buffer)
+	for _, field := range []interface{}{timestamp, serial, initVec, challenge, trimmedCiphertext} {
+		err := binary.Write(buf, binary.LittleEndian, field)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	header, _ := hex.DecodeString(
 		"823220d0df9234263797c5d0c5fee27ab087f86e76f82efe0bb386cc65ae879f",
@@ -156,9 +167,14 @@ func (sk *PortKnocker) makePacket(
 	)
 	digest = makeSHADigest(header, macBlock, footer)
 
-	buf = bytes.Buffer{}
-	binary.Write(&buf, binary.LittleEndian, macBlock)
-	binary.Write(&buf, binary.LittleEndian, digest)
+	buf = new(bytes.Buffer)
+	for _, field := range []interface{}{macBlock, digest} {
+		err := binary.Write(buf, binary.LittleEndian, field)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return buf.Bytes(), nil
 }
 

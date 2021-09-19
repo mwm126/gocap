@@ -132,7 +132,11 @@ func GetConfig() config {
 		log.Println("Warning: Could not read config file: ", cfg_path)
 		return conf
 	}
-	toml.Unmarshal(data, &conf)
+	err = toml.Unmarshal(data, &conf)
+	if err != nil {
+		log.Println("Warning: malformed config file: ", err)
+		return conf
+	}
 	return conf
 }
 
@@ -150,7 +154,11 @@ func WriteConfig(conf config) {
 		log.Println("Warning: Could not save config file: ", cfg_path)
 		return
 	}
-	file.Write(buf.Bytes())
+	_, err = file.Write(buf.Bytes())
+	if err != nil {
+		log.Println("Warning: Could not write config file: ", err)
+		return
+	}
 }
 
 func get_cfg_path() string {

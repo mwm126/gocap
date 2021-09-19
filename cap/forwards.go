@@ -30,10 +30,10 @@ func newPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *container.
 		),
 	}
 	for _, fwd := range fwds {
-		t.forwards.Append(fwd)
+		t.addPortForward(fwd)
 	}
 
-	add := widget.NewButton("Add", t.addPortForward)
+	add := widget.NewButton("Add", t.showNewPortForwardDialog)
 
 	var remove *widget.Button
 	var to_be_removed widget.ListItemID
@@ -65,7 +65,7 @@ func newPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *container.
 	return container.NewTabItem("Port Forwards", box)
 }
 
-func (t *PortForwardTab) addPortForward() {
+func (t *PortForwardTab) showNewPortForwardDialog() {
 	win := t.app.NewWindow("Add Port Forward")
 
 	local_p := widget.NewEntry()
@@ -83,8 +83,7 @@ func (t *PortForwardTab) addPortForward() {
 		},
 		OnSubmit: func() {
 			new_fwd := fmt.Sprintf("%s:%s:%s", local_p.Text, remote_h.Text, remote_p.Text)
-			log.Println("Adding forward:", new_fwd)
-			t.forwards.Append(new_fwd)
+			t.addPortForward(new_fwd)
 			fwds, _ := t.forwards.Get()
 			t.save(fwds)
 			win.Close()
@@ -97,6 +96,13 @@ func (t *PortForwardTab) addPortForward() {
 	win.Show()
 }
 
+func (t *PortForwardTab) addPortForward(fwd string) {
+	err := t.forwards.Append(fwd)
+	if err != nil {
+		log.Println("Unable to add port forward ", fwd, " because: ", err)
+	}
+}
+
 func (t *PortForwardTab) removeForward(to_be_removed int) {
 	fwds, _ := t.forwards.Get()
 	for i := range fwds {
@@ -105,6 +111,9 @@ func (t *PortForwardTab) removeForward(to_be_removed int) {
 			break
 		}
 	}
-	t.forwards.Set(fwds)
+	err := t.forwards.Set(fwds)
+	if err != nil {
+		log.Println("Unable to remove port forward: ", err)
+	}
 	t.save(fwds)
 }

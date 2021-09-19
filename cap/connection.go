@@ -155,7 +155,7 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 	// represented by a Session.
 	session, err := client.NewSession()
 	if err != nil {
-		log.Fatal("Failed to create session: ", err)
+		return "", err
 	}
 	defer session.Close()
 
@@ -164,7 +164,6 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 	var b bytes.Buffer
 	session.Stdout = &b
 	if err := session.Run(cmd); err != nil {
-		log.Fatal("Failed to run: " + err.Error())
 		return "", err
 	}
 	return b.String(), nil
@@ -183,6 +182,9 @@ func getConnection(client *ssh.Client, user, pass string) *CapConnection {
 		log.Fatal("Failed to lookup login IP")
 	}
 	uid, err := getUID(client)
+	if err != nil {
+		log.Fatal("Failed to lookup UID")
+	}
 	sshLocalPort := openSSHTunnel(user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	session_mgt_port := openSessionManagementForward(user, pass)
@@ -254,7 +256,12 @@ func openSSHTunnel(
 	)
 
 	tunnel.Log = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-	go tunnel.Start()
+	go func() {
+		err := tunnel.Start()
+		if err != nil {
+			log.Println("Could not create tunnel: ", err)
+		}
+	}()
 	time.Sleep(100 * time.Millisecond)
 	log.Println("tunnel is ", tunnel)
 	return *tunnel
@@ -285,26 +292,32 @@ func openSessionManagementForward(user, pass string) sshtunnel.SSHTunnel {
 	)
 
 	tunnel.Log = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-	go tunnel.Start()
+	go func() {
+		err := tunnel.Start()
+		if err != nil {
+			log.Println("Could not create session management tunnel: ", err)
+		}
+	}()
+
 	time.Sleep(100 * time.Millisecond)
 	log.Println("tunnel is ", tunnel)
 	return *tunnel
 }
 
-func readSessionManagerSecret(client *ssh.Client) string {
-	command := "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
-	out, err := cleanExec(client, command)
+// func readSessionManagerSecret(client *ssh.Client) string {
+// 	command := "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
+// 	out, err := cleanExec(client, command)
 
-	if err == nil {
-		log.Println("Reading .sessionManager secret")
-		return out
-	}
+// 	if err == nil {
+// 		log.Println("Reading .sessionManager secret")
+// 		return out
+// 	}
 
-	log.Println("Error:  ", err)
-	log.Println("Creating new .sessionManager secret")
-	command = `dd if=/dev/urandom bs=1 count=1024|sha256sum|
-               awk \x27{print $1}\x27> ~/.sessionManager;
-               cat ~/.sessionManager;chmod 0400 ~/.sessionManager`
-	out, err = cleanExec(client, command)
-	return out
-}
+// 	log.Println("Error:  ", err)
+// 	log.Println("Creating new .sessionManager secret")
+// 	command = `dd if=/dev/urandom bs=1 count=1024|sha256sum|
+//                awk \x27{print $1}\x27> ~/.sessionManager;
+//                cat ~/.sessionManager;chmod 0400 ~/.sessionManager`
+// 	out, err = cleanExec(client, command)
+// 	return out
+// }

@@ -7,12 +7,11 @@ import (
 )
 
 type WattTab struct {
-	Tab                *container.TabItem
-	NetworkSelect      *widget.Select
-	UsernameEntry      *widget.Entry
-	PasswordEntry      *widget.Entry
-	LoginBtn           *widget.Button
-	connection_manager *CapConnectionManager
+	Tab           *container.TabItem
+	NetworkSelect *widget.Select
+	UsernameEntry *widget.Entry
+	PasswordEntry *widget.Entry
+	LoginBtn      *widget.Button
 }
 
 func NewWattConnected(app fyne.App,

@@ -3,11 +3,15 @@ package main
 import (
 	"aeolustec.com/capclient/cap"
 	"crypto/rand"
+	"log"
 )
 
 func main() {
 	var entropy [32]byte
-	rand.Read(entropy[:])
+	_, err := rand.Read(entropy[:])
+	if err != nil {
+		log.Fatal("Unable to get entropy to send CAP packet")
+	}
 
 	yk := cap.UsbYubikey{}
 	knk := cap.NewPortKnocker(&yk, entropy)
