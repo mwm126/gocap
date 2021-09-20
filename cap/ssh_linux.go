@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+//go:generate go run gen.go
+
 func run_ssh(conn_man *CapConnectionManager) {
 	cmd := exec.Command(
 		"x-terminal-emulator",

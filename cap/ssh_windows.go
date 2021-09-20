@@ -1,7 +1,7 @@
 package cap
 
 import (
-	"embed"
+	_ "embed"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,12 +9,10 @@ import (
 	"strconv"
 )
 
-var PUTTY_FILENAME = "embeds/putty.exe"
-
 //go:generate go run gen.go
 
-//go:embed embeds/*
-var content embed.FS
+//go:embed embeds/putty.exe
+var putty []byte
 
 func run_ssh(conn_man *CapConnectionManager) {
 	conn := conn_man.GetConnection()
@@ -30,11 +28,10 @@ func run_ssh(conn_man *CapConnectionManager) {
 		log.Fatal("could not open tempfile", err)
 	}
 
-	the_putty, err := content.ReadFile(PUTTY_FILENAME)
+	_, err = file.Write(putty)
 	if err != nil {
-		log.Fatal("Could not get embed", err)
+		log.Fatal("could not write ", putty, " because: ", err)
 	}
-	file.Write(the_putty)
 	file.Close()
 	cmd := exec.Command(file.Name(),
 		"127.0.0.1",
