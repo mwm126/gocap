@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TAG=v21.9.20
+TAG=v21.9.21
 TITLE="CAP Client Release ${TAG}"
-NOTES="changes xyz"
+NOTES="Build with fyne-cross"
 
 ASSET_MAC=fyne-cross/Gocap.${TAG}_Mac.zip
 ASSET_LINUX=fyne-cross/gocap.${TAG}_Linux.tar.gz
