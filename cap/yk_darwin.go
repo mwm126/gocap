@@ -15,7 +15,8 @@ func run_yk_info() ([]byte, error) {
 	dir, err := os.MkdirTemp("", "capclient")
 	defer os.RemoveAll(dir)
 	if err != nil {
-		log.Fatal("could not open tempfile", err)
+		log.Println("Could not make temporary directory")
+		return []byte{}, err
 	}
 
 	yki := path.Join(dir, "ykinfo")
@@ -34,12 +35,12 @@ func run_yk_info() ([]byte, error) {
 	return output, err
 }
 
-
 func run_yk_chalresp(chal string) ([]byte, error) {
 	dir, err := os.MkdirTemp("", "capclient")
 	defer os.RemoveAll(dir)
 	if err != nil {
-		log.Fatal("could not open tempfile", err)
+		log.Println("Could not make temporary directory")
+		return []byte{}, err
 	}
 
 	ykc := path.Join(dir, "ykchalresp")
@@ -68,7 +69,8 @@ func run_yk_hmac(chal string) ([]byte, error) {
 	dir, err := os.MkdirTemp("", "capclient")
 	defer os.RemoveAll(dir)
 	if err != nil {
-		log.Fatal("could not open tempfile", err)
+		log.Println("Could not make temporary directory")
+		return []byte{}, err
 	}
 
 	ykc := path.Join(dir, "ykchalresp")
@@ -94,8 +96,8 @@ func run_yk_hmac(chal string) ([]byte, error) {
 }
 
 func save(path string, content []byte) {
-	err := os.WriteFile(path, content, 0666)
+	err := os.WriteFile(path, content, 0755)
 	if err != nil {
-		log.Fatal("could not write ", path, " because: ", err)
+		log.Println("could not write ", path, " because: ", err)
 	}
 }

@@ -96,7 +96,7 @@ func (sk *PortKnocker) makePacket(
 	timestamp int32,
 	auth_addr, ssh_addr, server_addr net.IP,
 ) ([]byte, error) {
-	OTP := getOTP(sk.yubikey, sk.entropy[:])
+	OTP, err := getOTP(sk.yubikey, sk.entropy[:])
 
 	var initVec [16]byte
 	digest := makeSHADigest(sk.entropy[:], OTP[:])
@@ -178,13 +178,19 @@ func (sk *PortKnocker) makePacket(
 	return buf.Bytes(), nil
 }
 
-func getOTP(yk Yubikey, entropy []byte) OneTimePassword {
+func getOTP(yk Yubikey, entropy []byte) (OneTimePassword, error) {
+	var zeros [16]byte
 	// Get Yubico OTP response from client.connection.yubikey
 	digest := makeSHADigest([]byte("yubicoChal"), entropy)
 	var yubicoChal [16]byte
 	copy(yubicoChal[:], digest[:16])
 	time.Sleep(1 * time.Second)
-	return yk.challengeResponse(yubicoChal)
+	response, err := yk.challengeResponse(yubicoChal)
+	if err != nil {
+		log.Println("Unable to get OTP", err)
+		return zeros, err
+	}
+	return response, nil
 }
 
 func getChallengeResponse(

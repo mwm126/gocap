@@ -26,7 +26,6 @@ var ykchalresp []byte
 //go:embed embeds/bin/ykinfo.exe
 var ykinfo []byte
 
-
 func run_yk_info() ([]byte, error) {
 	dir, err := os.MkdirTemp("", "capclient")
 	defer os.RemoveAll(dir)
@@ -54,7 +53,6 @@ func run_yk_info() ([]byte, error) {
 	output, err := cmd.Output()
 	return output, err
 }
-
 
 func run_yk_chalresp(chal string) ([]byte, error) {
 	dir, err := os.MkdirTemp("", "capclient")

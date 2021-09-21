@@ -10,7 +10,6 @@ import (
 
 //go:generate go run gen.go
 
-
 func run_yk_info() ([]byte, error) {
 	dir, err := os.MkdirTemp("", "capclient")
 	defer os.RemoveAll(dir)

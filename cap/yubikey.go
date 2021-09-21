@@ -10,7 +10,7 @@ import (
 // Yubikey interface used by other code (can be real or faked)
 type Yubikey interface {
 	FindSerial() (int32, error)
-	challengeResponse(chal [16]byte) [16]byte
+	challengeResponse(chal [16]byte) ([16]byte, error)
 	challengeResponseHMAC(chal SHADigest) ([16]byte, error)
 }
 
@@ -30,19 +30,22 @@ func (yk *UsbYubikey) FindSerial() (int32, error) {
 	return int32(i), nil
 }
 
-func (yk *UsbYubikey) challengeResponse(chal [16]byte) [16]byte {
+func (yk *UsbYubikey) challengeResponse(chal [16]byte) ([16]byte, error) {
+	var zeros [16]byte
 	challengeArgument := hex.EncodeToString(chal[:])
 	out, err := run_yk_chalresp(challengeArgument)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Could not get challenge response", err)
+		return zeros, err
 	}
 	responseStr := strings.TrimSpace(string(out))
 	log.Println(responseStr)
 	response := modhexDecode(responseStr[:16])
 	if err != nil {
-		log.Fatal(response, err)
+		log.Println(response, err)
+		return zeros, err
 	}
-	return response
+	return response, nil
 }
 
 func modhexDecode(m string) [16]byte {

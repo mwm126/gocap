@@ -14,11 +14,11 @@ func (yk *FakeYubikey) FindSerial() (int32, error) {
 	return 5417533, nil
 }
 
-func (yk *FakeYubikey) challengeResponse(chal [16]byte) [16]byte {
+func (yk *FakeYubikey) challengeResponse(chal [16]byte) ([16]byte, error) {
 	var resp [16]byte
 	r, _ := hex.DecodeString("2ee619bc248bcefbe09e733d2cdda3be")
 	copy(resp[:], r)
-	return resp
+	return resp, nil
 }
 
 func (yk *FakeYubikey) challengeResponseHMAC(chal SHADigest) ([16]byte, error) {
