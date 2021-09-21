@@ -9,7 +9,7 @@ import (
 
 // Yubikey interface used by other code (can be real or faked)
 type Yubikey interface {
-	findSerial() (int32, error)
+	FindSerial() (int32, error)
 	challengeResponse(chal [16]byte) [16]byte
 	challengeResponseHMAC(chal SHADigest) ([16]byte, error)
 }
@@ -17,7 +17,7 @@ type Yubikey interface {
 // UsbYubikey implementation (for actual yubikey)
 type UsbYubikey struct{}
 
-func (yk *UsbYubikey) findSerial() (int32, error) {
+func (yk *UsbYubikey) FindSerial() (int32, error) {
 	out, err := run_yk_info()
 	if err != nil {
 		return 0, error(err)
@@ -38,7 +38,7 @@ func (yk *UsbYubikey) challengeResponse(chal [16]byte) [16]byte {
 	}
 	responseStr := strings.TrimSpace(string(out))
 	log.Println(responseStr)
-	response := modhexDecode(responseStr)
+	response := modhexDecode(responseStr[:16])
 	if err != nil {
 		log.Fatal(response, err)
 	}

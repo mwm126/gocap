@@ -2,14 +2,15 @@ package cap
 
 import (
 	"encoding/hex"
-	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type FakeYubikey struct{}
 
-func (yk *FakeYubikey) findSerial() (int32, error) {
+func (yk *FakeYubikey) FindSerial() (int32, error) {
 	return 5417533, nil
 }
 

@@ -144,7 +144,7 @@ func (sk *PortKnocker) makePacket(
 	var trimmedCiphertext [160]byte
 	copy(trimmedCiphertext[:], ciphertext[16:])
 
-	serial, err := sk.yubikey.findSerial()
+	serial, err := sk.yubikey.FindSerial()
 	if err != nil {
 		log.Println("Unable to get yubikey serial number: ", err)
 		return nil, err
