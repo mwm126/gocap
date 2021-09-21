@@ -21,8 +21,10 @@ func TestCapConnection(t *testing.T) {
 	fake_kckr = NewPortKnocker(&fake_yk, entropy)
 	conn_man := NewCapConnectionManager(fake_kckr)
 	conn, _ := conn_man.newCapConnection(username, password, ext_ip, server)
+	assert.NotNil(t, conn)
 	defer conn.close()
 
+	assert.NotNil(t, conn.connectionInfo)
 	assert.Equal(t, conn.connectionInfo.username, "testusername")
 	assert.Equal(t, conn.connectionInfo.password, "testpassword")
 }

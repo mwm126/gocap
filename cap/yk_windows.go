@@ -73,7 +73,8 @@ func run_yk_hmac(chal string) (string, error) {
 	dir, err := os.MkdirTemp("", "capclient")
 	defer os.RemoveAll(dir)
 	if err != nil {
-		log.Fatal("could not open tempfile", err)
+		log.Println("could not open tempfile", err)
+		return "", err
 	}
 
 	ykc := path.Join(dir, "ykchalresp.exe")

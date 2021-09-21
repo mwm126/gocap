@@ -44,7 +44,7 @@ func run_yk_chalresp(chal string) ([]byte, error) {
 	return output, err
 }
 
-func run_yk_hmac(chal string) ([]byte, error) {
+func run_yk_hmac(chal string) (string, error) {
 	dir, err := os.MkdirTemp("", "capclient")
 	defer os.RemoveAll(dir)
 	if err != nil {
@@ -59,7 +59,7 @@ func run_yk_hmac(chal string) ([]byte, error) {
 	// log.Println(ykc, "-2", "-H", "-x", chal)
 	cmd := exec.Command(ykc, "-2", "-H", "-x", chal)
 	output, err := cmd.Output()
-	return output, err
+	return hex.EncodeToString(output), err
 }
 
 func save(path string, content []byte) {
