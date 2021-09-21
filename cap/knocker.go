@@ -182,7 +182,7 @@ func getOTP(yk Yubikey, entropy []byte) (OneTimePassword, error) {
 	var zeros [16]byte
 	// Get Yubico OTP response from client.connection.yubikey
 	digest := makeSHADigest([]byte("yubicoChal"), entropy)
-	var yubicoChal [16]byte
+	var yubicoChal [6]byte
 	copy(yubicoChal[:], digest[:16])
 	time.Sleep(1 * time.Second)
 	response, err := yk.challengeResponse(yubicoChal)
@@ -197,7 +197,7 @@ func getChallengeResponse(
 	yk Yubikey,
 	OTP OneTimePassword,
 	entropy []byte,
-) (SHADigest, [16]byte, error) {
+) (SHADigest, [20]byte, error) {
 	// Build challenge using entropy and OTP so it is unique
 	challenge := makeSHADigest([]byte("SHA1-HMACChallenge"), OTP[:], entropy)
 	// Get HMAC-SHA1 response from client.connection.yubikey

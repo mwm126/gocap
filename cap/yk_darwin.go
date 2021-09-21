@@ -22,15 +22,8 @@ func run_yk_info() ([]byte, error) {
 	yki := path.Join(dir, "ykinfo")
 	save(yki, []byte("TODO"))
 
-	log.Println(yki,
-		"-s",
-		"-q",
-	)
-
-	cmd := exec.Command(yki,
-		"-s",
-		"-q",
-	)
+	// log.Println(yki, "-s", "-q")
+	cmd := exec.Command(yki, "-s", "-q")
 	output, err := cmd.Output()
 	return output, err
 }
@@ -48,19 +41,9 @@ func run_yk_chalresp(chal string) ([]byte, error) {
 	save(ykc, []byte("TODO"))
 	save(yki, []byte("TODO"))
 
-	log.Println(ykc,
-		"-1",
-		"-Y",
-		"-x",
-		chal,
-	)
+	// log.Println(ykc, "-1", "-Y", "-x", chal)
 
-	cmd := exec.Command(ykc,
-		"-1",
-		"-Y",
-		"-x",
-		chal,
-	)
+	cmd := exec.Command(ykc, "-1", "-Y", "-x", chal)
 	output, err := cmd.Output()
 	return output, err
 }
@@ -78,19 +61,9 @@ func run_yk_hmac(chal string) ([]byte, error) {
 	save(ykc, []byte("TODO"))
 	save(yki, []byte("TODO"))
 
-	log.Println(ykc,
-		"-2",
-		"-H",
-		"-x",
-		chal,
-	)
+	// log.Println(ykc, "-2", "-H", "-x", chal)
 
-	cmd := exec.Command(ykc,
-		"-2",
-		"-H",
-		"-x",
-		chal,
-	)
+	cmd := exec.Command(ykc, "-2", "-H", "-x", chal)
 	output, err := cmd.Output()
 	return output, err
 }

@@ -17,9 +17,9 @@ func TestYubikeySerial(t *testing.T) {
 
 func TestYubikeyChalResp(t *testing.T) {
 	yk := new(UsbYubikey)
-	resp, _ := yk.challengeResponse([16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5})
+	resp, _ := yk.challengeResponse([6]byte{0, 1, 2, 3, 4, 5})
 
-	assert.Equal(t, 32, len(resp))
+	assert.Equal(t, 16, len(resp))
 }
 
 func TestYubikeyChalRespHMAC(t *testing.T) {

@@ -14,15 +14,15 @@ func (yk *FakeYubikey) FindSerial() (int32, error) {
 	return 5417533, nil
 }
 
-func (yk *FakeYubikey) challengeResponse(chal [16]byte) ([16]byte, error) {
+func (yk *FakeYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
 	var resp [16]byte
 	r, _ := hex.DecodeString("2ee619bc248bcefbe09e733d2cdda3be")
 	copy(resp[:], r)
 	return resp, nil
 }
 
-func (yk *FakeYubikey) challengeResponseHMAC(chal SHADigest) ([16]byte, error) {
-	var hmac [16]byte
+func (yk *FakeYubikey) challengeResponseHMAC(chal SHADigest) ([20]byte, error) {
+	var hmac [20]byte
 	h, _ := hex.DecodeString("2ee619bc248bcefbe09e733d2cdda3be")
 	copy(hmac[:], h)
 	return hmac, nil

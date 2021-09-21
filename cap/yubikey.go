@@ -10,8 +10,8 @@ import (
 // Yubikey interface used by other code (can be real or faked)
 type Yubikey interface {
 	FindSerial() (int32, error)
-	challengeResponse(chal [16]byte) ([16]byte, error)
-	challengeResponseHMAC(chal SHADigest) ([16]byte, error)
+	challengeResponse(chal [6]byte) ([16]byte, error)
+	challengeResponseHMAC(chal SHADigest) ([20]byte, error)
 }
 
 // UsbYubikey implementation (for actual yubikey)
@@ -30,7 +30,7 @@ func (yk *UsbYubikey) FindSerial() (int32, error) {
 	return int32(i), nil
 }
 
-func (yk *UsbYubikey) challengeResponse(chal [16]byte) ([16]byte, error) {
+func (yk *UsbYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
 	var zeros [16]byte
 	challengeArgument := hex.EncodeToString(chal[:])
 	out, err := run_yk_chalresp(challengeArgument)
@@ -39,7 +39,6 @@ func (yk *UsbYubikey) challengeResponse(chal [16]byte) ([16]byte, error) {
 		return zeros, err
 	}
 	responseStr := strings.TrimSpace(string(out))
-	log.Println(responseStr)
 	response := modhexDecode(responseStr[:16])
 	if err != nil {
 		log.Println(response, err)
@@ -75,19 +74,20 @@ func modhexDecode(m string) [16]byte {
 
 }
 
-func (yk *UsbYubikey) challengeResponseHMAC(chal SHADigest) ([16]byte, error) {
-	var hmac [16]byte
-	out, err := run_yk_hmac(string(chal[:]))
+func (yk *UsbYubikey) challengeResponseHMAC(chal SHADigest) ([20]byte, error) {
+	var hmac [20]byte
+	hex_chal := hex.EncodeToString(chal[:])
+	out, err := run_yk_hmac(hex_chal)
 	if err != nil {
 		log.Println("Unable to run ykchalresp:", err)
 		return hmac, err
 	}
-	responseHex := strings.TrimSpace(string(out))
+	responseHex := strings.TrimSpace(out)
 	response, err := hex.DecodeString(responseHex)
 	if err != nil {
 		log.Fatal(response, err)
 	}
 
-	copy(hmac[:], response)
+	copy(hmac[:], response[:20])
 	return hmac, nil
 }
