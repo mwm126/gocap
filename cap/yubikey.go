@@ -3,7 +3,6 @@ package cap
 import (
 	"encoding/hex"
 	"log"
-	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -19,7 +18,7 @@ type Yubikey interface {
 type UsbYubikey struct{}
 
 func (yk *UsbYubikey) findSerial() (int32, error) {
-	out, err := exec.Command("ykinfo", "-s", "-q").Output()
+	out, err := run_yk_info()
 	if err != nil {
 		return 0, error(err)
 	}
@@ -33,8 +32,7 @@ func (yk *UsbYubikey) findSerial() (int32, error) {
 
 func (yk *UsbYubikey) challengeResponse(chal [16]byte) [16]byte {
 	challengeArgument := hex.EncodeToString(chal[:])
-	log.Println("ykchalresp", "-1", "-Y", "-x", challengeArgument)
-	out, err := exec.Command("ykchalresp", "-1", "-Y", "-x", string(chal[:])).Output()
+	out, err := run_yk_chalresp(challengeArgument)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,7 +74,7 @@ func modhexDecode(m string) [16]byte {
 
 func (yk *UsbYubikey) challengeResponseHMAC(chal SHADigest) ([16]byte, error) {
 	var hmac [16]byte
-	out, err := exec.Command("ykchalresp", "-2", "-H", "-x", string(chal[:])).Output()
+	out, err := run_yk_hmac(string(chal[:]))
 	if err != nil {
 		log.Println("Unable to run ykchalresp:", err)
 		return hmac, err

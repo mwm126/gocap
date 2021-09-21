@@ -13,13 +13,14 @@ git clean -fdx
 go generate ./...
 fyne-cross windows
 fyne-cross linux
-fyne-cross darwin  --app-id "com.aeolustec.capclient"
+fyne-cross darwin --app-id "com.aeolustec.capclient"
 
 zip -r -j ${ASSET_MAC} fyne-cross/dist/darwin-amd64/gocap.app
-ln fyne-cross/dist/linux-amd64/gocap.tar.gz ${ASSET_LINUX}
-ln fyne-cross/dist/windows-amd64/gocap.exe.zip ${ASSET_WINDOWS}
+ln -f fyne-cross/dist/linux-amd64/gocap.tar.gz ${ASSET_LINUX}
+ln -f fyne-cross/dist/windows-amd64/gocap.exe.zip ${ASSET_WINDOWS}
 
-gh release create ${TAG} --draft \
+gh release create ${TAG} \
+    --draft \
     ${ASSET_MAC} \
     ${ASSET_LINUX} \
     ${ASSET_WINDOWS} \

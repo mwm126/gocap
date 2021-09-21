@@ -2,7 +2,6 @@ package cap
 
 import (
 	_ "embed"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -22,7 +21,7 @@ func run_ssh(conn_man *CapConnectionManager) {
 	}
 	username := conn.connectionInfo.username
 	password := conn.connectionInfo.password
-	file, err := ioutil.TempFile("", "putty.*.exe")
+	file, err := os.CreateTemp("", "putty.*.exe")
 	defer os.Remove(file.Name())
 	if err != nil {
 		log.Fatal("could not open tempfile", err)

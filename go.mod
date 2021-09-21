@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.0.4
 	github.com/beevik/ntp v0.3.0
 	github.com/elliotchance/sshtunnel v1.3.0
+	github.com/fyne-io/fyne-cross v1.1.0 // indirect
 	github.com/glendc/go-external-ip v0.0.0-20200601212049-c872357d968e
 	github.com/melbahja/got v0.5.0
 	github.com/pelletier/go-toml v1.9.3
