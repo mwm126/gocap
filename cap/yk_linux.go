@@ -2,7 +2,7 @@ package cap
 
 import (
 	_ "embed"
-	"hex/encoding"
+	"encoding/hex"
 	"log"
 	"os"
 	"os/exec"
