@@ -37,9 +37,9 @@ func NewCapTab(tabname,
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
-			tab.card.SetContent(tab.login)
-			connect_cancelled = false
-			return
+			// tab.card.SetContent(tab.login)
+			// connect_cancelled = false
+			// return
 		}
 
 		if connect_cancelled {
