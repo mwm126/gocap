@@ -9,7 +9,6 @@ import (
 	"testing"
 )
 
-
 type StubYubikey struct{}
 
 func (yk *StubYubikey) FindSerial() (int32, error) {
@@ -17,11 +16,11 @@ func (yk *StubYubikey) FindSerial() (int32, error) {
 }
 
 func (yk *StubYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
-	return  [16]byte{}, nil
+	return [16]byte{}, nil
 }
 
 func (yk *StubYubikey) challengeResponseHMAC(chal SHADigest) ([20]byte, error) {
-	return  [20]byte{}, nil
+	return [20]byte{}, nil
 }
 
 func TestCapConnection(t *testing.T) {

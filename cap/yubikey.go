@@ -3,7 +3,6 @@ package cap
 import (
 	"encoding/hex"
 	"log"
-	"strconv"
 	"strings"
 )
 
@@ -22,12 +21,7 @@ func (yk *UsbYubikey) FindSerial() (int32, error) {
 	if err != nil {
 		return 0, error(err)
 	}
-	serial := strings.TrimSpace(string(out))
-	i, err := strconv.Atoi(serial)
-	if err != nil {
-		return 0, error(err)
-	}
-	return int32(i), nil
+	return out, err
 }
 
 func (yk *UsbYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {

@@ -1,8 +1,16 @@
 package cap
 
+// #cgo CFLAGS: -g -Wall -I/usr/local/include/ykpers-1 -I/usr/local/include
+// #cgo LDFLAGS: /usr/local/lib/libykpers-1.a /usr/local/lib/libyubikey.a -framework CoreServices -framework IOKit
+// #include "yk_darwin.h"
+import (
+	"C"
+)
+
 import (
 	_ "embed"
 	"encoding/hex"
+	"errors"
 	"log"
 	"os"
 	"os/exec"
@@ -12,21 +20,12 @@ import (
 //go:generate go run gen.go
 //go:generate unzip -o -d embeds embeds/ykpers-1.20.0-win64.zip
 
-func run_yk_info() ([]byte, error) {
-	dir, err := os.MkdirTemp("", "capclient")
-	defer os.RemoveAll(dir)
-	if err != nil {
-		log.Println("Could not make temporary directory")
-		return []byte{}, err
+func run_yk_info() (int32, error) {
+	serial := C.get_yk_serial()
+	if serial < 0 {
+		return -1, errors.New("Error getting info from Yubikey")
 	}
-
-	yki := path.Join(dir, "ykinfo")
-	save(yki, []byte("TODO"))
-
-	// log.Println(yki, "-s", "-q")
-	cmd := exec.Command(yki, "-s", "-q")
-	output, err := cmd.Output()
-	return output, err
+	return int32(serial), nil
 }
 
 func run_yk_chalresp(chal string) ([]byte, error) {
