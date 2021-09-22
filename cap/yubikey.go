@@ -31,19 +31,14 @@ func (yk *UsbYubikey) FindSerial() (int32, error) {
 }
 
 func (yk *UsbYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
-	var zeros [16]byte
 	challengeArgument := hex.EncodeToString(chal[:])
 	out, err := run_yk_chalresp(challengeArgument)
 	if err != nil {
 		log.Println("Could not get challenge response", err)
-		return zeros, err
+		return [16]byte{}, err
 	}
 	responseStr := strings.TrimSpace(string(out))
 	response := modhexDecode(responseStr[:16])
-	if err != nil {
-		log.Println(response, err)
-		return zeros, err
-	}
 	return response, nil
 }
 
