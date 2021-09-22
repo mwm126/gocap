@@ -97,6 +97,10 @@ func (sk *PortKnocker) makePacket(
 	auth_addr, ssh_addr, server_addr net.IP,
 ) ([]byte, error) {
 	OTP, err := getOTP(sk.yubikey, sk.entropy[:])
+	if err != nil {
+		log.Println("could not get OTP", err)
+		return nil, err
+	}
 
 	var initVec [16]byte
 	digest := makeSHADigest(sk.entropy[:], OTP[:])
@@ -137,8 +141,7 @@ func (sk *PortKnocker) makePacket(
 	// The IV needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
 	ciphertext := make([]byte, aes.BlockSize+len(plainBlock))
-	iv := []byte(initVec[:])
-	mode := cipher.NewCBCEncrypter(block, iv)
+	mode := cipher.NewCBCEncrypter(block, initVec[:])
 	mode.CryptBlocks(ciphertext[aes.BlockSize:], plainBlock)
 
 	var trimmedCiphertext [160]byte
