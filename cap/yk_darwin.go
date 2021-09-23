@@ -3,7 +3,7 @@ package cap
 // #cgo CFLAGS: -g -Wall -Werror -I/usr/local/include/ykpers-1 -I/usr/local/include
 // #cgo LDFLAGS: /usr/local/lib/libykpers-1.a /usr/local/lib/libyubikey.a -framework CoreServices -framework IOKit
 // #include <stdlib.h>
-// #include "yk_darwin.h"
+// #include "yk.h"
 import "C"
 
 import (

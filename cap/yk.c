@@ -1,4 +1,4 @@
-#include "yk_darwin.h"
+#include "yk.h"
 #include <stdio.h>
 
 #include <ykcore.h>

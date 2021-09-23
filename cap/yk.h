@@ -1,5 +1,5 @@
-#ifndef YK_DARWIN_H_
-#define YK_DARWIN_H_
+#ifndef YK_H_
+#define YK_H_
 
 /** Return Yubikey serial, or -1 on error */
 int get_yk_serial();
@@ -13,4 +13,4 @@ int get_otp(const unsigned char[], unsigned char[]);
 int hmac_from_digest(const unsigned char[DIGEST_LENGTH],
                      unsigned char[HMAC_LENGTH]);
 
-#endif // YK_DARWIN_H_
+#endif // YK_H_
