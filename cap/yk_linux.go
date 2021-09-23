@@ -1,7 +1,7 @@
 package cap
 
 // #cgo CFLAGS: -g -Wall -Werror -I/usr/include/ykpers-1/
-// #cgo LDFLAGS: /usr/lib/x86_64-linux-gnu/libykpers-1.a /usr/lib/x86_64-linux-gnu/libyubikey.a -lusb-1.0
+// #cgo LDFLAGS: -Wl,-Bstatic -lykpers-1 -lyubikey -Wl,-Bdynamic -lusb-1.0
 // #include <stdlib.h>
 // #include "yk.h"
 import "C"
