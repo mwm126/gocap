@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run:   |
               if [ "$RUNNER_OS" == "Linux" ]; then
-                    sudo apt install -y libgl1-mesa-dev xorg-dev
+                sudo apt-get -qq -y install --no-install-recommends && sudo apt install -y libgl1-mesa-dev xorg-dev libusb-dev libyubikey-dev libykpers-1-dev
               fi
 
       - name: Generate

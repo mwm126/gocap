@@ -1,76 +1,50 @@
 package cap
 
+// #cgo CFLAGS: -g -Wall -Werror -I/usr/local/include/ykpers-1 -I/usr/local/include
+// #cgo LDFLAGS: /usr/local/lib/libykpers-1.a /usr/local/lib/libyubikey.a -framework CoreServices -framework IOKit
+// #include <stdlib.h>
+// #include "yk.h"
+import "C"
+
 import (
-	_ "embed"
 	"encoding/hex"
-	"log"
-	"os"
-	"os/exec"
-	"path"
+	"errors"
 )
 
-//go:generate go run gen.go
-//go:generate unzip -o -d embeds embeds/ykpers-1.20.0-win64.zip
-
-func run_yk_info() ([]byte, error) {
-	dir, err := os.MkdirTemp("", "capclient")
-	defer os.RemoveAll(dir)
-	if err != nil {
-		log.Println("Could not make temporary directory")
-		return []byte{}, err
+func run_yk_info() (int32, error) {
+	serial := C.get_yk_serial()
+	if serial < 0 {
+		return -1, errors.New("Error getting info from Yubikey")
 	}
-
-	yki := path.Join(dir, "ykinfo")
-	save(yki, []byte("TODO"))
-
-	// log.Println(yki, "-s", "-q")
-	cmd := exec.Command(yki, "-s", "-q")
-	output, err := cmd.Output()
-	return output, err
+	return int32(serial), nil
 }
 
-func run_yk_chalresp(chal string) ([]byte, error) {
-	dir, err := os.MkdirTemp("", "capclient")
-	defer os.RemoveAll(dir)
+func run_yk_chalresp(chal string) ([16]byte, error) {
+	var otp [16]byte
+	challenge, err := hex.DecodeString(chal)
 	if err != nil {
-		log.Println("Could not make temporary directory")
-		return []byte{}, err
+		return [16]byte{}, err
 	}
 
-	ykc := path.Join(dir, "ykchalresp")
-	yki := path.Join(dir, "ykinfo")
-	save(ykc, []byte("TODO"))
-	save(yki, []byte("TODO"))
+	ch := (*C.uchar)(&challenge[0])
+	ohtipi := (*C.uchar)(&otp[0])
 
-	// log.Println(ykc, "-1", "-Y", "-x", chal)
+	C.get_otp(ch, ohtipi)
 
-	cmd := exec.Command(ykc, "-1", "-Y", "-x", chal)
-	output, err := cmd.Output()
-	return output, err
+	return otp, nil
 }
 
-func run_yk_hmac(chal string) (string, error) {
-	dir, err := os.MkdirTemp("", "capclient")
-	defer os.RemoveAll(dir)
+func run_yk_hmac(chal string) ([20]byte, error) {
+	var hmac [20]byte
+
+	challenge, err := hex.DecodeString(chal)
 	if err != nil {
-		log.Println("Could not make temporary directory")
-		return "", err
+		return hmac, err
 	}
+	digest := (*C.uchar)(&challenge[0])
+	hmac_c := (*C.uchar)(&hmac[0])
 
-	ykc := path.Join(dir, "ykchalresp")
-	yki := path.Join(dir, "ykinfo")
-	save(ykc, []byte("TODO"))
-	save(yki, []byte("TODO"))
+	C.hmac_from_digest(digest, hmac_c)
 
-	// log.Println(ykc, "-2", "-H", "-x", chal)
-	cmd := exec.Command(ykc, "-2", "-H", "-x", chal)
-	output, err := cmd.Output()
-	return hex.EncodeToString(output), err
-}
-
-func save(path string, content []byte) {
-	err := os.WriteFile(path, content, 0755)
-	if err != nil {
-		log.Println("could not write ", path, " because: ", err)
-	}
+	return hmac, nil
 }
