@@ -1,7 +1,7 @@
 package cap
 
-// #cgo CFLAGS: -g -Wall -Werror -IC:/Users/mwm12/scoop/apps/yubikey-personalization/1.19.0/include -IC:/Users/mwm12/scoop/apps/yubikey-personalization/1.19.0/include/ykpers-1
-// #cgo LDFLAGS: C:/Users/mwm12/scoop/apps/yubikey-personalization/1.19.0/lib/libykpers-1.a C:/Users/mwm12/scoop/apps/yubikey-personalization/1.19.0/lib/libyubikey.a -lsetupapi -lhid
+// #cgo CFLAGS: -g -Wall -Werror -I/usr/include/ykpers-1/ -I/usr/include/ -I/usr/include/x86_64-linux-gnu
+// #cgo LDFLAGS: -Wl,-Bstatic -lykpers-1 -lyubikey -Wl,-Bdynamic -lusb-1.0 -lsetupapi -lhid
 // #include <stdlib.h>
 // #include "yk.h"
 import "C"

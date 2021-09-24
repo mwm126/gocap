@@ -3,12 +3,13 @@ module aeolustec.com/capclient
 go 1.16
 
 require (
-	fyne.io/fyne/v2 v2.0.4
+	fyne.io/fyne/v2 v2.1.0
 	github.com/beevik/ntp v0.3.0
 	github.com/elliotchance/sshtunnel v1.3.0
 	github.com/fyne-io/fyne-cross v1.1.0 // indirect
+	github.com/fyne-io/mobile v0.1.3-0.20210412090810-650a3139866a // indirect
 	github.com/glendc/go-external-ip v0.0.0-20200601212049-c872357d968e
-	github.com/melbahja/got v0.5.0
+	github.com/melbahja/got v0.5.0 // indirect
 	github.com/pelletier/go-toml v1.9.3
 	github.com/stretchr/testify v1.7.1-0.20210427113832-6241f9ab9942
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5

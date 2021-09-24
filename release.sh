@@ -10,11 +10,12 @@ ASSET_LINUX=fyne-cross/gocap.${TAG}_Linux.tar.gz
 ASSET_WINDOWS=fyne-cross/gocap.${TAG}_Windows.zip
 
 docker build .fyne-cross/linux/ -t capclient-linux
+docker build .fyne-cross/windows/ -t capclient-windows
 
 git clean -fdx
 go generate ./...
-fyne-cross windows
 fyne-cross linux -image capclient-linux:latest
+fyne-cross windows -image capclient-windows:latest
 fyne-cross darwin --app-id "com.aeolustec.capclient"
 
 zip -r -j ${ASSET_MAC} fyne-cross/dist/darwin-amd64/gocap.app
