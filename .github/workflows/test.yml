@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         go-version: [1.17.x]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
 
@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run:   |
               if [ "$RUNNER_OS" == "Linux" ]; then
-                sudo apt-get -qq -y install --no-install-recommends && sudo apt install -y libgl1-mesa-dev xorg-dev libusb-dev libyubikey-dev libykpers-1-dev
+                apt-get -qq -y install --no-install-recommends && apt install -y libgl1-mesa-dev xorg-dev libusb-dev libyubikey-dev libykpers-1-dev
               fi
 
       - name: Generate
