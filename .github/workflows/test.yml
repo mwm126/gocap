@@ -29,7 +29,7 @@ jobs:
         run: go generate ./...
 
       - name: Build
-        run: go build . -x
+        run: go build -x .
 
       - name: Test
         run: go test -v ./...
