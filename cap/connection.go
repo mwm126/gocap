@@ -1,7 +1,6 @@
 package cap
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -10,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elliotchance/sshtunnel"
+	"aeolustec.com/capclient/cap/sshtunnel"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -27,9 +26,9 @@ func (t *CapConnectionManager) GetConnection() *CapConnection {
 	return t.connection
 }
 
-func (t *CapConnectionManager) CloseConnection() {
+func (t *CapConnectionManager) Close() {
 	if t.connection == nil {
-		log.Println("Cannot close connection (connection missing)")
+		log.Println("Not connected; Cannot close connection")
 		return
 	}
 	t.connection.close()
@@ -88,7 +87,7 @@ func (conn *CapConnection) forward(fwd string) sshtunnel.SSHTunnel {
 	if err != nil {
 		log.Println("Warning:  bad remote port", err)
 	}
-	return openSSHTunnel(conn.connectionInfo.username,
+	return openSSHTunnel(conn.client, conn.connectionInfo.username,
 		conn.connectionInfo.password, local_p, remote_h, remote_p)
 }
 
@@ -99,39 +98,20 @@ func (conn *CapConnection) close() {
 	conn.client.Close()
 }
 
-func (cm *CapConnectionManager) newCapConnection(
+func (cm *CapConnectionManager) Connect(
 	user, pass string,
 	ext_addr,
 	server net.IP,
-) (*CapConnection, error) {
+) error {
 	log.Println("Opening SSH Connection...")
 	err := cm.knocker.Knock(user, pass, ext_addr, server)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
-	client, err := connectToHost(user, pass, "localhost:22")
-	// host := fmt.Sprintf("{}:{}", server, "22")
-	// client, err := connectToHost(user, pass, host)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
 
-	//     password_checker = PasswordChecker(self.ssh, self._login_info.passwd)
-	// log.Println("Checking for expired password...")
-	//     if password_checker.is_pw_expired():
-	//         self.status_signal.emit("Password expired.")
-	//         return (ConnectionEvent.GET_NEW_PASSWORD.value, password_checker)
-
-	//     return (self._conn_event.value, self.get_connection())
-	cm.connection = getConnection(client, user, pass)
-	return cm.connection, nil
-}
-
-func connectToHost(user, pass, host string) (*ssh.Client, error) {
 	// var hostKey ssh.PublicKey
 	config := &ssh.ClientConfig{
 		User: user,
@@ -141,13 +121,26 @@ func connectToHost(user, pass, host string) (*ssh.Client, error) {
 		// HostKeyCallback: ssh.FixedHostKey(hostKey),
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
+	server = net.IPv4(127, 0, 0, 1) // FIXME: testing
+	host := fmt.Sprintf("%s:%s", server, "22")
 	client, err := ssh.Dial("tcp", host, config)
 	if err != nil {
-		log.Println("Failed to dial: ", err)
-		return nil, err
+		log.Println("Could not connect to localhost:22, ", err)
+		return err
 	}
-	// defer client.Close()
-	return client, nil
+
+	//     password_checker = PasswordChecker(self.ssh, self._login_info.passwd)
+	// log.Println("Checking for expired password...")
+	//     if password_checker.is_pw_expired():
+	//         self.status_signal.emit("Password expired.")
+	//         return (ConnectionEvent.GET_NEW_PASSWORD.value, password_checker)
+
+	//     return (self._conn_event.value, self.get_connection())
+	err = cm.setupConnection(client, user, pass)
+	if err != nil {
+		client.Close()
+	}
+	return err
 }
 
 func cleanExec(client *ssh.Client, cmd string) (string, error) {
@@ -159,35 +152,32 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 	}
 	defer session.Close()
 
-	// Once a Session is created, you can execute a single command on
-	// the remote side using the Run method.
-	var b bytes.Buffer
-	session.Stdout = &b
-	if err := session.Run(cmd); err != nil {
-		return "", err
-	}
-	return b.String(), nil
+	b, err := session.Output(cmd)
+	return string(b), err
 }
 
 const webLocalPort = 10080
 
-func getConnection(client *ssh.Client, user, pass string) *CapConnection {
+func (cm *CapConnectionManager) setupConnection(client *ssh.Client, user, pass string) error {
 	log.Println("Getting connection info...")
 	loginName, err := cleanExec(client, "hostname")
 	if err != nil {
-		log.Fatal("Failed hostname")
+		log.Println("Failed hostname")
+		return err
 	}
 	loginAddr, err := getLoginIP(client, loginName)
 	if err != nil {
-		log.Fatal("Failed to lookup login IP")
+		log.Println("Failed to lookup login IP")
+		return err
 	}
 	uid, err := getUID(client)
 	if err != nil {
-		log.Fatal("Failed to lookup UID")
+		log.Println("Failed to lookup UID")
+		return err
 	}
-	sshLocalPort := openSSHTunnel(user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
+	sshLocalPort := openSSHTunnel(client, user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
-	session_mgt_port := openSessionManagementForward(user, pass)
+	session_mgt_port := openSessionManagementForward(client, user, pass)
 	// session_mgt_secret := readSessionManagerSecret(client)
 
 	log.Println("Connected.")
@@ -203,7 +193,8 @@ func getConnection(client *ssh.Client, user, pass string) *CapConnection {
 		session_mgt_port,
 	}
 	var fwds map[string]sshtunnel.SSHTunnel
-	return &CapConnection{client, connInfo, fwds}
+	cm.connection = &CapConnection{client, connInfo, fwds}
+	return nil
 }
 
 func getLoginIP(client *ssh.Client, loginName string) (string, error) {
@@ -227,6 +218,7 @@ const SSH_FWD_ADDR = "localhost"
 const SSH_FWD_PORT = 22
 
 func openSSHTunnel(
+	client *ssh.Client,
 	user, pass string,
 	local_port int,
 	remote_addr string,
@@ -238,6 +230,7 @@ func openSSHTunnel(
 	// ssh_port := check_free_port(SSH_LOCAL_PORT)
 
 	tunnel := sshtunnel.NewSSHTunnel(
+		client,
 		// User and host of tunnel server, it will default to port 22
 		// if not specified.
 		fmt.Sprintf("%s@%s", user, "localhost"),
@@ -267,13 +260,14 @@ func openSSHTunnel(
 	return *tunnel
 }
 
-func openSessionManagementForward(user, pass string) sshtunnel.SSHTunnel {
+func openSessionManagementForward(client *ssh.Client, user, pass string) sshtunnel.SSHTunnel {
 	log.Println("Starting session manager...")
 
 	// ssh_port := check_free_port(SSH_LOCAL_PORT)
 	ssh_port := strconv.Itoa(SSH_LOCAL_PORT)
 
 	tunnel := sshtunnel.NewSSHTunnel(
+		client,
 		// User and host of tunnel server, it will default to port 22
 		// if not specified.
 		fmt.Sprintf("%s@%s", user, "localhost"),

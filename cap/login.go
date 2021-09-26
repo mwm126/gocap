@@ -33,7 +33,7 @@ func NewCapTab(tabname,
 	tab.connection_manager = conn_man
 	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		conn, err := tab.connection_manager.newCapConnection(user, pass, ext_ip, srv_ip)
+		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip)
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
@@ -44,7 +44,7 @@ func NewCapTab(tabname,
 
 		if connect_cancelled {
 			log.Println("CAP Connection cancelled.")
-			conn.close()
+			tab.connection_manager.Close()
 			connect_cancelled = false
 			return
 		}
@@ -103,6 +103,6 @@ func NewConnecting(cancel_cb func()) *fyne.Container {
 }
 
 func (t *CapTab) closeConnection() {
-	t.connection_manager.CloseConnection()
+	t.connection_manager.Close()
 	t.card.SetContent(t.login)
 }
