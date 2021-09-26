@@ -87,7 +87,7 @@ func NewConfig() config {
 			"alb_foreign_national": "204.154.139.11",
 			"alb_research":         "204.154.139.11",
 			"alb_scientific":       "204.154.139.11",
-			"external":             "0.0.0.0",
+			"external":             "204.154.139.11",
 			"mgn_admin":            "204.154.139.11",
 			"mgn_foreign_national": "204.154.139.11",
 			"mgn_research":         "204.154.139.11",

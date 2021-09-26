@@ -57,7 +57,6 @@ func (sk *PortKnocker) Knock(uname, pword string, ext_addr, server_addr net.IP) 
 	cfg := GetConfig()
 	addrPort := fmt.Sprintf("%s:%d", server_addr, cfg.CapPort)
 	log.Println("addrPort === ", addrPort)
-	return nil
 
 	conn, err := net.Dial("udp", addrPort)
 	if err != nil {

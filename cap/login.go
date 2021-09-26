@@ -84,9 +84,9 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 		if network.Selected == "external" {
 			ext_addr = GetExternalIp()
 		} else {
-			ext_addr = net.ParseIP(network_ips[network.Selected])
+			ext_addr = net.ParseIP(GetConfig().External_Ips[network.Selected])
 		}
-		server_addr = net.ParseIP(GetConfig().External_Ips[network.Selected])
+		server_addr = net.ParseIP(network_ips[network.Selected])
 		go connect_cb(username.Text, password.Text, ext_addr, server_addr)
 	})
 	t.networkSelect = network

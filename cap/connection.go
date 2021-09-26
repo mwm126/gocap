@@ -121,7 +121,6 @@ func (cm *CapConnectionManager) Connect(
 		// HostKeyCallback: ssh.FixedHostKey(hostKey),
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	server = net.IPv4(127, 0, 0, 1) // FIXME: testing
 	host := fmt.Sprintf("%s:%s", server, "22")
 	client, err := ssh.Dial("tcp", host, config)
 	if err != nil {
