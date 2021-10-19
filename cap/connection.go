@@ -104,7 +104,7 @@ func (cm *CapConnectionManager) Connect(
 	server net.IP,
 ) error {
 	log.Println("Opening SSH Connection...")
-	err := cm.knocker.Knock(user, pass, ext_addr, server)
+	err := cm.knocker.Knock(user, ext_addr, server)
 	if err != nil {
 		return err
 	}

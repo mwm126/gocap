@@ -24,7 +24,7 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
-	Knock(username, password string, ext_addr, server_addr net.IP) error
+	Knock(username string, ext_addr, server_addr net.IP) error
 }
 
 // PortKnocker for actual Knocker implementation
@@ -37,7 +37,7 @@ func NewPortKnocker(yk Yubikey, ent [32]byte) *PortKnocker {
 	return &PortKnocker{yk, ent}
 }
 
-func (sk *PortKnocker) Knock(uname, pword string, ext_addr, server_addr net.IP) error {
+func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	timestamp, err := getNtpTime()
@@ -48,7 +48,7 @@ func (sk *PortKnocker) Knock(uname, pword string, ext_addr, server_addr net.IP) 
 
 	auth_addr := ext_addr
 	ssh_addr := ext_addr
-	packet, err := sk.makePacket(uname, pword, timestamp, auth_addr, ssh_addr, server_addr)
+	packet, err := sk.makePacket(uname, timestamp, auth_addr, ssh_addr, server_addr)
 	if err != nil {
 		log.Printf("Could not make CAP packet:  %v", err)
 		return err
@@ -91,7 +91,7 @@ func getNtpTime() (int32, error) {
 }
 
 func (sk *PortKnocker) makePacket(
-	uname, pword string,
+	uname string,
 	timestamp int32,
 	auth_addr, ssh_addr, server_addr net.IP,
 ) ([]byte, error) {

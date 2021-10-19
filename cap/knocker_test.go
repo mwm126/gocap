@@ -59,7 +59,6 @@ func TestPacketFactory(t *testing.T) {
 
 	pkt, _ := pk.makePacket(
 		"mmeredith",
-		"xUZv!jA&TgHTkw#!3$bUVcDXxW3sY",
 		timestamp,
 		auth_addr,
 		ssh_addr,

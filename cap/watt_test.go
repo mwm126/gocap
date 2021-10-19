@@ -15,15 +15,13 @@ import (
 
 type WattSpyKnocker struct {
 	username string
-	password string
 	address  net.IP
 	knocked  bool
 }
 
-func (sk *WattSpyKnocker) Knock(username, password string, address net.IP) error {
+func (sk *WattSpyKnocker) Knock(username string, address net.IP) error {
 	sk.knocked = true
 	sk.username = username
-	sk.password = password
 	sk.address = address
 	return nil
 }
@@ -49,6 +47,5 @@ func TestWattLoginButton(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	assert.True(t, spy.knocked)
 	assert.Equal(t, "the_user", spy.username)
-	assert.Equal(t, "the_pass", spy.password)
 	assert.Equal(t, net.IPv4(199, 249, 243, 253), spy.address)
 }
