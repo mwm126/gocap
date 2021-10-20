@@ -43,7 +43,8 @@ func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP) error {
 	timestamp, err := getNtpTime()
 	if err != nil {
 		log.Printf("Unable to get NTP time:  %v", err)
-		return err
+		log.Printf("Warning: going to use local time, without checking for NTP offset")
+		timestamp = (int32)(time.Now().Unix())
 	}
 
 	auth_addr := ext_addr

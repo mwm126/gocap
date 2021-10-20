@@ -124,7 +124,7 @@ func (cm *CapConnectionManager) Connect(
 	host := fmt.Sprintf("%s:%s", server, "22")
 	client, err := ssh.Dial("tcp", host, config)
 	if err != nil {
-		log.Println("Could not connect to localhost:22, ", err)
+		log.Println("Could not connect to", host, err)
 		return err
 	}
 
@@ -164,16 +164,23 @@ func (cm *CapConnectionManager) setupConnection(client *ssh.Client, user, pass s
 		log.Println("Failed hostname")
 		return err
 	}
+	loginName = strings.TrimSpace(loginName)
+	log.Println("Got login hostname:", loginName)
+
 	loginAddr, err := getLoginIP(client, loginName)
 	if err != nil {
 		log.Println("Failed to lookup login IP")
 		return err
 	}
+	log.Println("Got login server IP:", loginAddr)
+
 	uid, err := getUID(client)
 	if err != nil {
 		log.Println("Failed to lookup UID")
 		return err
 	}
+	log.Println("Got UID:", uid)
+
 	sshLocalPort := openSSHTunnel(client, user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	session_mgt_port := openSessionManagementForward(client, user, pass)
@@ -198,18 +205,26 @@ func (cm *CapConnectionManager) setupConnection(client *ssh.Client, user, pass s
 
 func getLoginIP(client *ssh.Client, loginName string) (string, error) {
 	//     Get the login IP Address
-	log.Println("Getting login IP")
 	command := ("ping -c 1 " +
 		loginName + "| grep PING|awk \x27{print $3}\x27" + "| sed \x22s/(//\x22|sed \x22s/)//\x22")
-	return cleanExec(client, command)
+	log.Println("Command for getting address of login server: ", command)
+	addr, err := cleanExec(client, command)
+	if err != nil {
+		return addr, err
+	}
+	return strings.TrimSpace(addr), nil
 }
 
 func getUID(client *ssh.Client) (string, error) {
 	//     Get uid for user
 	//     # id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'
-	log.Println("Getting login UID")
 	command := "id|sed \x22s/uid=//\x22|sed \x22s/(/ /\x22" + "|awk \x27{print $1}\x27"
-	return cleanExec(client, command)
+	log.Println("Command to get UID: ", command)
+	uid, err := cleanExec(client, command)
+	if err != nil {
+		return uid, err
+	}
+	return strings.TrimSpace(uid), nil
 }
 
 const SSH_LOCAL_PORT = 10022
