@@ -57,27 +57,13 @@ func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP) error {
 
 	cfg := GetConfig()
 	addrPort := fmt.Sprintf("%s:%d", server_addr, cfg.CapPort)
-	log.Println("addrPort === ", addrPort)
-
 	conn, err := net.Dial("udp", addrPort)
 	if err != nil {
 		log.Printf("Unable to connect to CAP server:  %v", err)
 		return err
 	}
 
-	buf := bytes.Buffer{}
-	err = binary.Write(&buf, binary.LittleEndian, timestamp)
-	if err != nil {
-		return err
-	}
-
-	timestampBytes := buf.Bytes()
-
 	_, err = conn.Write(packet)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Write(timestampBytes)
 	if err != nil {
 		return err
 	}
@@ -117,9 +103,9 @@ func (sk *PortKnocker) makePacket(
 	var ssh [16]byte
 	var server [16]byte
 	copy(user[:], []byte(uname))
-	copy(auth[12:], auth_addr)
-	copy(ssh[12:], ssh_addr)
-	copy(server[12:], server_addr)
+	copy(auth[12:], auth_addr.To4())
+	copy(ssh[12:], ssh_addr.To4())
+	copy(server[12:], server_addr.To4())
 
 	buf := new(bytes.Buffer)
 	buf.Write(auth[:])
