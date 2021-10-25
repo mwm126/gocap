@@ -29,9 +29,12 @@ func run_yk_chalresp(chal string) ([16]byte, error) {
 	ch := (*C.uchar)(&challenge[0])
 	ohtipi := (*C.uchar)(&otp[0])
 
-	C.get_otp(ch, ohtipi)
+	code := C.get_otp(ch, ohtipi)
+	if code != 0 {
+		err = errors.New("Error from get_otp")
+	}
 
-	return otp, nil
+	return otp, err
 }
 
 func run_yk_hmac(chal string) ([20]byte, error) {
@@ -44,7 +47,10 @@ func run_yk_hmac(chal string) ([20]byte, error) {
 	digest := (*C.uchar)(&challenge[0])
 	hmac_c := (*C.uchar)(&hmac[0])
 
-	C.hmac_from_digest(digest, hmac_c)
+	code := C.hmac_from_digest(digest, hmac_c)
+	if code != 0 {
+		err = errors.New("Error from hmac_from_digest")
+	}
 
-	return hmac, nil
+	return hmac, err
 }
