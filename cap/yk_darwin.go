@@ -41,6 +41,9 @@ func run_yk_chalresp(chal string) ([16]byte, error) {
 		return otp, err
 	}
 	out_s := strings.TrimSpace(string(out[:]))
+	if len(out_s) != 32 {
+		return otp, errors.New("invalid challenge response")
+	}
 	otp, err = modhexDecode(out_s)
 	return otp, err
 
@@ -114,11 +117,12 @@ func modhexDecode(m string) ([16]byte, error) {
 	}
 	var hexstring [32]rune
 	if len(m) != 32 {
-		panic("FUCK YOU")
+		var result [16]byte
+		return result, errors.New("invalid challenge")
 	}
 	for ii, value := range m {
 		hexstring[ii] = from_mod[value]
 	}
-	glerp, err := hex.DecodeString(string(hexstring[:]))
-	return *(*[16]byte)(glerp), err
+	result, err := hex.DecodeString(string(hexstring[:]))
+	return *(*[16]byte)(result), err
 }
