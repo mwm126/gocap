@@ -36,11 +36,9 @@ func (yk *UsbYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
 func (yk *UsbYubikey) challengeResponseHMAC(chal SHADigest) ([20]byte, error) {
 	var hmac [20]byte
 	hex_chal := hex.EncodeToString(chal[:])
-	out, err := run_yk_hmac(hex_chal)
+	hmac, err := run_yk_hmac(hex_chal)
 	if err != nil {
 		log.Println("Unable to get HMAC challenge response:", err)
-		return hmac, err
 	}
-
-	return out, nil
+	return hmac, err
 }

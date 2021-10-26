@@ -37,9 +37,9 @@ func NewCapTab(tabname,
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
-			// tab.card.SetContent(tab.login)
-			// connect_cancelled = false
-			// return
+			tab.card.SetContent(tab.login)
+			connect_cancelled = false
+			return
 		}
 
 		if connect_cancelled {
@@ -84,9 +84,9 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 		if network.Selected == "external" {
 			ext_addr = GetExternalIp()
 		} else {
-			ext_addr = net.ParseIP(network_ips[network.Selected])
+			ext_addr = net.ParseIP(GetConfig().External_Ips[network.Selected])
 		}
-		server_addr = net.ParseIP(GetConfig().External_Ips[network.Selected])
+		server_addr = net.ParseIP(network_ips[network.Selected])
 		go connect_cb(username.Text, password.Text, ext_addr, server_addr)
 	})
 	t.networkSelect = network
