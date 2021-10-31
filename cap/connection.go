@@ -151,7 +151,8 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 	}
 	defer session.Close()
 
-	b, err := session.Output(cmd)
+	b, err := session.CombinedOutput(cmd)
+	log.Println("COMBINEDOUTPUT: ", string(b))
 	return string(b), err
 }
 

@@ -3,7 +3,7 @@ module aeolustec.com/capclient
 go 1.17
 
 require (
-	fyne.io/fyne/v2 v2.1.0
+	fyne.io/fyne/v2 v2.1.1
 	github.com/beevik/ntp v0.3.0
 	github.com/glendc/go-external-ip v0.0.0-20200601212049-c872357d968e
 	github.com/pelletier/go-toml v1.9.3
