@@ -2,13 +2,14 @@ package cap
 
 import (
 	"errors"
+	"log"
+	"strings"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"golang.org/x/crypto/ssh"
-	"log"
-	"strings"
-	"time"
 )
 
 type PasswordChecker struct {
@@ -19,9 +20,9 @@ type PasswordChecker struct {
 func (pc *PasswordChecker) is_pw_expired() bool {
 	out, err := cleanExec(pc.client, "echo")
 	if err != nil {
-		log.Println("errTxt=%s", err)
+		log.Println("errTxt=", err)
 	}
-	log.Println("outTxt=%s", out)
+	log.Println("outTxt=", out)
 	return strings.Contains(strings.ToLower(out), "expired")
 }
 
