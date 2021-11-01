@@ -20,6 +20,8 @@ type CapTab struct {
 	card               *widget.Card
 	login              *fyne.Container
 	connecting         *fyne.Container
+	change_password    *fyne.Container
+	pw_expired_cb      func()
 }
 
 func NewCapTab(tabname,
@@ -33,7 +35,12 @@ func NewCapTab(tabname,
 	tab.connection_manager = conn_man
 	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip)
+		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip, tab.pw_expired_cb)
+
+		if tab.connection_manager.password_expired {
+			tab.card.SetContent(tab.change_password)
+			return
+		}
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
@@ -57,7 +64,17 @@ func NewCapTab(tabname,
 		connect_cancelled = true
 		tab.card.SetContent(tab.login)
 	}
+
+	tab.pw_expired_cb = func() {
+		tab.connection_manager.password_expired = true
+		tab.card.SetContent(tab.change_password)
+	}
+	change_cb := func(new_password string) {
+		connect_cancelled = true
+		tab.card.SetContent(tab.login)
+	}
 	tab.connecting = NewConnecting(cancel_cb)
+	tab.change_password = NewChangePassword(change_cb)
 	tab.card = widget.NewCard(tabname, desc, tab.login)
 
 	tab.Tab = container.NewTabItem(tabname, tab.card)

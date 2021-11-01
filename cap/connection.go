@@ -1,6 +1,7 @@
 package cap
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -14,12 +15,13 @@ import (
 )
 
 type CapConnectionManager struct {
-	knocker    Knocker
-	connection *CapConnection
+	knocker          Knocker
+	connection       *CapConnection
+	password_expired bool
 }
 
 func NewCapConnectionManager(knocker Knocker) *CapConnectionManager {
-	return &CapConnectionManager{knocker, nil}
+	return &CapConnectionManager{knocker, nil, false}
 }
 
 func (t *CapConnectionManager) GetConnection() *CapConnection {
@@ -102,6 +104,7 @@ func (cm *CapConnectionManager) Connect(
 	user, pass string,
 	ext_addr,
 	server net.IP,
+	pw_expired_cb func(),
 ) error {
 	log.Println("Opening SSH Connection...")
 	err := cm.knocker.Knock(user, ext_addr, server)
@@ -109,7 +112,6 @@ func (cm *CapConnectionManager) Connect(
 		return err
 	}
 
-	//     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
 
 	// var hostKey ssh.PublicKey
@@ -128,11 +130,13 @@ func (cm *CapConnectionManager) Connect(
 		return err
 	}
 
-	//     password_checker = PasswordChecker(self.ssh, self._login_info.passwd)
-	// log.Println("Checking for expired password...")
-	//     if password_checker.is_pw_expired():
-	//         self.status_signal.emit("Password expired.")
-	//         return (ConnectionEvent.GET_NEW_PASSWORD.value, password_checker)
+	password_checker := PasswordChecker{client, pass}
+	log.Println("Checking for expired password...")
+	if password_checker.is_pw_expired() {
+		log.Println("Password expired.")
+		pw_expired_cb()
+		return errors.New("Cannot connect; password expired")
+	}
 
 	//     return (self._conn_event.value, self.get_connection())
 	err = cm.setupConnection(client, user, pass)
