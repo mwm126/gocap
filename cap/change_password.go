@@ -94,8 +94,6 @@ func (pc *PasswordChecker) change_password(
 		time.Sleep(1 * time.Second)
 		log.Println("Expected: updated not found in string: ", buf.String())
 	}
-	session.Wait()
-
 	return nil
 }
 

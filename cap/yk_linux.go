@@ -63,10 +63,7 @@ func run_yk_hmac(chal string) ([20]byte, error) {
 		return hmac, errors.New("Bad response from yubikey: " + out_s)
 	}
 	hmac_s, err := hex.DecodeString(out_s)
-	if err != nil {
-		return hmac, err
-	}
-	hmac = *(*[20]byte)(hmac_s)
+	copy(hmac[:], hmac_s)
 	return hmac, err
 }
 
@@ -90,13 +87,14 @@ func modhexDecode(m string) ([16]byte, error) {
 		'v': 'f',
 	}
 	var hexstring [32]rune
+	var result [16]byte
 	if len(m) != 32 {
-		var result [16]byte
 		return result, errors.New("invalid challenge")
 	}
 	for ii, value := range m {
 		hexstring[ii] = from_mod[value]
 	}
-	result, err := hex.DecodeString(string(hexstring[:]))
-	return *(*[16]byte)(result), err
+	result_s, err := hex.DecodeString(string(hexstring[:]))
+	copy(result[:], result_s)
+	return result, err
 }
