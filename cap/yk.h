@@ -13,4 +13,6 @@ int get_otp(const unsigned char[], unsigned char[]);
 int hmac_from_digest(const unsigned char[DIGEST_LENGTH],
                      unsigned char[HMAC_LENGTH]);
 
+int the_main(int argc, char **argv, char result[1000]);
+
 #endif // YK_H_

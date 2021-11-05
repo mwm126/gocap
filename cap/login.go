@@ -20,6 +20,8 @@ type CapTab struct {
 	card               *widget.Card
 	login              *fyne.Container
 	connecting         *fyne.Container
+	change_password    *fyne.Container
+	pw_expired_cb      func(PasswordChecker)
 }
 
 func NewCapTab(tabname,
@@ -29,11 +31,17 @@ func NewCapTab(tabname,
 	connected *fyne.Container) CapTab {
 	tab := &CapTab{}
 	connect_cancelled := false
+	ch := make(chan string)
 
 	tab.connection_manager = conn_man
 	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip)
+		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip, tab.pw_expired_cb, ch)
+
+		if tab.connection_manager.password_expired {
+			tab.card.SetContent(tab.change_password)
+			return
+		}
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
@@ -53,11 +61,21 @@ func NewCapTab(tabname,
 		tab.card.SetContent(connected)
 	})
 
-	cancel_cb := func() {
+	tab.pw_expired_cb = func(pw_checker PasswordChecker) {
+		// Detected expired password callback
+		tab.connection_manager.password_expired = true
+		tab.card.SetContent(tab.change_password)
+	}
+	tab.connecting = NewConnecting(func() {
+		// connecting cancel button handler
 		connect_cancelled = true
 		tab.card.SetContent(tab.login)
-	}
-	tab.connecting = NewConnecting(cancel_cb)
+	})
+	tab.change_password = NewChangePassword(func(new_password string) {
+		ch <- new_password
+		connect_cancelled = true
+		tab.card.SetContent(tab.login)
+	})
 	tab.card = widget.NewCard(tabname, desc, tab.login)
 
 	tab.Tab = container.NewTabItem(tabname, tab.card)
