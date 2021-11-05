@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TAG=v21.9.23
+TAG=v21.11.5
 TITLE="CAP Client Release ${TAG}"
 NOTES="Link in libyubikey and libykpers"
 ASSETS=""
