@@ -9,8 +9,6 @@ import "C"
 import (
 	"encoding/hex"
 	"errors"
-	"log"
-	"os/exec"
 	"strings"
 )
 
@@ -24,75 +22,48 @@ func run_yk_info() (int32, error) {
 
 func run_yk_chalresp(chal string) ([16]byte, error) {
 	var otp [16]byte
-	challenge, err := hex.DecodeString(chal)
-	if err != nil {
-		return [16]byte{}, err
-	}
+	var buffer [1000]C.char
 
-	cmd := exec.Command(
-		"ykchalresp",
-		"-1",
-		"-Y",
-		"-x",
-		chal)
-	out, err := cmd.Output()
-	if err != nil {
-		log.Println("ykchalresp FAIL: ", err)
+	argv := [5](*C.char){
+		C.CString(""),
+		C.CString("-1"),
+		C.CString("-Y"),
+		C.CString("-x"),
+		C.CString(chal)}
+	code := C.the_main(5, &argv[0], &buffer[0])
+	if code != 0 {
+		err := errors.New("Error from get_otp")
 		return otp, err
 	}
-	out_s := strings.TrimSpace(string(out[:]))
+	out_s := strings.TrimSpace(C.GoString(&buffer[0]))
 	if len(out_s) != 32 {
 		return otp, errors.New("invalid challenge response")
 	}
-	otp, err = modhexDecode(out_s)
-	return otp, err
-
-	ch := (*C.uchar)(&challenge[0])
-	ohtipi := (*C.uchar)(&otp[0])
-
-	code := C.get_otp(ch, ohtipi)
-	if code != 0 {
-		err = errors.New("Error from get_otp")
-	}
-
+	otp, err := modhexDecode(out_s)
 	return otp, err
 }
 
 func run_yk_hmac(chal string) ([20]byte, error) {
 	var hmac [20]byte
-
-	challenge, err := hex.DecodeString(chal)
-	if err != nil {
-		return hmac, err
+	var buffer [1000]C.char
+	argv := [5](*C.char){
+		C.CString(""),
+		C.CString("-2"),
+		C.CString("-H"),
+		C.CString("-x"),
+		C.CString(chal),
 	}
-
-	cmd := exec.Command(
-		"ykchalresp",
-		"-2",
-		"-H",
-		"-x",
-		chal)
-	out, err := cmd.Output()
-	if err != nil {
-		log.Println("ykchalresp HMAC FAIL: ", err)
-		return hmac, err
-	}
-	out_s := strings.TrimSpace(string(out[:]))
-	hmac_s, err := hex.DecodeString(out_s)
-	if err != nil {
-		return hmac, err
-	}
-	hmac = *(*[20]byte)(hmac_s)
-	return hmac, err
-
-	digest := (*C.uchar)(&challenge[0])
-	hmac_c := (*C.uchar)(&hmac[0])
-
-	code := C.hmac_from_digest(digest, hmac_c)
+	code := C.the_main(5, &argv[0], &buffer[0])
 	if code != 0 {
-		err = errors.New("Error from hmac_from_digest")
+		err := errors.New("Error from get_otp")
+		return hmac, err
 	}
-
+	out_s := strings.TrimSpace(C.GoString(&buffer[0]))
+	if len(out_s) != 40 {
+		return hmac, errors.New("Bad response from yubikey: " + out_s)
+	}
+	hmac_s, err := hex.DecodeString(out_s)
+	copy(hmac[:], hmac_s)
 	return hmac, err
 }
 
@@ -116,13 +87,14 @@ func modhexDecode(m string) ([16]byte, error) {
 		'v': 'f',
 	}
 	var hexstring [32]rune
+	var result [16]byte
 	if len(m) != 32 {
-		var result [16]byte
 		return result, errors.New("invalid challenge")
 	}
 	for ii, value := range m {
 		hexstring[ii] = from_mod[value]
 	}
-	result, err := hex.DecodeString(string(hexstring[:]))
-	return *(*[16]byte)(result), err
+	result_s, err := hex.DecodeString(string(hexstring[:]))
+	copy(result[:], result_s)
+	return result, err
 }

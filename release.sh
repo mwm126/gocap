@@ -3,22 +3,22 @@ set -euo pipefail
 
 TAG=v21.11.5
 TITLE="CAP Client Release ${TAG}"
-NOTES="Link in libyubikey and libykpers"
+NOTES="Password change dialog"
 ASSETS=""
 
 function build_linux {
     docker build .fyne-cross/linux/ -t capclient-linux
     fyne-cross linux -image capclient-linux:latest
-    ASSET="fyne-cross/gocap.${TAG}_Linux.tar.gz"
-    ln -f fyne-cross/dist/linux-amd64/gocap.tar.gz ${ASSET}
+    ASSET="fyne-cross/gocap.${TAG}_Linux.tar.xz"
+    ln -f fyne-cross/dist/linux-amd64/gocap.tar.xz ${ASSET}
     ASSETS="${ASSETS} ${ASSET}"
 }
 
 function build_mac {
+    fyne-cross darwin --app-id "com.aeolustec.capclient"
     ASSET="fyne-cross/Gocap.${TAG}_Mac.zip"
-    ASSETS="${ASSETS} ${ASSET}"
-    # fyne-cross darwin --app-id "com.aeolustec.capclient"
     zip -r -j ${ASSET} fyne-cross/dist/darwin-amd64/gocap.app
+    ASSETS="${ASSETS} ${ASSET}"
 }
 
 function build_windows {
@@ -32,9 +32,9 @@ function build_windows {
 git clean -fdx
 go generate ./...
 
-build_linux
-# build_mac
+build_mac
 build_windows
+build_linux
 
 gh release create ${TAG} \
     --draft \

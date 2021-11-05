@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define __USE_MINGW_ANSI_STDIO 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -206,7 +207,7 @@ static int parse_args(int argc, char **argv, int *slot, bool *verbose,
     static unsigned char decoded[SHA1_MAX_BLOCK_SIZE];
 
     if (*challenge_len > sizeof(decoded) * 2) {
-      fprintf(stderr, "Hex-encoded challenge too long (max %lu chars)\n",
+      fprintf(stderr, "Hex-encoded challenge too long (max %zu chars)\n",
               sizeof(decoded) * 2);
       return 0;
     }
