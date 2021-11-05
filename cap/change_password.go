@@ -1,7 +1,9 @@
 package cap
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -26,60 +28,101 @@ func (pc *PasswordChecker) is_pw_expired() bool {
 	return strings.Contains(strings.ToLower(out), "expired")
 }
 
-func (pc *PasswordChecker) change_password(client ssh.Client, old_pw string, newPasswd string) error {
+func (pc *PasswordChecker) change_password(
+	client *ssh.Client,
+	old_pw string,
+	newPasswd string,
+) error {
 	log.Println("Opening shell to existing connection")
-	// shell = self._ssh.invoke_shell()
 	session, err := client.NewSession()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 
-	send_pword(session, "Prompt LDAP old passwd", old_pw)
-	send_pword(session, "Prompt Enter new passwd ", newPasswd)
-	send_pword(session, "Prompt Reenter new passwd ", newPasswd)
-	response := send_pword(session, "response", "")
-
-	if strings.Contains(response, "updated") {
-		return nil
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          0,     // disable echoing
+		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
+		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
-	return errors.New("Unable to update password")
+
+	err = session.RequestPty("xterm", 80, 40, modes)
+	if err != nil {
+		log.Println("Could not open xterm (pty)")
+		return err
+	}
+
+	stdin, err := session.StdinPipe()
+	if err != nil {
+		log.Println("Problem opening ssh stdin")
+		return err
+	}
+	var buf bytes.Buffer
+	session.Stdout = &buf
+	session.Stderr = &buf
+
+	err = session.Shell()
+	if err != nil {
+		log.Println("Problem opening ssh shell")
+		return err
+	}
+
+	cmds := [][]string{
+		{"Current Password", old_pw},
+		{"New password", newPasswd},
+		{"Retype new password", newPasswd},
+	}
+
+	for _, cmd := range cmds {
+		expected_prompt := cmd[0]
+		reply := cmd[1]
+
+		for !strings.Contains(buf.String(), expected_prompt) {
+			time.Sleep(10 * time.Second)
+			log.Println("not found in string: ", buf.String()[len(buf.String())-20:])
+			log.Println("Waiting for response: ", expected_prompt)
+		}
+		log.Println(">>>>>>>>>>>>>>>>>>>>>:  ", expected_prompt)
+		_, err := fmt.Fprintf(stdin, "%s\n", reply)
+		if err != nil {
+			log.Println("Problem running command: ", err)
+		}
+		log.Println("<<<<<<<<<<<<<<<<<<<<<:  ", reply)
+	}
+
+	for !strings.Contains(buf.String(), "updated") {
+		time.Sleep(1 * time.Second)
+		log.Println("Expected: updated not found in string: ", buf.String())
+	}
+	session.Wait()
+
+	return nil
 }
 
-func (pc *PasswordChecker) close() {
-	// pc.ssh.close()
-}
-
-func send_pword(shell *ssh.Session, label string, password string) string {
-	time.Sleep(1 * time.Second)
-	// for !shell.recv_ready() {
-	// 	log.Println("Waiting for: %s", label)
-	// 	time.Sleep(1 * time.Second)
-	// }
-	// prompt := shell.recv(20000)
-	// log.Println(">>>>>>>>>>>>>>>>>>>>>:  %s", prompt)
-	// if password != nil {
-	// 	pwd_bytes := bytes(password+"\n", "utf-8")
-	// 	shell.send(pwd_bytes)
-	// 	time.Sleep(1 * time.Second)
-	// }
-	// return prompt.decode("utf-8").strip()
-	return ""
-}
-
-func NewChangePassword(
-	change_cb func(new_password string)) *fyne.Container {
+func NewChangePassword(change_cb func(new_password string)) *fyne.Container {
 	old_password := widget.NewPasswordEntry()
 	old_password.SetPlaceHolder("Enter old password...")
 	new_password := widget.NewPasswordEntry()
 	new_password.SetPlaceHolder("Enter new password...")
-	// new_password.OnChanged(func() {})
 	new2password := widget.NewPasswordEntry()
 	new2password.SetPlaceHolder("Enter new password...")
 
 	change := widget.NewButton("Change", func() {
 		go change_cb(new_password.Text)
 	})
+
+	check_new_password := func(_ string) {
+		result := password_passes(old_password.Text, new_password.Text, new2password.Text)
+		if result == nil {
+			change.Enable()
+		} else {
+			log.Println(result)
+			change.Disable()
+		}
+	}
+	new_password.OnChanged = check_new_password
+	new2password.OnChanged = check_new_password
+	change.Disable()
 	return container.NewVBox(old_password, new_password, new2password, change)
 }
 
@@ -119,10 +162,26 @@ class ChangePasswordDialog(QDialog):
         ui.label_not_match.setVisible(False)
 
         ui.lineEdit_newpass.setFocus()
-
-        # check requirements
-        # length >= 12
-        # at least one lower, upper, digit, special
-        # not the same as previous password
-        # same as password2
 */
+
+func password_passes(old, new, new2 string) error {
+	if new != new2 {
+		return errors.New("Passwords do not match")
+	}
+	if old == new {
+		return errors.New("Passwords is the same as previous password")
+	}
+	if len(new) < 12 {
+		return errors.New("Password must have length >=12 characters")
+	}
+	if !strings.ContainsAny(new, "abcdefghijklmnopqrstuvwxyz") {
+		return errors.New("Password must contain a lowercase letter")
+	}
+	if !strings.ContainsAny(new, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+		return errors.New("Password must contain an uppercase letter")
+	}
+	if !strings.ContainsAny(new, "0123456789") {
+		return errors.New("Password must contain a digit")
+	}
+	return nil
+}

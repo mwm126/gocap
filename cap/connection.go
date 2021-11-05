@@ -104,8 +104,8 @@ func (cm *CapConnectionManager) Connect(
 	user, pass string,
 	ext_addr,
 	server net.IP,
-	pw_expired_cb func(),
-) error {
+	pw_expired_cb func(PasswordChecker),
+	ch chan string) error {
 	log.Println("Opening SSH Connection...")
 	err := cm.knocker.Knock(user, ext_addr, server)
 	if err != nil {
@@ -134,14 +134,22 @@ func (cm *CapConnectionManager) Connect(
 	log.Println("Checking for expired password...")
 	if password_checker.is_pw_expired() {
 		log.Println("Password expired.")
-		pw_expired_cb()
-		return errors.New("Cannot connect; password expired")
+		pw_expired_cb(password_checker)
+		new_password := <-ch
+		log.Println("Got new password.")
+		err := password_checker.change_password(client, pass, new_password)
+		defer client.Close()
+		if err != nil {
+			log.Println("Unable to change password")
+			return err
+		}
+		log.Println("Password changed.")
+		return errors.New("Could not connect; password was expired")
 	}
 
-	//     return (self._conn_event.value, self.get_connection())
-	err = cm.setupConnection(client, user, pass)
+	cm.connection, err = NewCapConnection(client, user, pass)
 	if err != nil {
-		client.Close()
+		defer client.Close()
 	}
 	return err
 }
@@ -156,18 +164,17 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 	defer session.Close()
 
 	b, err := session.CombinedOutput(cmd)
-	log.Println("COMBINEDOUTPUT: ", string(b))
 	return string(b), err
 }
 
 const webLocalPort = 10080
 
-func (cm *CapConnectionManager) setupConnection(client *ssh.Client, user, pass string) error {
+func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, error) {
 	log.Println("Getting connection info...")
 	loginName, err := cleanExec(client, "hostname")
 	if err != nil {
 		log.Println("Failed hostname")
-		return err
+		return nil, err
 	}
 	loginName = strings.TrimSpace(loginName)
 	log.Println("Got login hostname:", loginName)
@@ -175,24 +182,22 @@ func (cm *CapConnectionManager) setupConnection(client *ssh.Client, user, pass s
 	loginAddr, err := getLoginIP(client, loginName)
 	if err != nil {
 		log.Println("Failed to lookup login IP")
-		return err
+		return nil, err
 	}
 	log.Println("Got login server IP:", loginAddr)
 
 	uid, err := getUID(client)
 	if err != nil {
 		log.Println("Failed to lookup UID")
-		return err
+		return nil, err
 	}
 	log.Println("Got UID:", uid)
 
 	sshLocalPort := openSSHTunnel(client, user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	session_mgt_port := openSessionManagementForward(client, user, pass)
-	// session_mgt_secret := readSessionManagerSecret(client)
 
 	log.Println("Connected.")
-	//     sess_man = SessionManager(self._config, uid, session_mgt_port, session_mgt_secret)
 	connInfo := ConnectionInfo{
 		user,
 		pass,
@@ -204,12 +209,10 @@ func (cm *CapConnectionManager) setupConnection(client *ssh.Client, user, pass s
 		session_mgt_port,
 	}
 	var fwds map[string]sshtunnel.SSHTunnel
-	cm.connection = &CapConnection{client, connInfo, fwds}
-	return nil
+	return &CapConnection{client, connInfo, fwds}, nil
 }
 
 func getLoginIP(client *ssh.Client, loginName string) (string, error) {
-	//     Get the login IP Address
 	command := ("ping -c 1 " +
 		loginName + "| grep PING|awk \x27{print $3}\x27" + "| sed \x22s/(//\x22|sed \x22s/)//\x22")
 	log.Println("Command for getting address of login server: ", command)
@@ -221,8 +224,7 @@ func getLoginIP(client *ssh.Client, loginName string) (string, error) {
 }
 
 func getUID(client *ssh.Client) (string, error) {
-	//     Get uid for user
-	//     # id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'
+	//  id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'
 	command := "id|sed \x22s/uid=//\x22|sed \x22s/(/ /\x22" + "|awk \x27{print $1}\x27"
 	log.Println("Command to get UID: ", command)
 	uid, err := cleanExec(client, command)
