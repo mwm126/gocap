@@ -45,7 +45,9 @@ func TestPacketFactory(t *testing.T) {
 		"280c6d2ea06d20db231dc93bf16db0b7308016d782c7dfe7c969c08cf68cc984",
 	)
 
-	pk := &PortKnocker{&FakeYubikey{}, *(*[32]byte)(entropyBuf)}
+	var entropyBufArray [32]byte
+	copy(entropyBufArray[:], entropyBuf)
+	pk := &PortKnocker{&FakeYubikey{}, entropyBufArray}
 	timestamp := int32(1627324072)
 	auth_addr := net.ParseIP("74.109.234.77").To4()
 	ssh_addr := net.ParseIP("74.109.234.77").To4()

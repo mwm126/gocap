@@ -8,7 +8,6 @@ RUN apt-get -qq update \
     libusb-1.0=2:1.* \
     libyubikey-dev=1.* \
     libykpers-1-dev=1.* \
-    && rm -rf /var/lib/apt
-
-RUN curl --insecure "https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.20.0-win64.zip" --output ykpers.zip
-RUN unzip -d /usr/x86_64-w64-mingw32 ykpers.zip
+    && rm -rf /var/lib/apt \
+    && curl --insecure "https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.20.0-win64.zip" --output ykpers.zip \
+    && unzip -d /usr/x86_64-w64-mingw32 ykpers.zip
