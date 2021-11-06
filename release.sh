@@ -23,6 +23,8 @@ function build_mac {
 
 function build_windows {
     docker build .fyne-cross/windows/ -t capclient-windows
+    env CGL_CFLAG= -I/usr/include/ykpers-1/ -I/usr/share/mingw-w64/include/
+    env CGL_LDFLAG=-L/usr/x86_64-w64-mingw32/lib
     fyne-cross windows -image capclient-windows:latest
     ASSET="fyne-cross/gocap.${TAG}_Windows.zip"
     ln -f fyne-cross/dist/windows-amd64/gocap.exe.zip ${ASSET}

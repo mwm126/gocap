@@ -1,7 +1,7 @@
 package cap
 
-// #cgo CFLAGS: -g -Wall -Werror -I/usr/include/ykpers-1/ -I/usr/share/mingw-w64/include/
-// #cgo LDFLAGS: -L/usr/x86_64-w64-mingw32/lib -Wl,-Bstatic -lykpers-1 -lyubikey -Wl,-Bdynamic -lsetupapi -lhid
+// #cgo CFLAGS: -g -Wall -Werror
+// #cgo LDFLAGS: -Wl,-Bstatic -lykpers-1 -lyubikey -Wl,-Bdynamic -lsetupapi -lhid
 // #include <stdlib.h>
 // #include "yk.h"
 import "C"
