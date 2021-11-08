@@ -4,9 +4,10 @@
 package cap
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type StubYubikey struct{}

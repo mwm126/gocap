@@ -1,8 +1,9 @@
 package sshtunnel
 
 import (
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
+
+	"golang.org/x/crypto/ssh"
 )
 
 func PrivateKeyFile(file string) ssh.AuthMethod {

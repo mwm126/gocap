@@ -7,9 +7,10 @@ package main
 // It can be invoked by running:  go generate
 
 import (
-	"github.com/melbahja/got"
 	"log"
 	"os"
+
+	"github.com/melbahja/got"
 )
 
 var PUTTY_URL = "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe"

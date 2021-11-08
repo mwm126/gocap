@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/glendc/go-external-ip"
+	externalip "github.com/glendc/go-external-ip"
 )
 
 func GetExternalIp() net.IP {
