@@ -30,7 +30,7 @@ jobs:
         run: go generate ./...
 
       - name: Build
-        run: go build .
+        run: env CGO_CFLAGS="-I/usr/include/ykpers-1/" go build .
 
       - name: Test
         run: go test -v ./...
