@@ -53,7 +53,6 @@ type ConnectionInfo struct {
 	loginAddr    string
 	webLocalPort int
 	sshLocalPort int
-	mgtPort      sshtunnel.SSHTunnel
 }
 
 func (conn *CapConnection) UpdateForwards(fwds []string) {
@@ -195,8 +194,6 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 
 	sshLocalPort := openSSHTunnel(client, user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
-	session_mgt_port := openSessionManagementForward(client, user, pass)
-
 	log.Println("Connected.")
 	connInfo := ConnectionInfo{
 		user,
@@ -206,7 +203,6 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 		loginAddr,
 		webLocalPort,
 		sshLocalPort.Local.Port,
-		session_mgt_port,
 	}
 	var fwds map[string]sshtunnel.SSHTunnel
 	return &CapConnection{client, connInfo, fwds}, nil
@@ -276,44 +272,6 @@ func openSSHTunnel(
 			log.Println("Could not create tunnel: ", err)
 		}
 	}()
-	time.Sleep(100 * time.Millisecond)
-	log.Println("tunnel is ", tunnel)
-	return *tunnel
-}
-
-func openSessionManagementForward(client *ssh.Client, user, pass string) sshtunnel.SSHTunnel {
-	log.Println("Starting session manager...")
-
-	// ssh_port := check_free_port(SSH_LOCAL_PORT)
-	ssh_port := strconv.Itoa(SSH_LOCAL_PORT)
-
-	tunnel := sshtunnel.NewSSHTunnel(
-		client,
-		// User and host of tunnel server, it will default to port 22
-		// if not specified.
-		fmt.Sprintf("%s@%s", user, "localhost"),
-
-		// Pick ONE of the following authentication methods:
-		// sshtunnel.PrivateKeyFile("path/to/private/key.pem"), // 1. private key
-		ssh.Password(pass), // 2. password
-		// sshtunnel.SSHAgent(),                                // 3. ssh-agent
-
-		// The destination host and port of the actual server.
-		fmt.Sprintf("%s:%d", SSH_FWD_ADDR, SSH_FWD_PORT),
-
-		// The local port you want to bind the remote port to.
-		// Specifying "0" will lead to a random port.
-		ssh_port,
-	)
-
-	tunnel.Log = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-	go func() {
-		err := tunnel.Start()
-		if err != nil {
-			log.Println("Could not create session management tunnel: ", err)
-		}
-	}()
-
 	time.Sleep(100 * time.Millisecond)
 	log.Println("tunnel is ", tunnel)
 	return *tunnel
