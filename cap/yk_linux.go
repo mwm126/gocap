@@ -1,6 +1,6 @@
 package cap
 
-// #cgo CFLAGS: -g -Wall -Werror -I/usr/include/ykpers-1/
+// #cgo CFLAGS: -g -Wall -Werror
 // #cgo LDFLAGS: -Wl,-Bstatic -lykpers-1 -lyubikey -Wl,-Bdynamic -L/usr/lib/x86_64-linux-gnu -lusb-1.0
 // #include <stdlib.h>
 // #include "yk.h"

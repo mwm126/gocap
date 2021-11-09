@@ -8,7 +8,7 @@ ASSETS=""
 
 function build_linux {
     docker build .fyne-cross/linux/ -t capclient-linux
-    fyne-cross linux -image capclient-linux:latest
+    fyne-cross linux -image capclient-linux:latest -env CGO_CFLAGS="-I/usr/include/ykpers-1/"
     ASSET="fyne-cross/gocap.${TAG}_Linux.tar.xz"
     ln -f fyne-cross/dist/linux-amd64/gocap.tar.xz ${ASSET}
     ASSETS="${ASSETS} ${ASSET}"
@@ -23,9 +23,7 @@ function build_mac {
 
 function build_windows {
     docker build .fyne-cross/windows/ -t capclient-windows
-    env CGO_CFLAGS= -I/usr/include/ykpers-1/ -I/usr/share/mingw-w64/include/
-    env CGO_LDFLAGS=-L/usr/x86_64-w64-mingw32/lib
-    fyne-cross windows -image capclient-windows:latest
+    fyne-cross windows -image capclient-windows:latest -env CGO_CFLAGS="-I/usr/include/ykpers-1/ -I/usr/share/mingw-w64/include/" -env CGO_LDFLAGS=-L/usr/x86_64-w64-mingw32/lib
     ASSET="fyne-cross/gocap.${TAG}_Windows.zip"
     ln -f fyne-cross/dist/windows-amd64/gocap.exe.zip ${ASSET}
     ASSETS="${ASSETS} ${ASSET}"
@@ -34,9 +32,9 @@ function build_windows {
 git clean -fdx
 go generate ./...
 
-build_mac
 build_windows
 build_linux
+build_mac
 
 gh release create ${TAG} \
     --draft \
