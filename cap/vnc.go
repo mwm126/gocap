@@ -65,16 +65,10 @@ func newVncTab(app fyne.App, conn_man *CapConnectionManager) *container.TabItem 
 			obj.(*widget.Label).Bind(fwd.(binding.String))
 		})
 
-	box := container.NewVBox(
-		widget.NewLabel("To create new Terminal (SSH) Session in gnome-terminal:"),
-		new_vnc,
-		refresh_btn,
-		sessions,
-	)
+	vcard := widget.NewCard("GUI", "List of VNC Sessions", new_vnc)
+	box := container.NewBorder(vcard, refresh_btn, nil, nil, sessions)
 
-	vcard := widget.NewCard("GUI", "List of VNC Sessions", box)
-
-	return container.NewTabItem("VNC", vcard)
+	return container.NewTabItem("VNC", box)
 }
 
 func get_field(fields []string, fieldname string) string {
