@@ -84,15 +84,23 @@ func parseVncInfo(text string) []Session {
 	var sessions []Session
 
 	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
-		fields := strings.Fields(line)
-		sessions = append(sessions, Session{
-			Username:      fields[15],
-			DisplayNumber: fields[11],
-			Geometry:      get_field(fields, "-geometry"),
-			DateCreated:   fields[8],
-			HostAddress:   "localhost",
-			HostPort:      get_field(fields, "-rfbport"),
-		})
+		session, err := parseVncLine(line)
+		if err == nil {
+			sessions = append(sessions, session)
+		}
 	}
 	return sessions
+}
+
+func parseVncLine(line string) (Session, error) {
+	fields := strings.Fields(line)
+	session := Session{
+		Username:      fields[15],
+		DisplayNumber: fields[11],
+		Geometry:      get_field(fields, "-geometry"),
+		DateCreated:   fields[8],
+		HostAddress:   "localhost",
+		HostPort:      get_field(fields, "-rfbport"),
+	}
+	return session, nil
 }
