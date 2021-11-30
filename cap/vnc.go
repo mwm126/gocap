@@ -35,13 +35,11 @@ func (vt *VncTab) refresh() error {
 	defer session.Close()
 
 	b, err := session.CombinedOutput("ps auxnww|grep Xvnc|grep -v grep")
-	vt.sessions = parseVncInfo(string(b))
+	vt.sessions = findSessions(vt.connection_manager.connection.connectionInfo.username, string(b))
 	return err
-
 }
 
 func newVncTab(app fyne.App, conn_man *CapConnectionManager) *container.TabItem {
-
 	t := VncTab{
 		app:                app,
 		connection_manager: conn_man,
@@ -80,12 +78,11 @@ func get_field(fields []string, fieldname string) string {
 	return ""
 }
 
-func parseVncInfo(text string) []Session {
-	var sessions []Session
-
+func findSessions(username string, text string) []Session {
+	sessions := make([]Session, 0, 10)
 	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
 		session, err := parseVncLine(line)
-		if err == nil {
+		if err == nil && session.Username == username {
 			sessions = append(sessions, session)
 		}
 	}
@@ -94,8 +91,9 @@ func parseVncInfo(text string) []Session {
 
 func parseVncLine(line string) (Session, error) {
 	fields := strings.Fields(line)
+	username := fields[15][1 : len(fields[15])-1]
 	session := Session{
-		Username:      fields[15],
+		Username:      username,
 		DisplayNumber: fields[11],
 		Geometry:      get_field(fields, "-geometry"),
 		DateCreated:   fields[8],

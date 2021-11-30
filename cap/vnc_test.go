@@ -36,18 +36,17 @@ const ps_output = `
 `
 
 func TestParseVncProcesses(t *testing.T) {
-
-	sessions := parseVncInfo(
-		`8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:20 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :5 -desktop TurboVNC: login03:5 (mmeredith) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
-	)
+	sessions := findSessions("mmeredith",
+		`8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:20 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :5 -desktop TurboVNC: login03:5 (not_mark) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1
+8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:20 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :5 -desktop TurboVNC: login03:5 (mmeredith) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1
+8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:20 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :5 -desktop TurboVNC: login03:5 (meredithm) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`)
 
 	assert.Equal(t, sessions[0], Session{
-		"(mmeredith)",
+		"mmeredith",
 		":5",
 		"3840x2160",
 		"Aug03",
 		"localhost",
 		"5905",
 	})
-
 }
