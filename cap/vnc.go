@@ -1,6 +1,7 @@
 package cap
 
 import (
+	"fmt"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -36,6 +37,18 @@ func (vt *VncTab) refresh() error {
 
 	b, err := session.CombinedOutput("ps auxnww|grep Xvnc|grep -v grep")
 	vt.sessions = findSessions(vt.connection_manager.connection.connectionInfo.username, string(b))
+	labels := make([]string, 0)
+	for _, session := range vt.sessions {
+		label := fmt.Sprintf(
+			"Session %s - %s - %s",
+			session.DisplayNumber,
+			session.Geometry,
+			session.DateCreated,
+		)
+		labels = append(labels, label)
+
+	}
+	vt.session_labels.Set(labels)
 	return err
 }
 
@@ -82,7 +95,10 @@ func findSessions(username string, text string) []Session {
 	sessions := make([]Session, 0, 10)
 	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
 		session, err := parseVncLine(line)
-		if err == nil && session.Username == username {
+		if err != nil {
+			continue
+		}
+		if session.Username == username {
 			sessions = append(sessions, session)
 		}
 	}
