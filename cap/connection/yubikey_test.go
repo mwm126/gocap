@@ -1,7 +1,7 @@
 //go:build yubikey
 // +build yubikey
 
-package cap
+package connection
 
 import (
 	"testing"
@@ -18,14 +18,14 @@ func TestYubikeySerial(t *testing.T) {
 
 func TestYubikeyChalResp(t *testing.T) {
 	yk := new(UsbYubikey)
-	resp, _ := yk.challengeResponse([6]byte{0, 1, 2, 3, 4, 5})
+	resp, _ := yk.ChallengeResponse([6]byte{0, 1, 2, 3, 4, 5})
 
 	assert.Equal(t, 16, len(resp))
 }
 
 func TestYubikeyChalRespHMAC(t *testing.T) {
 	yk := new(UsbYubikey)
-	resp, _ := yk.challengeResponseHMAC([32]byte{
+	resp, _ := yk.ChallengeResponseHMAC([32]byte{
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5,
 	})

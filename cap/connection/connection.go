@@ -1,4 +1,4 @@
-package cap
+package connection
 
 import (
 	"errors"
@@ -28,6 +28,18 @@ func (t *CapConnectionManager) GetConnection() *CapConnection {
 	return t.connection
 }
 
+func (c *CapConnectionManager) GetUsername() string {
+	return c.connection.connectionInfo.username
+}
+
+func (c *CapConnectionManager) GetPasswordExpired() bool {
+	return c.password_expired
+}
+
+func (c *CapConnectionManager) SetPasswordExpired() {
+	c.password_expired = true
+}
+
 func (t *CapConnectionManager) Close() {
 	if t.connection == nil {
 		log.Println("Not connected; Cannot close connection")
@@ -53,6 +65,10 @@ type ConnectionInfo struct {
 	loginAddr    string
 	webLocalPort int
 	sshLocalPort int
+}
+
+func (c *CapConnection) GetClient() *ssh.Client {
+	return c.client
 }
 
 func (conn *CapConnection) UpdateForwards(fwds []string) {
@@ -103,10 +119,12 @@ func (cm *CapConnectionManager) Connect(
 	user, pass string,
 	ext_addr,
 	server net.IP,
+	port uint,
 	pw_expired_cb func(PasswordChecker),
 	ch chan string) error {
+
 	log.Println("Opening SSH Connection...")
-	err := cm.knocker.Knock(user, ext_addr, server)
+	err := cm.knocker.Knock(user, ext_addr, server, port)
 	if err != nil {
 		return err
 	}
@@ -153,7 +171,7 @@ func (cm *CapConnectionManager) Connect(
 	return err
 }
 
-func cleanExec(client *ssh.Client, cmd string) (string, error) {
+func CleanExec(client *ssh.Client, cmd string) (string, error) {
 	// Each ClientConn can support multiple interactive sessions,
 	// represented by a Session.
 	session, err := client.NewSession()
@@ -169,8 +187,10 @@ func cleanExec(client *ssh.Client, cmd string) (string, error) {
 const webLocalPort = 10080
 
 func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, error) {
+	var conn *CapConnection
+	conn.client = client
 	log.Println("Getting connection info...")
-	loginName, err := cleanExec(client, "hostname")
+	loginName, err := CleanExec(conn.client, "hostname")
 	if err != nil {
 		log.Println("Failed hostname")
 		return nil, err
@@ -178,14 +198,14 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 	loginName = strings.TrimSpace(loginName)
 	log.Println("Got login hostname:", loginName)
 
-	loginAddr, err := getLoginIP(client, loginName)
+	loginAddr, err := conn.getLoginIP(loginName)
 	if err != nil {
 		log.Println("Failed to lookup login IP")
 		return nil, err
 	}
 	log.Println("Got login server IP:", loginAddr)
 
-	uid, err := getUID(client)
+	uid, err := conn.getUID()
 	if err != nil {
 		log.Println("Failed to lookup UID")
 		return nil, err
@@ -195,7 +215,7 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 	sshLocalPort := openSSHTunnel(client, user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	log.Println("Connected.")
-	connInfo := ConnectionInfo{
+	conn.connectionInfo = ConnectionInfo{
 		user,
 		pass,
 		uid,
@@ -204,26 +224,25 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 		webLocalPort,
 		sshLocalPort.Local.Port,
 	}
-	var fwds map[string]sshtunnel.SSHTunnel
-	return &CapConnection{client, connInfo, fwds}, nil
+	return conn, nil
 }
 
-func getLoginIP(client *ssh.Client, loginName string) (string, error) {
+func (c *CapConnection) getLoginIP(loginName string) (string, error) {
 	command := ("ping -c 1 " +
 		loginName + "| grep PING|awk \x27{print $3}\x27" + "| sed \x22s/(//\x22|sed \x22s/)//\x22")
 	log.Println("Command for getting address of login server: ", command)
-	addr, err := cleanExec(client, command)
+	addr, err := CleanExec(c.client, command)
 	if err != nil {
 		return addr, err
 	}
 	return strings.TrimSpace(addr), nil
 }
 
-func getUID(client *ssh.Client) (string, error) {
+func (c *CapConnection) getUID() (string, error) {
 	//  id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'
 	command := "id|sed \x22s/uid=//\x22|sed \x22s/(/ /\x22" + "|awk \x27{print $1}\x27"
 	log.Println("Command to get UID: ", command)
-	uid, err := cleanExec(client, command)
+	uid, err := CleanExec(c.client, command)
 	if err != nil {
 		return uid, err
 	}
@@ -279,7 +298,7 @@ func openSSHTunnel(
 
 // func readSessionManagerSecret(client *ssh.Client) string {
 // 	command := "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
-// 	out, err := cleanExec(client, command)
+// 	out, err := CleanExec(client, command)
 
 // 	if err == nil {
 // 		log.Println("Reading .sessionManager secret")
@@ -291,6 +310,6 @@ func openSSHTunnel(
 // 	command = `dd if=/dev/urandom bs=1 count=1024|sha256sum|
 //                awk \x27{print $1}\x27> ~/.sessionManager;
 //                cat ~/.sessionManager;chmod 0400 ~/.sessionManager`
-// 	out, err = cleanExec(client, command)
+// 	out, err = CleanExec(client, command)
 // 	return out
 // }

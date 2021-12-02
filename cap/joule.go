@@ -1,21 +1,24 @@
 package cap
 
 import (
+	"aeolustec.com/capclient/cap/connection"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
 func NewJouleConnected(app fyne.App,
-	conn_man *CapConnectionManager,
+	conn_man *connection.CapConnectionManager,
 	close_cb func()) *fyne.Container {
 
 	homeTab := newJouleHome(close_cb)
 	sshTab := newSsh(conn_man)
-	vncTab := newVncTab(app, conn_man)
+	vncTab := newVncTab(conn_man)
+	vncTabItem := newVncTabItem(vncTab)
 
 	cfg := GetConfig()
-	conn := conn_man.connection
+	conn := conn_man.GetConnection()
 	fwdTab := newPortForwardTab(app, cfg.Joule_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
 		SaveForwards(fwds)
@@ -24,7 +27,7 @@ func NewJouleConnected(app fyne.App,
 	tabs := container.NewAppTabs(
 		homeTab,
 		sshTab,
-		vncTab,
+		vncTabItem,
 		fwdTab,
 	)
 	return container.NewMax(tabs)

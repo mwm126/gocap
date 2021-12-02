@@ -19,7 +19,7 @@ type WattSpyKnocker struct {
 	knocked  bool
 }
 
-func (sk *WattSpyKnocker) Knock(username string, address net.IP) error {
+func (sk *WattSpyKnocker) Knock(username string, address net.IP, port uint) error {
 	sk.knocked = true
 	sk.username = username
 	sk.address = address

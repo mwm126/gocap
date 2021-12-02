@@ -1,4 +1,4 @@
-package cap
+package connection
 
 import (
 	"encoding/hex"
@@ -15,7 +15,7 @@ func (yk *FakeYubikey) FindSerial() (int32, error) {
 	return 5417533, nil
 }
 
-func (yk *FakeYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
+func (yk *FakeYubikey) ChallengeResponse(chal [6]byte) ([16]byte, error) {
 	if hex.EncodeToString(chal[:]) != "d459c24da2f9" {
 		log.Fatal("FakeYubikey expects hardcoded challenge...", "d459c24da2f9")
 	}
@@ -25,7 +25,7 @@ func (yk *FakeYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
 	return resp, nil
 }
 
-func (yk *FakeYubikey) challengeResponseHMAC(chal SHADigest) ([20]byte, error) {
+func (yk *FakeYubikey) ChallengeResponseHMAC(chal SHADigest) ([20]byte, error) {
 	if hex.EncodeToString(
 		chal[:],
 	) != "72542b8786762da3178a035eb5f2fcef2d020dd18be729f6f67fa46ee134d5c7" {

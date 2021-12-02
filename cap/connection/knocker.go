@@ -2,7 +2,7 @@
 // CAP was developed by Aeolus Technologies, Inc.
 // (C)opyright 2013, Aeolus Technologies, Inc.  All rights reserved.
 
-package cap
+package connection
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker interface {
-	Knock(username string, ext_addr, server_addr net.IP) error
+	Knock(username string, ext_addr, server_addr net.IP, port uint) error
 }
 
 // PortKnocker for actual Knocker implementation
@@ -37,7 +37,7 @@ func NewPortKnocker(yk Yubikey, ent [32]byte) *PortKnocker {
 	return &PortKnocker{yk, ent}
 }
 
-func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP) error {
+func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	timestamp, err := getNtpTime()
@@ -55,8 +55,7 @@ func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP) error {
 		return err
 	}
 
-	cfg := GetConfig()
-	addrPort := fmt.Sprintf("%s:%d", server_addr, cfg.CapPort)
+	addrPort := fmt.Sprintf("%s:%d", server_addr, port)
 	conn, err := net.Dial("udp", addrPort)
 	if err != nil {
 		log.Printf("Unable to connect to CAP server:  %v", err)
@@ -173,7 +172,7 @@ func getOTP(yk Yubikey, entropy []byte) (OneTimePassword, error) {
 	var yubicoChal [6]byte
 	copy(yubicoChal[:], digest[:16])
 	time.Sleep(1 * time.Second)
-	response, err := yk.challengeResponse(yubicoChal)
+	response, err := yk.ChallengeResponse(yubicoChal)
 	if err != nil {
 		log.Println("Unable to get OTP", err)
 		return OneTimePassword{}, err
@@ -190,7 +189,7 @@ func getChallengeResponse(
 	challenge := makeSHADigest([]byte("SHA1-HMACChallenge"), OTP[:], entropy)
 	// Get HMAC-SHA1 response from client.connection.yubikey
 	time.Sleep(1 * time.Second)
-	response, err := yk.challengeResponseHMAC(challenge)
+	response, err := yk.ChallengeResponseHMAC(challenge)
 	if err != nil {
 		log.Printf("Error getting challenge response %v", err)
 		return challenge, response, err

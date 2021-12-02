@@ -1,8 +1,13 @@
 package cap
 
 import (
+	"aeolustec.com/capclient/cap/connection"
+
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
 	"testing"
 
+	"fyne.io/fyne/v2/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,4 +56,44 @@ func TestParseVncProcesses(t *testing.T) {
 		"localhost",
 		"5905",
 	})
+}
+
+type StubYubikey struct{}
+
+func (yk *StubYubikey) FindSerial() (int32, error) {
+	return 0, nil
+}
+
+func (yk *StubYubikey) ChallengeResponse(chal [6]byte) ([16]byte, error) {
+	return [16]byte{}, nil
+}
+
+func (yk *StubYubikey) ChallengeResponseHMAC(chal connection.SHADigest) ([20]byte, error) {
+	return [20]byte{}, nil
+}
+
+func NewFakeKnocker() *connection.PortKnocker {
+	var fake_yk StubYubikey
+	var entropy [32]byte
+	return connection.NewPortKnocker(&fake_yk, entropy)
+}
+
+func TestVncTab(t *testing.T) {
+	a := app.New()
+	w := a.NewWindow("Hello")
+
+	fake_kckr := NewFakeKnocker()
+	conn_man := connection.NewCapConnectionManager(fake_kckr)
+
+	vncTab := newVncTab(conn_man)
+	tabItem := newVncTabItem(vncTab)
+	tabs := container.NewAppTabs(tabItem)
+
+	w.SetContent(container.NewVBox(
+		tabs,
+	))
+
+	test.Tap(vncTab.refresh_btn)
+
+	// vncTab.loadUI(test.NewApp())
 }

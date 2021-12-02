@@ -1,6 +1,8 @@
 package cap
 
 import (
+	"aeolustec.com/capclient/cap/connection"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -15,7 +17,7 @@ type WattTab struct {
 }
 
 func NewWattConnected(app fyne.App,
-	conn_man *CapConnectionManager,
+	conn_man *connection.CapConnectionManager,
 	close_cb func()) *fyne.Container {
 
 	ssh := widget.NewButton("Connect SSH", func() {

@@ -1,7 +1,7 @@
-package cap
+package connection
 
-// #cgo CFLAGS: -g -Wall -Werror -I/usr/include/ykpers-1/
-// #cgo LDFLAGS: -Wl,-Bstatic -lykpers-1 -lyubikey -Wl,-Bdynamic -L/usr/lib/x86_64-linux-gnu -lusb-1.0
+// #cgo CFLAGS: -g -Wall -Werror -I/usr/local/include/ykpers-1 -I/usr/local/include
+// #cgo LDFLAGS: /usr/local/lib/libykpers-1.a /usr/local/lib/libyubikey.a -framework CoreServices -framework IOKit
 // #include <stdlib.h>
 // #include "yk.h"
 import "C"

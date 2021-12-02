@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/cap/connection"
 )
 
 func main() {
@@ -14,8 +15,8 @@ func main() {
 		log.Fatal("Unable to get entropy to send CAP packet")
 	}
 
-	yk := new(cap.UsbYubikey)
-	knk := cap.NewPortKnocker(yk, entropy)
+	yk := new(connection.UsbYubikey)
+	knk := connection.NewPortKnocker(yk, entropy)
 
 	cfg := cap.GetConfig()
 	cfg.Enable_joule = true

@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package cap
+package cap/connection
 
 import (
 	"net"
@@ -16,12 +16,19 @@ func (yk *StubYubikey) FindSerial() (int32, error) {
 	return 0, nil
 }
 
-func (yk *StubYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
+func (yk *StubYubikey) ChallengeResponse(chal [6]byte) ([16]byte, error) {
 	return [16]byte{}, nil
 }
 
-func (yk *StubYubikey) challengeResponseHMAC(chal SHADigest) ([20]byte, error) {
+func (yk *StubYubikey) ChallengeResponseHMAC(chal SHADigest) ([20]byte, error) {
 	return [20]byte{}, nil
+}
+
+func NewFakeKnocker() *PortKnocker {
+	var fake_yk StubYubikey
+	var entropy [32]byte
+	var fake_kckr Knocker
+	return NewPortKnocker(&fake_yk, entropy)
 }
 
 func TestCapConnection(t *testing.T) {
@@ -30,10 +37,7 @@ func TestCapConnection(t *testing.T) {
 	ext_ip := net.IPv4(11, 22, 33, 44)
 	server := net.IPv4(55, 66, 77, 88)
 
-	var fake_yk StubYubikey
-	var entropy [32]byte
-	var fake_kckr Knocker
-	fake_kckr = NewPortKnocker(&fake_yk, entropy)
+	fake_kckr = NewFakeKnocker()
 	conn_man := NewCapConnectionManager(fake_kckr)
 	err := conn_man.Connect(username, password, ext_ip, server)
 	if err != nil {

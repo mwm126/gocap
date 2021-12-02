@@ -1,6 +1,8 @@
 package cap
 
 import (
+	"aeolustec.com/capclient/cap/connection"
+
 	"fmt"
 	"strings"
 
@@ -20,8 +22,10 @@ type Session struct {
 }
 
 type VncTab struct {
-	app                fyne.App
-	connection_manager *CapConnectionManager
+	// app                fyne.App
+	connection_manager *connection.CapConnectionManager
+	refresh_btn        *widget.Button
+	new_vnc            *widget.Button
 	// save     SaveCallback
 	session_labels binding.StringList
 	sessions       []Session
@@ -29,14 +33,10 @@ type VncTab struct {
 
 func (vt *VncTab) refresh() error {
 	// refreshes sessions attribute
-	session, err := vt.connection_manager.connection.client.NewSession()
-	if err != nil {
-		return err
-	}
-	defer session.Close()
 
-	b, err := session.CombinedOutput("ps auxnww|grep Xvnc|grep -v grep")
-	vt.sessions = findSessions(vt.connection_manager.connection.connectionInfo.username, string(b))
+	b, err := connection.CleanExec(vt.connection_manager.GetConnection().GetClient(), "ps auxnww|grep Xvnc|grep -v grep")
+
+	vt.sessions = findSessions(vt.connection_manager.GetUsername(), string(b))
 	labels := make([]string, 0)
 	for _, session := range vt.sessions {
 		label := fmt.Sprintf(
@@ -52,9 +52,8 @@ func (vt *VncTab) refresh() error {
 	return err
 }
 
-func newVncTab(app fyne.App, conn_man *CapConnectionManager) *container.TabItem {
+func newVncTab(conn_man *connection.CapConnectionManager) *VncTab {
 	t := VncTab{
-		app:                app,
 		connection_manager: conn_man,
 		// save: cb,
 		session_labels: binding.BindStringList(
@@ -65,9 +64,12 @@ func newVncTab(app fyne.App, conn_man *CapConnectionManager) *container.TabItem 
 		),
 	}
 
-	new_vnc := widget.NewButton("New VNC Session", func() { run_ssh(conn_man) })
-	refresh_btn := widget.NewButton("Refresh", func() { t.refresh() })
+	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
+	t.new_vnc = widget.NewButton("New VNC Session", func() { run_ssh(conn_man) })
+	return &t
+}
 
+func newVncTabItem(t *VncTab) *container.TabItem {
 	sessions := widget.NewListWithData(t.session_labels,
 		func() fyne.CanvasObject {
 			return widget.NewLabel("template")
@@ -76,8 +78,8 @@ func newVncTab(app fyne.App, conn_man *CapConnectionManager) *container.TabItem 
 			obj.(*widget.Label).Bind(fwd.(binding.String))
 		})
 
-	vcard := widget.NewCard("GUI", "List of VNC Sessions", new_vnc)
-	box := container.NewBorder(vcard, refresh_btn, nil, nil, sessions)
+	vcard := widget.NewCard("GUI", "List of VNC Sessions", t.new_vnc)
+	box := container.NewBorder(vcard, t.refresh_btn, nil, nil, sessions)
 
 	return container.NewTabItem("VNC", box)
 }

@@ -1,6 +1,8 @@
 package cap
 
 import (
+	"aeolustec.com/capclient/cap/connection"
+
 	_ "embed"
 	"log"
 	"os"
@@ -13,7 +15,7 @@ import (
 //go:embed embeds/putty.exe
 var putty []byte
 
-func run_ssh(conn_man *CapConnectionManager) {
+func run_ssh(conn_man *connection.CapConnectionManager) {
 	conn := conn_man.GetConnection()
 	if conn == nil {
 		log.Println("Warning: no connection; unable to run Putty", conn_man)

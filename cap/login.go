@@ -1,6 +1,8 @@
 package cap
 
 import (
+	"aeolustec.com/capclient/cap/connection"
+
 	"log"
 	"net"
 	"time"
@@ -12,7 +14,7 @@ import (
 
 type CapTab struct {
 	Tab                *container.TabItem
-	connection_manager *CapConnectionManager
+	connection_manager *connection.CapConnectionManager
 	networkSelect      *widget.Select
 	usernameEntry      *widget.Entry
 	passwordEntry      *widget.Entry
@@ -21,13 +23,13 @@ type CapTab struct {
 	login              *fyne.Container
 	connecting         *fyne.Container
 	change_password    *fyne.Container
-	pw_expired_cb      func(PasswordChecker)
+	pw_expired_cb      func(connection.PasswordChecker)
 }
 
 func NewCapTab(tabname,
 	desc string,
 	ips map[string]string,
-	conn_man *CapConnectionManager,
+	conn_man *connection.CapConnectionManager,
 	connected *fyne.Container) CapTab {
 	tab := &CapTab{}
 	connect_cancelled := false
@@ -36,9 +38,13 @@ func NewCapTab(tabname,
 	tab.connection_manager = conn_man
 	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip, tab.pw_expired_cb, ch)
+		cfg := GetConfig()
+		port := cfg.CapPort
+		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
+			port,
+			tab.pw_expired_cb, ch)
 
-		if tab.connection_manager.password_expired {
+		if tab.connection_manager.GetPasswordExpired() {
 			tab.card.SetContent(tab.change_password)
 			return
 		}
@@ -61,9 +67,9 @@ func NewCapTab(tabname,
 		tab.card.SetContent(connected)
 	})
 
-	tab.pw_expired_cb = func(pw_checker PasswordChecker) {
+	tab.pw_expired_cb = func(pw_checker connection.PasswordChecker) {
 		// Detected expired password callback
-		tab.connection_manager.password_expired = true
+		tab.connection_manager.SetPasswordExpired()
 		tab.card.SetContent(tab.change_password)
 	}
 	tab.connecting = NewConnecting(func() {

@@ -19,7 +19,7 @@ type JouleSpyKnocker struct {
 	knocked  bool
 }
 
-func (sk *JouleSpyKnocker) Knock(username string, address net.IP) error {
+func (sk *JouleSpyKnocker) Knock(username string, address net.IP, port uint) error {
 	sk.knocked = true
 	sk.username = username
 	sk.address = address
