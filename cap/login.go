@@ -14,7 +14,7 @@ import (
 
 type CapTab struct {
 	Tab                *container.TabItem
-	connection_manager *connection.CapConnectionManager
+	connection_manager connection.ConnectionManager
 	networkSelect      *widget.Select
 	usernameEntry      *widget.Entry
 	passwordEntry      *widget.Entry
@@ -29,7 +29,7 @@ type CapTab struct {
 func NewCapTab(tabname,
 	desc string,
 	ips map[string]string,
-	conn_man *connection.CapConnectionManager,
+	conn_man connection.ConnectionManager,
 	connected *fyne.Container) CapTab {
 	tab := &CapTab{}
 	connect_cancelled := false

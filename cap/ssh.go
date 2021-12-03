@@ -9,8 +9,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func newSsh(conn_man *connection.CapConnectionManager) *container.TabItem {
-	ssh := widget.NewButton("New SSH Session", func() { run_ssh(conn_man) })
+func newSsh(conn connection.Connection) *container.TabItem {
+	ssh := widget.NewButton("New SSH Session", func() { run_ssh(conn) })
 	label := widget.NewLabel(
 		fmt.Sprintf("or run in a terminal:  ssh localhost -p %d", connection.SSH_LOCAL_PORT),
 	)

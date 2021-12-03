@@ -4,7 +4,7 @@ import (
 	"aeolustec.com/capclient/cap/connection"
 
 	"fmt"
-	"strings"
+	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -12,31 +12,23 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type Session struct {
-	Username      string
-	DisplayNumber string
-	Geometry      string
-	DateCreated   string
-	HostAddress   string
-	HostPort      string
-}
-
 type VncTab struct {
 	// app                fyne.App
-	connection_manager *connection.CapConnectionManager
-	refresh_btn        *widget.Button
-	new_vnc            *widget.Button
+	connection  connection.Connection
+	refresh_btn *widget.Button
+	new_vnc     *widget.Button
 	// save     SaveCallback
 	session_labels binding.StringList
-	sessions       []Session
+	sessions       []connection.Session
 }
 
 func (vt *VncTab) refresh() error {
 	// refreshes sessions attribute
-
-	b, err := connection.CleanExec(vt.connection_manager.GetConnection().GetClient(), "ps auxnww|grep Xvnc|grep -v grep")
-
-	vt.sessions = findSessions(vt.connection_manager.GetUsername(), string(b))
+	sessions, err := vt.connection.FindSessions()
+	if err != nil {
+		log.Println("Warning - unable to refresh: ", err)
+	}
+	vt.sessions = sessions
 	labels := make([]string, 0)
 	for _, session := range vt.sessions {
 		label := fmt.Sprintf(
@@ -48,13 +40,13 @@ func (vt *VncTab) refresh() error {
 		labels = append(labels, label)
 
 	}
-	vt.session_labels.Set(labels)
+	// vt.session_labels.Set(labels)
 	return err
 }
 
-func newVncTab(conn_man *connection.CapConnectionManager) *VncTab {
+func newVncTab(conn connection.Connection) *VncTab {
 	t := VncTab{
-		connection_manager: conn_man,
+		connection: conn,
 		// save: cb,
 		session_labels: binding.BindStringList(
 			&[]string{
@@ -65,7 +57,7 @@ func newVncTab(conn_man *connection.CapConnectionManager) *VncTab {
 	}
 
 	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
-	t.new_vnc = widget.NewButton("New VNC Session", func() { run_ssh(conn_man) })
+	t.new_vnc = widget.NewButton("New VNC Session", func() { run_ssh(conn) })
 	return &t
 }
 
@@ -82,41 +74,4 @@ func newVncTabItem(t *VncTab) *container.TabItem {
 	box := container.NewBorder(vcard, t.refresh_btn, nil, nil, sessions)
 
 	return container.NewTabItem("VNC", box)
-}
-
-func get_field(fields []string, fieldname string) string {
-	for ii, field := range fields {
-		if field == fieldname {
-			return fields[ii+1]
-		}
-	}
-	return ""
-}
-
-func findSessions(username string, text string) []Session {
-	sessions := make([]Session, 0, 10)
-	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
-		session, err := parseVncLine(line)
-		if err != nil {
-			continue
-		}
-		if session.Username == username {
-			sessions = append(sessions, session)
-		}
-	}
-	return sessions
-}
-
-func parseVncLine(line string) (Session, error) {
-	fields := strings.Fields(line)
-	username := fields[15][1 : len(fields[15])-1]
-	session := Session{
-		Username:      username,
-		DisplayNumber: fields[11],
-		Geometry:      get_field(fields, "-geometry"),
-		DateCreated:   fields[8],
-		HostAddress:   "localhost",
-		HostPort:      get_field(fields, "-rfbport"),
-	}
-	return session, nil
 }

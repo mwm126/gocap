@@ -17,7 +17,7 @@ type WattTab struct {
 }
 
 func NewWattConnected(app fyne.App,
-	conn_man *connection.CapConnectionManager,
+	conn_man connection.ConnectionManager,
 	close_cb func()) *fyne.Container {
 
 	ssh := widget.NewButton("Connect SSH", func() {

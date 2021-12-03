@@ -14,6 +14,20 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+type ConnectionManager interface {
+	Connect(
+		user, pass string,
+		ext_addr,
+		server net.IP,
+		port uint,
+		pw_expired_cb func(PasswordChecker),
+		ch chan string) error
+	Close()
+	GetConnection() Connection
+	GetPasswordExpired() bool
+	SetPasswordExpired()
+}
+
 type CapConnectionManager struct {
 	knocker          Knocker
 	connection       *CapConnection
@@ -24,12 +38,8 @@ func NewCapConnectionManager(knocker Knocker) *CapConnectionManager {
 	return &CapConnectionManager{knocker, nil, false}
 }
 
-func (t *CapConnectionManager) GetConnection() *CapConnection {
+func (t *CapConnectionManager) GetConnection() Connection {
 	return t.connection
-}
-
-func (c *CapConnectionManager) GetUsername() string {
-	return c.connection.connectionInfo.username
 }
 
 func (c *CapConnectionManager) GetPasswordExpired() bool {
@@ -49,15 +59,16 @@ func (t *CapConnectionManager) Close() {
 	t.connection = nil
 }
 
-// A CapConnection represents a successful SSH connection after the port knock
-type CapConnection struct {
-	client         *ssh.Client
-	connectionInfo ConnectionInfo
-	forwards       map[string]sshtunnel.SSHTunnel
+type Connection interface {
+	FindSessions() ([]Session, error)
+	GetUsername() string
+	UpdateForwards(fwds []string)
 }
 
-// ConnectionInfo stores info about the connection
-type ConnectionInfo struct {
+// A CapConnection represents a successful SSH connection after the port knock
+type CapConnection struct {
+	client       *ssh.Client
+	forwards     map[string]sshtunnel.SSHTunnel
 	username     string
 	password     string
 	uid          string
@@ -67,8 +78,8 @@ type ConnectionInfo struct {
 	sshLocalPort int
 }
 
-func (c *CapConnection) GetClient() *ssh.Client {
-	return c.client
+func (c *CapConnection) GetUsername() string {
+	return c.username
 }
 
 func (conn *CapConnection) UpdateForwards(fwds []string) {
@@ -104,8 +115,8 @@ func (conn *CapConnection) forward(fwd string) sshtunnel.SSHTunnel {
 	if err != nil {
 		log.Println("Warning:  bad remote port", err)
 	}
-	return openSSHTunnel(conn.client, conn.connectionInfo.username,
-		conn.connectionInfo.password, local_p, remote_h, remote_p)
+	return openSSHTunnel(conn.client, conn.username,
+		conn.password, local_p, remote_h, remote_p)
 }
 
 func (conn *CapConnection) close() {
@@ -187,10 +198,8 @@ func CleanExec(client *ssh.Client, cmd string) (string, error) {
 const webLocalPort = 10080
 
 func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, error) {
-	var conn *CapConnection
-	conn.client = client
 	log.Println("Getting connection info...")
-	loginName, err := CleanExec(conn.client, "hostname")
+	loginName, err := CleanExec(client, "hostname")
 	if err != nil {
 		log.Println("Failed hostname")
 		return nil, err
@@ -198,14 +207,14 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 	loginName = strings.TrimSpace(loginName)
 	log.Println("Got login hostname:", loginName)
 
-	loginAddr, err := conn.getLoginIP(loginName)
+	loginAddr, err := getLoginIP(client, loginName)
 	if err != nil {
 		log.Println("Failed to lookup login IP")
 		return nil, err
 	}
 	log.Println("Got login server IP:", loginAddr)
 
-	uid, err := conn.getUID()
+	uid, err := getUID(client)
 	if err != nil {
 		log.Println("Failed to lookup UID")
 		return nil, err
@@ -215,7 +224,9 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 	sshLocalPort := openSSHTunnel(client, user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	log.Println("Connected.")
-	conn.connectionInfo = ConnectionInfo{
+	conn := CapConnection{
+		client,
+		make(map[string]sshtunnel.SSHTunnel, 0),
 		user,
 		pass,
 		uid,
@@ -224,25 +235,25 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 		webLocalPort,
 		sshLocalPort.Local.Port,
 	}
-	return conn, nil
+	return &conn, nil
 }
 
-func (c *CapConnection) getLoginIP(loginName string) (string, error) {
+func getLoginIP(client *ssh.Client, loginName string) (string, error) {
 	command := ("ping -c 1 " +
 		loginName + "| grep PING|awk \x27{print $3}\x27" + "| sed \x22s/(//\x22|sed \x22s/)//\x22")
 	log.Println("Command for getting address of login server: ", command)
-	addr, err := CleanExec(c.client, command)
+	addr, err := CleanExec(client, command)
 	if err != nil {
 		return addr, err
 	}
 	return strings.TrimSpace(addr), nil
 }
 
-func (c *CapConnection) getUID() (string, error) {
+func getUID(client *ssh.Client) (string, error) {
 	//  id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'
 	command := "id|sed \x22s/uid=//\x22|sed \x22s/(/ /\x22" + "|awk \x27{print $1}\x27"
 	log.Println("Command to get UID: ", command)
-	uid, err := CleanExec(c.client, command)
+	uid, err := CleanExec(client, command)
 	if err != nil {
 		return uid, err
 	}
@@ -313,3 +324,58 @@ func openSSHTunnel(
 // 	out, err = CleanExec(client, command)
 // 	return out
 // }
+
+func (c *CapConnection) FindSessions() ([]Session, error) {
+	sessions := make([]Session, 0, 10)
+	text, err := CleanExec(c.client, "ps auxnww|grep Xvnc|grep -v grep")
+	if err != nil {
+		return sessions, errors.New("Unable to find sessions")
+	}
+	return parseSessions(c.GetUsername(), text), nil
+}
+
+func parseSessions(username, text string) []Session {
+	sessions := make([]Session, 0, 10)
+	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
+		session, err := parseVncLine(line)
+		if err != nil {
+			continue
+		}
+		if session.Username == username {
+			sessions = append(sessions, session)
+		}
+	}
+	return sessions
+}
+
+type Session struct {
+	Username      string
+	DisplayNumber string
+	Geometry      string
+	DateCreated   string
+	HostAddress   string
+	HostPort      string
+}
+
+func parseVncLine(line string) (Session, error) {
+	fields := strings.Fields(line)
+	username := fields[15][1 : len(fields[15])-1]
+	session := Session{
+		Username:      username,
+		DisplayNumber: fields[11],
+		Geometry:      get_field(fields, "-geometry"),
+		DateCreated:   fields[8],
+		HostAddress:   "localhost",
+		HostPort:      get_field(fields, "-rfbport"),
+	}
+	return session, nil
+}
+
+func get_field(fields []string, fieldname string) string {
+	for ii, field := range fields {
+		if field == fieldname {
+			return fields[ii+1]
+		}
+	}
+	return ""
+}

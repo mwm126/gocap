@@ -15,12 +15,7 @@ import (
 //go:embed embeds/putty.exe
 var putty []byte
 
-func run_ssh(conn_man *connection.CapConnectionManager) {
-	conn := conn_man.GetConnection()
-	if conn == nil {
-		log.Println("Warning: no connection; unable to run Putty", conn_man)
-		return
-	}
+func run_ssh(conn connection.Connection) {
 	username := conn.connectionInfo.username
 	password := conn.connectionInfo.password
 	file, err := os.CreateTemp("", "putty.*.exe")

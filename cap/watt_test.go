@@ -27,16 +27,12 @@ func (sk *WattSpyKnocker) Knock(username string, address net.IP, port uint) erro
 }
 
 func TestWattLoginButton(t *testing.T) {
-	spy := &WattSpyKnocker{}
 	a := app.New()
 
-	var fake_yk FakeYubikey
-	var entropy [32]byte
-	fake_kckr := NewPortKnocker(&fake_yk, entropy)
-	conn_man := NewCapConnectionManager(fake_kckr)
+	var conn_man FakeConnectionManager
 	cfg := GetConfig()
-	wattTab := NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, conn_man,
-		NewWattConnected(a, conn_man, func() {}))
+	wattTab := NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, &conn_man,
+		NewWattConnected(a, &conn_man, func() {}))
 
 	test.Type(wattTab.usernameEntry, "the_user")
 	test.Type(wattTab.passwordEntry, "the_pass")
@@ -45,7 +41,6 @@ func TestWattLoginButton(t *testing.T) {
 	test.Tap(wattTab.loginBtn)
 
 	time.Sleep(100 * time.Millisecond)
-	assert.True(t, spy.knocked)
-	assert.Equal(t, "the_user", spy.username)
-	assert.Equal(t, net.IPv4(199, 249, 243, 253), spy.address)
+	assert.Equal(t, "the_user", conn_man.username)
+	assert.Equal(t, net.IPv4(199, 249, 243, 253), conn_man.address)
 }

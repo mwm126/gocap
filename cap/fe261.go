@@ -9,11 +9,13 @@ import (
 )
 
 func NewFe261Connected(app fyne.App,
-	conn_man *connection.CapConnectionManager,
+	conn_man connection.ConnectionManager,
 	close_cb func()) *fyne.Container {
 
+	conn := conn_man.GetConnection()
+
 	homeTab := newHome(close_cb)
-	sshTab := newSsh(conn_man)
+	sshTab := newSsh(conn)
 
 	cfg := GetConfig()
 	fwdTab := newPortForwardTab(app, cfg.Fe261_Forwards, func(fwds []string) {

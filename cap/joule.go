@@ -9,16 +9,17 @@ import (
 )
 
 func NewJouleConnected(app fyne.App,
-	conn_man *connection.CapConnectionManager,
+	conn_man connection.ConnectionManager,
 	close_cb func()) *fyne.Container {
 
+	conn := conn_man.GetConnection()
+
 	homeTab := newJouleHome(close_cb)
-	sshTab := newSsh(conn_man)
-	vncTab := newVncTab(conn_man)
+	sshTab := newSsh(conn)
+	vncTab := newVncTab(conn)
 	vncTabItem := newVncTabItem(vncTab)
 
 	cfg := GetConfig()
-	conn := conn_man.GetConnection()
 	fwdTab := newPortForwardTab(app, cfg.Joule_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
 		SaveForwards(fwds)
