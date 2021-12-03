@@ -40,11 +40,14 @@ func (vt *VncTab) refresh() error {
 		labels = append(labels, label)
 
 	}
-	// vt.session_labels.Set(labels)
+	vt.session_labels.Set(labels)
 	return err
 }
 
 func newVncTab(conn connection.Connection) *VncTab {
+	if conn == nil {
+		panic("Invalid")
+	}
 	t := VncTab{
 		connection: conn,
 		// save: cb,

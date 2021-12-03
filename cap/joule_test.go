@@ -49,14 +49,13 @@ func TestJouleLoginButton(t *testing.T) {
 	var conn_man FakeConnectionManager
 	cfg := GetConfig()
 
-	jouleTab := NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, &conn_man,
-		NewJouleConnected(a, &conn_man, func() {}))
+	jouleTab := NewJouleConnected(a, cfg, &conn_man)
 
-	test.Type(jouleTab.usernameEntry, "the_user")
-	test.Type(jouleTab.passwordEntry, "the_pass")
-	jouleTab.networkSelect.SetSelected("alb_admin")
+	test.Type(jouleTab.CapTab.usernameEntry, "the_user")
+	test.Type(jouleTab.CapTab.passwordEntry, "the_pass")
+	jouleTab.CapTab.networkSelect.SetSelected("alb_admin")
 
-	test.Tap(jouleTab.loginBtn)
+	test.Tap(jouleTab.CapTab.loginBtn)
 
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, "the_user", conn_man.username)

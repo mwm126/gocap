@@ -8,30 +8,41 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func NewJouleConnected(app fyne.App,
-	conn_man connection.ConnectionManager,
-	close_cb func()) *fyne.Container {
+type JouleTab struct {
+	app    fyne.App
+	Tabs   *container.AppTabs
+	CapTab CapTab
+}
 
-	conn := conn_man.GetConnection()
+func NewJouleConnected(app fyne.App, cfg config, conn_man connection.ConnectionManager) JouleTab {
+	var joule_tab JouleTab
+	tabs := container.NewAppTabs()
+	cont := container.NewMax(tabs)
 
-	homeTab := newJouleHome(close_cb)
+	joule_tab = JouleTab{
+		app,
+		tabs,
+		NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
+			func(conn connection.Connection) {
+				joule_tab.Connect(conn)
+			}, cont),
+	}
+	return joule_tab
+}
+
+func (t *JouleTab) Connect(conn connection.Connection) {
+	homeTab := newJouleHome(t.CapTab.closeConnection)
 	sshTab := newSsh(conn)
 	vncTab := newVncTab(conn)
 	vncTabItem := newVncTabItem(vncTab)
 
 	cfg := GetConfig()
-	fwdTab := newPortForwardTab(app, cfg.Joule_Forwards, func(fwds []string) {
+	fwdTab := newPortForwardTab(t.app, cfg.Joule_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
 		SaveForwards(fwds)
 	})
 
-	tabs := container.NewAppTabs(
-		homeTab,
-		sshTab,
-		vncTabItem,
-		fwdTab,
-	)
-	return container.NewMax(tabs)
+	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, vncTabItem, fwdTab})
 }
 
 func newJouleHome(close_cb func()) *container.TabItem {

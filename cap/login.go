@@ -30,6 +30,7 @@ func NewCapTab(tabname,
 	desc string,
 	ips map[string]string,
 	conn_man connection.ConnectionManager,
+	connected_cb func(connection connection.Connection),
 	connected *fyne.Container) CapTab {
 	tab := &CapTab{}
 	connect_cancelled := false
@@ -44,15 +45,15 @@ func NewCapTab(tabname,
 			port,
 			tab.pw_expired_cb, ch)
 
-		if tab.connection_manager.GetPasswordExpired() {
-			tab.card.SetContent(tab.change_password)
-			return
-		}
-
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
 			tab.card.SetContent(tab.login)
 			connect_cancelled = false
+			return
+		}
+
+		if tab.connection_manager.GetPasswordExpired() {
+			tab.card.SetContent(tab.change_password)
 			return
 		}
 
@@ -65,6 +66,7 @@ func NewCapTab(tabname,
 
 		time.Sleep(1 * time.Second)
 		tab.card.SetContent(connected)
+		connected_cb(conn_man.GetConnection())
 	})
 
 	tab.pw_expired_cb = func(pw_checker connection.PasswordChecker) {
@@ -72,11 +74,15 @@ func NewCapTab(tabname,
 		tab.connection_manager.SetPasswordExpired()
 		tab.card.SetContent(tab.change_password)
 	}
-	tab.connecting = NewConnecting(func() {
-		// connecting cancel button handler
-		connect_cancelled = true
-		tab.card.SetContent(tab.login)
-	})
+	tab.connecting = func() *fyne.Container {
+		connecting := widget.NewLabel("Connecting......")
+		cancel := widget.NewButton("Cancel", func() {
+			connect_cancelled = true
+			tab.card.SetContent(tab.login)
+		})
+		return container.NewVBox(connecting, cancel)
+	}()
+
 	tab.change_password = NewChangePassword(func(new_password string) {
 		ch <- new_password
 		connect_cancelled = true
@@ -118,12 +124,6 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 	t.passwordEntry = password
 	t.loginBtn = login
 	return container.NewVBox(username, password, network, login)
-}
-
-func NewConnecting(cancel_cb func()) *fyne.Container {
-	connecting := widget.NewLabel("Connecting......")
-	cancel := widget.NewButton("Cancel", cancel_cb)
-	return container.NewVBox(connecting, cancel)
 }
 
 func (t *CapTab) closeConnection() {

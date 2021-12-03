@@ -31,14 +31,13 @@ func TestWattLoginButton(t *testing.T) {
 
 	var conn_man FakeConnectionManager
 	cfg := GetConfig()
-	wattTab := NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, &conn_man,
-		NewWattConnected(a, &conn_man, func() {}))
+	wattTab := NewJouleConnected(a, cfg, &conn_man)
 
-	test.Type(wattTab.usernameEntry, "the_user")
-	test.Type(wattTab.passwordEntry, "the_pass")
-	wattTab.networkSelect.SetSelected("vpn")
+	test.Type(wattTab.CapTab.usernameEntry, "the_user")
+	test.Type(wattTab.CapTab.passwordEntry, "the_pass")
+	wattTab.CapTab.networkSelect.SetSelected("vpn")
 
-	test.Tap(wattTab.loginBtn)
+	test.Tap(wattTab.CapTab.loginBtn)
 
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, "the_user", conn_man.username)
