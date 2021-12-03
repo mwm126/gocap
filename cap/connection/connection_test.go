@@ -39,7 +39,15 @@ func DisabledTestCapConnection(t *testing.T) {
 	fake_kckr := NewFakeKnocker()
 	conn_man := NewCapConnectionManager(fake_kckr)
 	ch := make(chan string)
-	err := conn_man.Connect(username, password, ext_ip, server, 123, func(pwc PasswordChecker) {}, ch)
+	err := conn_man.Connect(
+		username,
+		password,
+		ext_ip,
+		server,
+		123,
+		func(pwc PasswordChecker) {},
+		ch,
+	)
 	if err != nil {
 		assert.FailNow(t, "failed to make cap connection", err)
 	}
