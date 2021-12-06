@@ -3,7 +3,7 @@ package cap
 import (
 	"aeolustec.com/capclient/cap/connection"
 
-	"fyne.io/fyne/v2"
+	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
