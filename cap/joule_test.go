@@ -11,7 +11,7 @@ import (
 	"aeolustec.com/capclient/cap/connection"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-cmp/cmp"
 )
 
 type FakeConnectionManager struct {
@@ -58,6 +58,20 @@ func TestJouleLoginButton(t *testing.T) {
 	test.Tap(jouleTab.CapTab.loginBtn)
 
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, "the_user", conn_man.username)
-	assert.Equal(t, net.IPv4(204, 154, 139, 11), conn_man.address)
+
+	t.Run("Test username entry", func(t *testing.T) {
+		want := "the_user"
+		got := conn_man.username
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
+	})
+
+	t.Run("Test address selection", func(t *testing.T) {
+		want := net.IPv4(204, 154, 139, 11)
+		got := conn_man.address
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
+	})
 }

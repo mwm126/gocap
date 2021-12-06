@@ -13,10 +13,10 @@ import (
 )
 
 type VncTab struct {
-	// app                fyne.App
+	app         fyne.App
 	connection  connection.Connection
 	refresh_btn *widget.Button
-	new_vnc     *widget.Button
+	new_btn     *widget.Button
 	// save     SaveCallback
 	session_labels binding.StringList
 	sessions       []connection.Session
@@ -44,11 +44,12 @@ func (vt *VncTab) refresh() error {
 	return err
 }
 
-func newVncTab(conn connection.Connection) *VncTab {
+func newVncTab(a fyne.App, conn connection.Connection) *VncTab {
 	if conn == nil {
 		panic("Invalid")
 	}
 	t := VncTab{
+		app:        a,
 		connection: conn,
 		// save: cb,
 		session_labels: binding.BindStringList(
@@ -60,7 +61,7 @@ func newVncTab(conn connection.Connection) *VncTab {
 	}
 
 	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
-	t.new_vnc = widget.NewButton("New VNC Session", func() { run_ssh(conn) })
+	t.new_btn = widget.NewButton("New VNC Session", t.showNewVncSessionDialog)
 	return &t
 }
 
@@ -73,8 +74,42 @@ func newVncTabItem(t *VncTab) *container.TabItem {
 			obj.(*widget.Label).Bind(fwd.(binding.String))
 		})
 
-	vcard := widget.NewCard("GUI", "List of VNC Sessions", t.new_vnc)
+	vcard := widget.NewCard("GUI", "List of VNC Sessions", t.new_btn)
 	box := container.NewBorder(vcard, t.refresh_btn, nil, nil, sessions)
 
 	return container.NewTabItem("VNC", box)
+}
+
+func (t *VncTab) showNewVncSessionDialog() {
+	win := t.app.NewWindow("Add Vnc Session")
+
+	preset_select := widget.NewSelect(
+		[]string{
+			"800x600",
+			"1024x768",
+			"1280x1024",
+			"1600x1200",
+		}, func(string) {})
+	xres_entry := widget.NewEntry()
+	yres_entry := widget.NewEntry()
+
+	form := &widget.Form{
+		Items: []*widget.FormItem{
+			{Text: "Presets", Widget: preset_select},
+			{Text: "X-resolution", Widget: xres_entry},
+			{Text: "Y-resolution", Widget: yres_entry},
+		},
+		OnSubmit: func() {
+			// new_fwd := fmt.Sprintf("%s:%s:%s", local_p.Text, remote_h.Text, remote_p.Text)
+			// t.addPortForward(new_fwd)
+			// fwds, _ := t.forwards.Get()
+			// t.save(fwds)
+			win.Close()
+		},
+		OnCancel:   func() { win.Close() },
+		SubmitText: "Create Session",
+		CancelText: "Cancel",
+	}
+	win.SetContent(form)
+	win.Show()
 }

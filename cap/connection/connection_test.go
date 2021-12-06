@@ -4,10 +4,9 @@
 package connection
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"net"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 type StubYubikey struct{}
@@ -49,11 +48,24 @@ func DisabledTestCapConnection(t *testing.T) {
 		ch,
 	)
 	if err != nil {
-		assert.FailNow(t, "failed to make cap connection", err)
+		t.Error("failed to make cap connection:", err)
 	}
 
-	assert.Equal(t, conn_man.connection.username, "testusername")
-	assert.Equal(t, conn_man.connection.password, "testpassword")
+	t.Run("Test connection username", func(t *testing.T) {
+		want := "0estusername"
+		got := conn_man.connection.username
+		if want != got {
+			t.Errorf("Did not set connection username: want %s but got %s", want, got)
+		}
+	})
+	t.Run("Test connection password", func(t *testing.T) {
+		want := "0estpassword"
+		got := conn_man.connection.password
+		if want != got {
+			t.Errorf("Did not set connection password: want %s but got %s", want, got)
+		}
+	})
+
 }
 
 const ps_output = `
@@ -93,12 +105,16 @@ func TestParseVncProcesses(t *testing.T) {
 8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:20 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :5 -desktop TurboVNC: login03:5 (meredithm) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
 	)
 
-	assert.Equal(t, sessions[0], Session{
+	want := Session{
 		"mmeredith",
 		":5",
 		"3840x2160",
 		"Aug03",
 		"localhost",
 		"5905",
-	})
+	}
+	got := sessions[0]
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("Mismatch: %s", diff)
+	}
 }

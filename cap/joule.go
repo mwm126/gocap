@@ -33,7 +33,7 @@ func NewJouleConnected(app fyne.App, cfg config, conn_man connection.ConnectionM
 func (t *JouleTab) Connect(conn connection.Connection) {
 	homeTab := newJouleHome(t.CapTab.closeConnection)
 	sshTab := newSsh(conn)
-	vncTab := newVncTab(conn)
+	vncTab := newVncTab(t.app, conn)
 	vncTabItem := newVncTabItem(vncTab)
 
 	cfg := GetConfig()
