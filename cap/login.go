@@ -3,8 +3,11 @@ package cap
 import (
 	"aeolustec.com/capclient/cap/connection"
 
+	"bufio"
+	"errors"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -102,6 +105,12 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 	password := widget.NewPasswordEntry()
 	password.SetPlaceHolder("Enter password...")
 
+	uname, pword, err := GetSavedLogin()
+	if err == nil {
+		username.SetText(uname)
+		password.SetText(pword)
+	}
+
 	networkNames := make([]string, 0, len(network_ips))
 	for network := range network_ips {
 		networkNames = append(networkNames, network)
@@ -129,4 +138,27 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 func (t *CapTab) closeConnection() {
 	t.connection_manager.Close()
 	t.card.SetContent(t.login)
+}
+
+func GetSavedLogin() (string, string, error) {
+	file, err := os.Open(".cap-credentials")
+	if err != nil {
+		return "", "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", "", err
+	}
+	if len(lines) < 2 {
+		return "", "", errors.New("Could not read .cap-credentials")
+	}
+	return lines[0], lines[1], nil
 }
