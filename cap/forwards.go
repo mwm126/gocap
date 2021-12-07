@@ -13,12 +13,14 @@ import (
 type SaveCallback func([]string)
 
 type PortForwardTab struct {
-	app      fyne.App
-	save     SaveCallback
-	forwards binding.StringList
+	TabItem   *container.TabItem
+	AddButton *widget.Button
+	app       fyne.App
+	save      SaveCallback
+	forwards  binding.StringList
 }
 
-func newPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *container.TabItem {
+func NewPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *PortForwardTab {
 	t := PortForwardTab{
 		app:  app,
 		save: cb,
@@ -33,7 +35,7 @@ func newPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *container.
 		t.addPortForward(fwd)
 	}
 
-	add := widget.NewButton("Add", t.showNewPortForwardDialog)
+	t.AddButton = widget.NewButton("Add", t.showNewPortForwardDialog)
 
 	var remove *widget.Button
 	var to_be_removed widget.ListItemID
@@ -61,12 +63,23 @@ func newPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *container.
 		}
 	}
 
-	box := container.NewBorder(add, remove, nil, nil, list)
-	return container.NewTabItem("Port Forwards", box)
+	box := container.NewBorder(t.AddButton, remove, nil, nil, list)
+	t.TabItem = container.NewTabItem("Port Forwards", box)
+	return &t
 }
 
 func (t *PortForwardTab) showNewPortForwardDialog() {
 	win := t.app.NewWindow("Add Port Forward")
+	pfform := t.NewPortForwardForm(win)
+	win.SetContent(pfform.Form)
+	win.Show()
+}
+
+type PortForwardForm struct {
+	Form *widget.Form
+}
+
+func (t *PortForwardTab) NewPortForwardForm(win fyne.Window) *PortForwardForm {
 
 	local_p := widget.NewEntry()
 	local_p.SetPlaceHolder("Local Port")
@@ -92,8 +105,12 @@ func (t *PortForwardTab) showNewPortForwardDialog() {
 		SubmitText: "Ok",
 		CancelText: "Cancel",
 	}
-	win.SetContent(form)
-	win.Show()
+
+	pfform := &PortForwardForm{
+		form,
+	}
+	return pfform
+
 }
 
 func (t *PortForwardTab) addPortForward(fwd string) {

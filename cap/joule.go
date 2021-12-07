@@ -34,15 +34,15 @@ func (t *JouleTab) Connect(conn connection.Connection) {
 	homeTab := newJouleHome(t.CapTab.closeConnection)
 	sshTab := newSsh(conn)
 	vncTab := newVncTab(t.app, conn)
-	vncTabItem := newVncTabItem(vncTab)
+	vncTabItem := vncTab.TabItem
 
 	cfg := GetConfig()
-	fwdTab := newPortForwardTab(t.app, cfg.Joule_Forwards, func(fwds []string) {
+	fwdTab := NewPortForwardTab(t.app, cfg.Joule_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
 		SaveForwards(fwds)
 	})
 
-	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, vncTabItem, fwdTab})
+	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, vncTabItem, fwdTab.TabItem})
 }
 
 func newJouleHome(close_cb func()) *container.TabItem {

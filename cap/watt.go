@@ -35,12 +35,12 @@ func (t *WattTab) Connect(conn connection.Connection) {
 	sshTab := newSsh(conn)
 
 	cfg := GetConfig()
-	fwdTab := newPortForwardTab(t.app, cfg.Watt_Forwards, func(fwds []string) {
+	fwdTab := NewPortForwardTab(t.app, cfg.Watt_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
 		SaveForwards(fwds)
 	})
 
-	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, fwdTab})
+	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, fwdTab.TabItem})
 }
 
 func newWattHome(close_cb func()) *container.TabItem {

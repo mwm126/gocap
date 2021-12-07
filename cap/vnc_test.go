@@ -45,46 +45,34 @@ func (c *FakeConnection) GetUsername() string {
 
 func (conn *FakeConnection) UpdateForwards(fwds []string) {}
 
-func DiableTestVncTabRefresh(t *testing.T) {
+func TestVncTab(t *testing.T) {
 	a := app.New()
 	w := a.NewWindow("Hello")
 	var conn FakeConnection
 	vncTab := newVncTab(a, &conn)
-	tabItem := newVncTabItem(vncTab)
-	tabs := container.NewAppTabs(tabItem)
-	w.SetContent(container.NewVBox(
-		tabs,
-	))
+	w.SetContent(container.NewVBox(container.NewAppTabs(vncTab.TabItem)))
 
-	test.Tap(vncTab.refresh_btn)
+	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
+		test.Tap(vncTab.refresh_btn)
 
-	want := 0
-	got := len(vncTab.sessions)
-	if want != got {
-		t.Error("Could not refresh sessions")
-	}
-}
+		want := 0
+		got := len(vncTab.sessions)
+		if want != got {
+			t.Error("Could not refresh sessions")
+		}
+	})
 
-func TestVncTabNewSession(t *testing.T) {
-	a := app.New()
-	w := a.NewWindow("Hello")
-	var conn FakeConnection
-	vncTab := newVncTab(a, &conn)
-	tabItem := newVncTabItem(vncTab)
-	tabs := container.NewAppTabs(tabItem)
-	w.SetContent(container.NewVBox(
-		tabs,
-	))
+	t.Run("Vnc New Session", func(t *testing.T) {
+		test.Tap(vncTab.new_btn)
 
-	test.Tap(vncTab.new_btn)
-
-	// if 0 != len(vncTab.sessions) {
-	// 	t.Error("Number of sessions should be 1 but was: ", len(vncTab.sessions))
-	// }
-	// want := connection.Session{}
-	// got := vncTab.sessions[0]
-	// if want != got {
-	// 	t.Error("BAD THING u DID")
-	// }
+		if 0 != len(vncTab.sessions) {
+			t.Error("Number of sessions should be 1 but was: ", len(vncTab.sessions))
+		}
+		// want := connection.Session{}
+		// got := vncTab.sessions[0]
+		// if want != got {
+		// t.Error("BAD THING u DID")
+		// }
+	})
 
 }

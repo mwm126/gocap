@@ -11,15 +11,15 @@ import (
 
 // Client represents the Main window of CAP client
 type Client struct {
+	Tabs   *container.AppTabs
 	window fyne.Window
 	app    fyne.App
 }
 
-func NewClient(conn_man connection.ConnectionManager) Client {
+func NewClient(cfg config, conn_man connection.ConnectionManager) Client {
 	a := app.New()
 	w := a.NewWindow("CAP Client")
 
-	cfg := GetConfig()
 	about_tab := container.NewTabItemWithIcon(
 		"About",
 		theme.HomeIcon(),
@@ -46,7 +46,7 @@ func NewClient(conn_man connection.ConnectionManager) Client {
 
 	w.SetContent(tabs)
 
-	return Client{w, a}
+	return Client{tabs, w, a}
 }
 
 func (client *Client) Run() {

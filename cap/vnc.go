@@ -13,6 +13,7 @@ import (
 )
 
 type VncTab struct {
+	TabItem     *container.TabItem
 	app         fyne.App
 	connection  connection.Connection
 	refresh_btn *widget.Button
@@ -60,12 +61,6 @@ func newVncTab(a fyne.App, conn connection.Connection) *VncTab {
 		),
 	}
 
-	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
-	t.new_btn = widget.NewButton("New VNC Session", t.showNewVncSessionDialog)
-	return &t
-}
-
-func newVncTabItem(t *VncTab) *container.TabItem {
 	sessions := widget.NewListWithData(t.session_labels,
 		func() fyne.CanvasObject {
 			return widget.NewLabel("template")
@@ -74,10 +69,13 @@ func newVncTabItem(t *VncTab) *container.TabItem {
 			obj.(*widget.Label).Bind(fwd.(binding.String))
 		})
 
+	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
+	t.new_btn = widget.NewButton("New VNC Session", t.showNewVncSessionDialog)
 	vcard := widget.NewCard("GUI", "List of VNC Sessions", t.new_btn)
 	box := container.NewBorder(vcard, t.refresh_btn, nil, nil, sessions)
 
-	return container.NewTabItem("VNC", box)
+	t.TabItem = container.NewTabItem("VNC", box)
+	return &t
 }
 
 func (t *VncTab) showNewVncSessionDialog() {

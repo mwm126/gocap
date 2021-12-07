@@ -24,6 +24,6 @@ func main() {
 	cap.WriteConfig(cfg)
 
 	conn_man := connection.NewCapConnectionManager(knk)
-	client := cap.NewClient(conn_man)
+	client := cap.NewClient(cfg, conn_man)
 	client.Run()
 }
