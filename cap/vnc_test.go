@@ -5,10 +5,9 @@ package cap
 
 import (
 	"aeolustec.com/capclient/cap/connection"
-
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/container"
+	"fmt"
 	"fyne.io/fyne/v2/test"
+	"github.com/google/go-cmp/cmp"
 	"testing"
 )
 
@@ -32,47 +31,155 @@ func NewFakeKnocker() *connection.PortKnocker {
 	return connection.NewPortKnocker(&fake_yk, entropy)
 }
 
-type FakeConnection struct{}
+type FakeConnection struct {
+	sessions []connection.Session
+}
 
 func (c *FakeConnection) FindSessions() ([]connection.Session, error) {
-	sessions := make([]connection.Session, 0, 10)
-	return sessions, nil
+	return c.sessions, nil
 }
 
 func (c *FakeConnection) GetUsername() string {
-	return ""
+	return "test_user"
 }
 
 func (conn *FakeConnection) UpdateForwards(fwds []string) {}
 
+func (conn *FakeConnection) CreateVncSession(xres string, yres string) {
+	conn.sessions = append(conn.sessions, connection.Session{
+		Username:      "test_user",
+		DisplayNumber: ":77",
+		Geometry:      fmt.Sprintf("%sx%s", xres, yres),
+		DateCreated:   "2222-33-44",
+		HostAddress:   "localhost",
+		HostPort:      "8088",
+	})
+}
+
 func TestVncTab(t *testing.T) {
-	a := app.New()
-	w := a.NewWindow("Hello")
+	a := test.NewApp()
 	var conn FakeConnection
+	conn.sessions = []connection.Session{
+		{
+			Username:      "the_user",
+			DisplayNumber: ":123",
+			Geometry:      "1661x888",
+			DateCreated:   "2021-12-02",
+			HostAddress:   "localhost",
+			HostPort:      "789",
+		},
+	}
 	vncTab := newVncTab(a, &conn)
-	w.SetContent(container.NewVBox(container.NewAppTabs(vncTab.TabItem)))
 
 	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
-		test.Tap(vncTab.refresh_btn)
-
 		want := 0
 		got := len(vncTab.sessions)
 		if want != got {
-			t.Error("Could not refresh sessions")
+			t.Error("Initially # of sessions should be 0 but was: ", len(vncTab.sessions))
+		}
+
+		test.Tap(vncTab.refresh_btn)
+
+		want = 1
+		got = len(vncTab.sessions)
+		if want != got {
+			t.Error("After refresh # of sessions should be 1 but was: ", len(vncTab.sessions))
 		}
 	})
 
 	t.Run("Vnc New Session", func(t *testing.T) {
-		test.Tap(vncTab.new_btn)
-
-		if 0 != len(vncTab.sessions) {
-			t.Error("Number of sessions should be 1 but was: ", len(vncTab.sessions))
+		want := 0
+		got := len(vncTab.sessions)
+		if want != got {
+			t.Error("Initially # of sessions should be 0 but was: ", len(vncTab.sessions))
 		}
-		// want := connection.Session{}
-		// got := vncTab.sessions[0]
-		// if want != got {
-		// t.Error("BAD THING u DID")
-		// }
+
+		test.Tap(vncTab.new_btn) // Should show new session dialog (without error)
+	})
+
+}
+
+func TestNewSessionDialog(t *testing.T) {
+	a := test.NewApp()
+	init_session := connection.Session{
+		Username:      "the_user",
+		DisplayNumber: ":123",
+		Geometry:      "1661x888",
+		DateCreated:   "2021-12-02",
+		HostAddress:   "localhost",
+		HostPort:      "789",
+	}
+	default_rezs := []string{
+		"800x600",
+		"1024x768",
+		"1280x1024",
+		"1600x1200",
+	}
+
+	t.Run("Test Preset Resolution", func(t *testing.T) {
+		var conn FakeConnection
+		conn.sessions = []connection.Session{init_session}
+		vncTab := newVncTab(a, &conn)
+		w := test.NewWindow(nil)
+		vsf := vncTab.NewVncSessionForm(w, default_rezs)
+		last_index := len(vsf.preset_select.Options) - 1
+		vsf.preset_select.SetSelectedIndex(last_index)
+		vsf.Form.OnSubmit()
+
+		want := []connection.Session{
+			{
+				Username:      "the_user",
+				DisplayNumber: ":123",
+				Geometry:      "1661x888",
+				DateCreated:   "2021-12-02",
+				HostAddress:   "localhost",
+				HostPort:      "789",
+			},
+			{
+				Username:      "test_user",
+				DisplayNumber: ":77",
+				Geometry:      "1600x1200",
+				DateCreated:   "2222-33-44",
+				HostAddress:   "localhost",
+				HostPort:      "8088",
+			}}
+		got := conn.sessions
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
+	})
+
+	t.Run("Test Custom Resolution", func(t *testing.T) {
+		var conn FakeConnection
+		conn.sessions = []connection.Session{init_session}
+		vncTab := newVncTab(a, &conn)
+		w := test.NewWindow(nil)
+		vsf := vncTab.NewVncSessionForm(w, default_rezs)
+		vsf.xres_entry.SetText("999")
+		vsf.yres_entry.SetText("555")
+		vsf.Form.OnSubmit()
+
+		want := []connection.Session{
+			{
+				Username:      "the_user",
+				DisplayNumber: ":123",
+				Geometry:      "1661x888",
+				DateCreated:   "2021-12-02",
+				HostAddress:   "localhost",
+				HostPort:      "789",
+			},
+			{
+				Username:      "test_user",
+				DisplayNumber: ":77",
+				Geometry:      "999x555",
+				DateCreated:   "2222-33-44",
+				HostAddress:   "localhost",
+				HostPort:      "8088",
+			}}
+		got := conn.sessions
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
 	})
 
 }

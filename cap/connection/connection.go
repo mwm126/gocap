@@ -61,6 +61,7 @@ func (t *CapConnectionManager) Close() {
 
 type Connection interface {
 	FindSessions() ([]Session, error)
+	CreateVncSession(xres string, yres string)
 	GetUsername() string
 	UpdateForwards(fwds []string)
 }
@@ -333,6 +334,8 @@ func (c *CapConnection) FindSessions() ([]Session, error) {
 	}
 	return parseSessions(c.GetUsername(), text), nil
 }
+
+func (c *CapConnection) CreateVncSession(xres string, yres string) {}
 
 func parseSessions(username, text string) []Session {
 	sessions := make([]Session, 0, 10)

@@ -2,23 +2,21 @@ package cap
 
 import (
 	"aeolustec.com/capclient/cap/connection"
-
 	"fmt"
-	"log"
-
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
+	"log"
+	"strings"
 )
 
 type VncTab struct {
-	TabItem     *container.TabItem
-	app         fyne.App
-	connection  connection.Connection
-	refresh_btn *widget.Button
-	new_btn     *widget.Button
-	// save     SaveCallback
+	TabItem        *container.TabItem
+	app            fyne.App
+	connection     connection.Connection
+	refresh_btn    *widget.Button
+	new_btn        *widget.Button
 	session_labels binding.StringList
 	sessions       []connection.Session
 }
@@ -53,12 +51,7 @@ func newVncTab(a fyne.App, conn connection.Connection) *VncTab {
 		app:        a,
 		connection: conn,
 		// save: cb,
-		session_labels: binding.BindStringList(
-			&[]string{
-				"1920x1080 :4   2021-12-21",
-				"800x600   :5   2021-12-21",
-			},
-		),
+		session_labels: binding.BindStringList(&[]string{}),
 	}
 
 	sessions := widget.NewListWithData(t.session_labels,
@@ -80,16 +73,28 @@ func newVncTab(a fyne.App, conn connection.Connection) *VncTab {
 
 func (t *VncTab) showNewVncSessionDialog() {
 	win := t.app.NewWindow("Add Vnc Session")
+	DEFAULT_RESOLUTIONS := []string{"800x600", "1024x768", "1280x1024", "1600x1200"}
+	f := t.NewVncSessionForm(win, DEFAULT_RESOLUTIONS)
+	win.SetContent(f.Form)
+	win.Show()
+}
 
-	preset_select := widget.NewSelect(
-		[]string{
-			"800x600",
-			"1024x768",
-			"1280x1024",
-			"1600x1200",
-		}, func(string) {})
+type VncSessionForm struct {
+	Form          *widget.Form
+	preset_select *widget.Select
+	xres_entry    *widget.Entry
+	yres_entry    *widget.Entry
+}
+
+func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionForm {
 	xres_entry := widget.NewEntry()
 	yres_entry := widget.NewEntry()
+	preset_select := widget.NewSelect(
+		rezs, func(text string) {
+			res := strings.Split(text, "x")
+			xres_entry.SetText(res[0])
+			yres_entry.SetText(res[1])
+		})
 
 	form := &widget.Form{
 		Items: []*widget.FormItem{
@@ -98,16 +103,18 @@ func (t *VncTab) showNewVncSessionDialog() {
 			{Text: "Y-resolution", Widget: yres_entry},
 		},
 		OnSubmit: func() {
-			// new_fwd := fmt.Sprintf("%s:%s:%s", local_p.Text, remote_h.Text, remote_p.Text)
-			// t.addPortForward(new_fwd)
-			// fwds, _ := t.forwards.Get()
-			// t.save(fwds)
+			t.connection.CreateVncSession(xres_entry.Text, yres_entry.Text)
 			win.Close()
 		},
 		OnCancel:   func() { win.Close() },
 		SubmitText: "Create Session",
 		CancelText: "Cancel",
 	}
-	win.SetContent(form)
-	win.Show()
+	vsf := &VncSessionForm{
+		form,
+		preset_select,
+		xres_entry,
+		yres_entry,
+	}
+	return vsf
 }
