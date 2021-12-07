@@ -1,9 +1,11 @@
 package cap
 
 import (
-	"aeolustec.com/capclient/cap/connection"
 	"net"
 	"testing"
+
+	"aeolustec.com/capclient/cap/connection"
+	"fyne.io/fyne/v2/test"
 )
 
 type FakeConnManager struct {
@@ -57,7 +59,9 @@ func TestClient(t *testing.T) {
 				Enable_watt:  tc.watt,
 			}
 
-			client := NewClient(cfg, conn_man)
+			a := test.NewApp()
+			w := test.NewWindow(nil)
+			client := NewClient(a, w, cfg, conn_man)
 
 			if got := len(client.Tabs.Items); got != tc.ntabs {
 				t.Errorf("Got %d; want %d", got, tc.ntabs)

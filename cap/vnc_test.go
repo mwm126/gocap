@@ -58,20 +58,21 @@ func (conn *FakeConnection) CreateVncSession(xres string, yres string) {
 
 func TestVncTab(t *testing.T) {
 	a := test.NewApp()
-	var conn FakeConnection
-	conn.sessions = []connection.Session{
-		{
-			Username:      "the_user",
-			DisplayNumber: ":123",
-			Geometry:      "1661x888",
-			DateCreated:   "2021-12-02",
-			HostAddress:   "localhost",
-			HostPort:      "789",
-		},
+
+	init_session := connection.Session{
+		Username:      "the_user",
+		DisplayNumber: ":123",
+		Geometry:      "1661x888",
+		DateCreated:   "2021-12-02",
+		HostAddress:   "localhost",
+		HostPort:      "789",
 	}
-	vncTab := newVncTab(a, &conn)
 
 	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
+		var conn FakeConnection
+		conn.sessions = []connection.Session{init_session}
+		vncTab := newVncTab(a, &conn)
+
 		want := 0
 		got := len(vncTab.sessions)
 		if want != got {
@@ -88,6 +89,10 @@ func TestVncTab(t *testing.T) {
 	})
 
 	t.Run("Vnc New Session", func(t *testing.T) {
+		var conn FakeConnection
+		conn.sessions = []connection.Session{init_session}
+		vncTab := newVncTab(a, &conn)
+
 		want := 0
 		got := len(vncTab.sessions)
 		if want != got {

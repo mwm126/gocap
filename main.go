@@ -1,11 +1,11 @@
 package main
 
 import (
-	"crypto/rand"
-	"log"
-
 	"aeolustec.com/capclient/cap"
 	"aeolustec.com/capclient/cap/connection"
+	"crypto/rand"
+	"fyne.io/fyne/v2/app"
+	"log"
 )
 
 func main() {
@@ -24,6 +24,8 @@ func main() {
 	cap.WriteConfig(cfg)
 
 	conn_man := connection.NewCapConnectionManager(knk)
-	client := cap.NewClient(cfg, conn_man)
+	a := app.New()
+	w := a.NewWindow("CAP Client")
+	client := cap.NewClient(a, w, cfg, conn_man)
 	client.Run()
 }

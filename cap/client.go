@@ -3,7 +3,6 @@ package cap
 import (
 	"aeolustec.com/capclient/cap/connection"
 	fyne "fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -16,9 +15,7 @@ type Client struct {
 	app    fyne.App
 }
 
-func NewClient(cfg config, conn_man connection.ConnectionManager) Client {
-	a := app.New()
-	w := a.NewWindow("CAP Client")
+func NewClient(a fyne.App, w fyne.Window, cfg config, conn_man connection.ConnectionManager) Client {
 
 	about_tab := container.NewTabItemWithIcon(
 		"About",
