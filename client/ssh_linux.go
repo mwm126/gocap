@@ -17,7 +17,7 @@ func run_ssh(conn cap.Connection) {
 		"ssh",
 		"localhost",
 		"-p",
-		strconv.Itoa(connection.SSH_LOCAL_PORT),
+		strconv.Itoa(cap.SSH_LOCAL_PORT),
 	)
 	err := cmd.Run()
 	if err != nil {

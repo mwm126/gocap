@@ -13,7 +13,7 @@ func RunVnc(conn connection.Connection, otp, displayNumber string) {
 		"vnc",
 		"localhost",
 		"-p",
-		strconv.Itoa(connection.VNC_LOCAL_PORT),
+		strconv.Itoa(VNC_LOCAL_PORT),
 	)
 	err := cmd.Run()
 	if err != nil {
