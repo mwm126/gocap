@@ -1,8 +1,8 @@
 package main
 
 import (
-	"aeolustec.com/capclient/client"
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/client"
 	"crypto/rand"
 	"fyne.io/fyne/v2/app"
 	"log"
@@ -26,6 +26,8 @@ func main() {
 	conn_man := cap.NewCapConnectionManager(knk)
 	a := app.New()
 	w := a.NewWindow("CAP Client")
+
+	client.InitServices(nil)
 	client := client.NewClient(a, w, cfg, conn_man)
 	client.Run()
 }

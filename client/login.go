@@ -27,6 +27,77 @@ type CapTab struct {
 	connecting         *fyne.Container
 	change_password    *fyne.Container
 	pw_expired_cb      func(cap.PasswordChecker)
+	ConnectedCallback  func(cap.Connection)
+}
+
+func NewLoginTab(tabname,
+	desc string,
+	ips map[string]string,
+	conn_man cap.ConnectionManager,
+	connected_cb func(cap cap.Connection),
+	connected *fyne.Container) CapTab {
+	tab := &CapTab{}
+	connect_cancelled := false
+	ch := make(chan string)
+
+	tab.ConnectedCallback = connected_cb
+	tab.connection_manager = conn_man
+	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
+		tab.card.SetContent(tab.connecting)
+		cfg := GetConfig()
+		port := cfg.CapPort
+		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
+			port,
+			tab.pw_expired_cb, ch)
+
+		if err != nil {
+			log.Println("Unable to make CAP Connection")
+			tab.card.SetContent(tab.login)
+			connect_cancelled = false
+			return
+		}
+
+		if tab.connection_manager.GetPasswordExpired() {
+			tab.card.SetContent(tab.change_password)
+			return
+		}
+
+		if connect_cancelled {
+			log.Println("CAP Connection cancelled.")
+			tab.connection_manager.Close()
+			connect_cancelled = false
+			return
+		}
+
+		time.Sleep(1 * time.Second)
+		tab.card.SetContent(connected)
+		connected_cb(conn_man.GetConnection())
+	})
+
+	tab.pw_expired_cb = func(pw_checker cap.PasswordChecker) {
+		// Detected expired password callback
+		tab.connection_manager.SetPasswordExpired()
+		tab.card.SetContent(tab.change_password)
+	}
+	tab.connecting = func() *fyne.Container {
+		connecting := widget.NewLabel("Connecting......")
+		cancel := widget.NewButton("Cancel", func() {
+			connect_cancelled = true
+			tab.card.SetContent(tab.login)
+		})
+		return container.NewVBox(connecting, cancel)
+	}()
+
+	tab.change_password = NewChangePassword(func(new_password string) {
+		ch <- new_password
+		connect_cancelled = true
+		tab.card.SetContent(tab.login)
+	})
+	tab.card = widget.NewCard(tabname, desc, tab.login)
+
+	tab.Tab = container.NewTabItem(tabname, tab.card)
+	tab.connection_manager = conn_man
+	return *tab
 }
 
 func NewCapTab(tabname,
