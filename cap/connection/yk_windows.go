@@ -1,4 +1,4 @@
-package cap
+package connection
 
 // #cgo CFLAGS: -g -Wall -Werror
 // #cgo LDFLAGS: -Wl,-Bstatic -lykpers-1 -lyubikey -Wl,-Bdynamic -lsetupapi -lhid

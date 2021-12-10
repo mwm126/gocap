@@ -1,35 +1,48 @@
 package cap
 
 import (
-	"fyne.io/fyne/v2"
+	"aeolustec.com/capclient/cap/connection"
+
+	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
-func NewJouleConnected(app fyne.App,
-	conn_man *CapConnectionManager,
-	close_cb func()) *fyne.Container {
+type JouleTab struct {
+	app    fyne.App
+	Tabs   *container.AppTabs
+	CapTab CapTab
+}
 
-	homeTab := newJouleHome(close_cb)
-	sshTab := newSsh(conn_man)
+func NewJouleConnected(app fyne.App, cfg config, conn_man connection.ConnectionManager) JouleTab {
+	var joule_tab JouleTab
+	tabs := container.NewAppTabs()
+	cont := container.NewMax(tabs)
 
-	vcard := widget.NewCard("GUI", "TODO", nil)
-	vncTab := container.NewTabItem("VNC", vcard)
+	joule_tab = JouleTab{
+		app,
+		tabs,
+		NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
+			func(conn connection.Connection) {
+				joule_tab.Connect(conn)
+			}, cont),
+	}
+	return joule_tab
+}
+
+func (t *JouleTab) Connect(conn connection.Connection) {
+	homeTab := newJouleHome(t.CapTab.closeConnection)
+	sshTab := newSsh(conn)
+	vncTab := newVncTab(t.app, conn)
+	vncTabItem := vncTab.TabItem
 
 	cfg := GetConfig()
-	conn := conn_man.connection
-	fwdTab := newPortForwardTab(app, cfg.Joule_Forwards, func(fwds []string) {
+	fwdTab := NewPortForwardTab(t.app, cfg.Joule_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
 		SaveForwards(fwds)
 	})
 
-	tabs := container.NewAppTabs(
-		homeTab,
-		sshTab,
-		vncTab,
-		fwdTab,
-	)
-	return container.NewMax(tabs)
+	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, vncTabItem, fwdTab.TabItem})
 }
 
 func newJouleHome(close_cb func()) *container.TabItem {

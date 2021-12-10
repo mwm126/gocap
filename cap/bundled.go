@@ -3,7 +3,7 @@
 
 package cap
 
-import "fyne.io/fyne/v2"
+import fyne "fyne.io/fyne/v2"
 
 var resourceIconPng = &fyne.StaticResource{
 	StaticName: "Icon.png",

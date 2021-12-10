@@ -1,8 +1,8 @@
 package cap
 
 import (
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
+	"aeolustec.com/capclient/cap/connection"
+	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -10,18 +10,13 @@ import (
 
 // Client represents the Main window of CAP client
 type Client struct {
+	Tabs   *container.AppTabs
 	window fyne.Window
-	// jouleTab JouleTab
-	// wattTab  WattTab
-	knocker Knocker
-	app     fyne.App
+	app    fyne.App
 }
 
-func NewClient(knocker Knocker) Client {
-	a := app.New()
-	w := a.NewWindow("CAP Client")
+func NewClient(a fyne.App, w fyne.Window, cfg config, conn_man connection.ConnectionManager) Client {
 
-	cfg := GetConfig()
 	about_tab := container.NewTabItemWithIcon(
 		"About",
 		theme.HomeIcon(),
@@ -32,32 +27,23 @@ func NewClient(knocker Knocker) Client {
 	tabs := container.NewAppTabs(about_tab)
 
 	if cfg.Enable_joule {
-		conn_man := NewCapConnectionManager(knocker)
-		var joule CapTab
-		joule = NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
-			NewJouleConnected(a, conn_man, joule.closeConnection))
-		tabs.Append(joule.Tab)
+		joule := NewJouleConnected(a, cfg, conn_man)
+		tabs.Append(joule.CapTab.Tab)
 	}
 	if cfg.Enable_watt {
-		conn_man := NewCapConnectionManager(knocker)
-		var watt CapTab
-		watt = NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, conn_man,
-			NewWattConnected(a, conn_man, watt.closeConnection))
-		tabs.Append(watt.Tab)
+		watt := NewWattConnected(a, cfg, conn_man)
+		tabs.Append(watt.CapTab.Tab)
 	}
 	if cfg.Enable_fe261 {
-		conn_man := NewCapConnectionManager(knocker)
-		var fe261 CapTab
-		fe261 = NewCapTab("FE261", "NETL system", cfg.Fe261_Ips, conn_man,
-			NewFe261Connected(a, conn_man, fe261.closeConnection))
-		tabs.Append(fe261.Tab)
+		fe261 := NewFe261Connected(a, cfg, conn_man)
+		tabs.Append(fe261.CapTab.Tab)
 	}
 
 	tabs.SetTabLocation(container.TabLocationLeading)
 
 	w.SetContent(tabs)
 
-	return Client{w, knocker, a}
+	return Client{tabs, w, a}
 }
 
 func (client *Client) Run() {

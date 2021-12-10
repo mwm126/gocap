@@ -1,37 +1,43 @@
 package cap
 
 import (
-	"fyne.io/fyne/v2"
+	"aeolustec.com/capclient/cap/connection"
+
+	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
-func NewFe261Connected(app fyne.App,
-	conn_man *CapConnectionManager,
-	close_cb func()) *fyne.Container {
-
-	homeTab := newHome(close_cb)
-	sshTab := newSsh(conn_man)
-
-	cfg := GetConfig()
-	fwdTab := newPortForwardTab(app, cfg.Fe261_Forwards, func(fwds []string) {
-		cfg := GetConfig()
-		cfg.Fe261_Forwards = fwds[2:]
-		WriteConfig(cfg)
-	})
-
-	tabs := container.NewAppTabs(
-		homeTab,
-		sshTab,
-		fwdTab,
-	)
-	return container.NewMax(tabs)
+type Fe261Tab struct {
+	app    fyne.App
+	Tabs   *container.AppTabs
+	CapTab CapTab
 }
 
-func newHome(close_cb func()) *container.TabItem {
-	close := widget.NewButton("Disconnect", func() {
-		close_cb()
-	})
+func NewFe261Connected(app fyne.App, cfg config, conn_man connection.ConnectionManager) Fe261Tab {
+	var fe261_tab Fe261Tab
+	tabs := container.NewAppTabs()
+	cont := container.NewMax(tabs)
+
+	fe261_tab = Fe261Tab{
+		app,
+		tabs,
+		NewCapTab("FE261", "NETL SuperComputer", cfg.Fe261_Ips, conn_man,
+			func(conn connection.Connection) {
+				fe261_tab.Connect(conn)
+			}, cont),
+	}
+	return fe261_tab
+}
+
+func (t *Fe261Tab) Connect(conn connection.Connection) {
+	homeTab := newFe261Home(t.CapTab.closeConnection)
+	sshTab := newSsh(conn)
+	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab})
+}
+
+func newFe261Home(close_cb func()) *container.TabItem {
+	close := widget.NewButton("Disconnect", close_cb)
 	box := container.NewVBox(widget.NewLabel("Connected!"), close)
 	return container.NewTabItem("Home", box)
 }

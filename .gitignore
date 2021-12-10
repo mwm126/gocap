@@ -2,3 +2,5 @@
 /fyne-cross/
 capclient
 /.cap-credentials
+/coverage.html
+/cover.out

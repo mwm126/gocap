@@ -8,16 +8,14 @@ import (
 	"strconv"
 )
 
-//go:generate curl --insecure "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe" --output embeds/putty.exe
-
-func run_ssh(conn connection.Connection) {
+func run_vnc(conn connection.Connection, otp, displayNumber string) {
 	cmd := exec.Command(
 		"x-terminal-emulator",
 		"--",
-		"ssh",
+		"vnc",
 		"localhost",
 		"-p",
-		strconv.Itoa(connection.SSH_LOCAL_PORT),
+		strconv.Itoa(connection.VNC_LOCAL_PORT),
 	)
 	err := cmd.Run()
 	if err != nil {

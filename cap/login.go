@@ -1,6 +1,8 @@
 package cap
 
 import (
+	"aeolustec.com/capclient/cap/connection"
+
 	"bufio"
 	"errors"
 	"log"
@@ -8,14 +10,14 @@ import (
 	"os"
 	"time"
 
-	"fyne.io/fyne/v2"
+	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
 type CapTab struct {
 	Tab                *container.TabItem
-	connection_manager *CapConnectionManager
+	connection_manager connection.ConnectionManager
 	networkSelect      *widget.Select
 	usernameEntry      *widget.Entry
 	passwordEntry      *widget.Entry
@@ -24,13 +26,14 @@ type CapTab struct {
 	login              *fyne.Container
 	connecting         *fyne.Container
 	change_password    *fyne.Container
-	pw_expired_cb      func(PasswordChecker)
+	pw_expired_cb      func(connection.PasswordChecker)
 }
 
 func NewCapTab(tabname,
 	desc string,
 	ips map[string]string,
-	conn_man *CapConnectionManager,
+	conn_man connection.ConnectionManager,
+	connected_cb func(connection connection.Connection),
 	connected *fyne.Container) CapTab {
 	tab := &CapTab{}
 	connect_cancelled := false
@@ -39,17 +42,21 @@ func NewCapTab(tabname,
 	tab.connection_manager = conn_man
 	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip, tab.pw_expired_cb, ch)
-
-		if tab.connection_manager.password_expired {
-			tab.card.SetContent(tab.change_password)
-			return
-		}
+		cfg := GetConfig()
+		port := cfg.CapPort
+		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
+			port,
+			tab.pw_expired_cb, ch)
 
 		if err != nil {
 			log.Println("Unable to make CAP Connection")
 			tab.card.SetContent(tab.login)
 			connect_cancelled = false
+			return
+		}
+
+		if tab.connection_manager.GetPasswordExpired() {
+			tab.card.SetContent(tab.change_password)
 			return
 		}
 
@@ -62,18 +69,23 @@ func NewCapTab(tabname,
 
 		time.Sleep(1 * time.Second)
 		tab.card.SetContent(connected)
+		connected_cb(conn_man.GetConnection())
 	})
 
-	tab.pw_expired_cb = func(pw_checker PasswordChecker) {
+	tab.pw_expired_cb = func(pw_checker connection.PasswordChecker) {
 		// Detected expired password callback
-		tab.connection_manager.password_expired = true
+		tab.connection_manager.SetPasswordExpired()
 		tab.card.SetContent(tab.change_password)
 	}
-	tab.connecting = NewConnecting(func() {
-		// connecting cancel button handler
-		connect_cancelled = true
-		tab.card.SetContent(tab.login)
-	})
+	tab.connecting = func() *fyne.Container {
+		connecting := widget.NewLabel("Connecting......")
+		cancel := widget.NewButton("Cancel", func() {
+			connect_cancelled = true
+			tab.card.SetContent(tab.login)
+		})
+		return container.NewVBox(connecting, cancel)
+	}()
+
 	tab.change_password = NewChangePassword(func(new_password string) {
 		ch <- new_password
 		connect_cancelled = true
@@ -121,12 +133,6 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 	t.passwordEntry = password
 	t.loginBtn = login
 	return container.NewVBox(username, password, network, login)
-}
-
-func NewConnecting(cancel_cb func()) *fyne.Container {
-	connecting := widget.NewLabel("Connecting......")
-	cancel := widget.NewButton("Cancel", cancel_cb)
-	return container.NewVBox(connecting, cancel)
 }
 
 func (t *CapTab) closeConnection() {

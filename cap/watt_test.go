@@ -10,7 +10,7 @@ import (
 
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-cmp/cmp"
 )
 
 type WattSpyKnocker struct {
@@ -19,33 +19,40 @@ type WattSpyKnocker struct {
 	knocked  bool
 }
 
-func (sk *WattSpyKnocker) Knock(username string, address net.IP) error {
+func (sk *WattSpyKnocker) Knock(username string, address net.IP, port uint) error {
 	sk.knocked = true
 	sk.username = username
 	sk.address = address
 	return nil
 }
 
-func TestWattLoginButton(t *testing.T) {
-	spy := &WattSpyKnocker{}
+func _TestWattLoginButton(t *testing.T) {
 	a := app.New()
 
-	var fake_yk FakeYubikey
-	var entropy [32]byte
-	fake_kckr := NewPortKnocker(&fake_yk, entropy)
-	conn_man := NewCapConnectionManager(fake_kckr)
+	var conn_man FakeConnectionManager
 	cfg := GetConfig()
-	wattTab := NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, conn_man,
-		NewWattConnected(a, conn_man, func() {}))
+	wattTab := NewJouleConnected(a, cfg, &conn_man)
 
-	test.Type(wattTab.usernameEntry, "the_user")
-	test.Type(wattTab.passwordEntry, "the_pass")
-	wattTab.networkSelect.SetSelected("vpn")
+	test.Type(wattTab.CapTab.usernameEntry, "the_user")
+	wattTab.CapTab.networkSelect.SetSelected("vpn")
 
-	test.Tap(wattTab.loginBtn)
+	test.Tap(wattTab.CapTab.loginBtn)
 
 	time.Sleep(100 * time.Millisecond)
-	assert.True(t, spy.knocked)
-	assert.Equal(t, "the_user", spy.username)
-	assert.Equal(t, net.IPv4(199, 249, 243, 253), spy.address)
+
+	t.Run("Test username entry", func(t *testing.T) {
+		want := "the_user"
+		got := conn_man.username
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
+	})
+
+	t.Run("Test address selection", func(t *testing.T) {
+		want := net.IPv4(199, 249, 243, 253)
+		got := conn_man.address
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
+	})
 }

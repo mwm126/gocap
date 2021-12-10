@@ -1,4 +1,4 @@
-package cap
+package connection
 
 import (
 	"encoding/hex"
@@ -8,8 +8,8 @@ import (
 // Yubikey interface used by other code (can be real or faked)
 type Yubikey interface {
 	FindSerial() (int32, error)
-	challengeResponse(chal [6]byte) ([16]byte, error)
-	challengeResponseHMAC(chal SHADigest) ([20]byte, error)
+	ChallengeResponse(chal [6]byte) ([16]byte, error)
+	ChallengeResponseHMAC(chal SHADigest) ([20]byte, error)
 }
 
 // UsbYubikey implementation (for actual yubikey)
@@ -23,7 +23,7 @@ func (yk *UsbYubikey) FindSerial() (int32, error) {
 	return out, err
 }
 
-func (yk *UsbYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
+func (yk *UsbYubikey) ChallengeResponse(chal [6]byte) ([16]byte, error) {
 	challengeArgument := hex.EncodeToString(chal[:])
 	out, err := run_yk_chalresp(challengeArgument)
 	if err != nil {
@@ -33,7 +33,7 @@ func (yk *UsbYubikey) challengeResponse(chal [6]byte) ([16]byte, error) {
 	return out, nil
 }
 
-func (yk *UsbYubikey) challengeResponseHMAC(chal SHADigest) ([20]byte, error) {
+func (yk *UsbYubikey) ChallengeResponseHMAC(chal SHADigest) ([20]byte, error) {
 	var hmac [20]byte
 	hex_chal := hex.EncodeToString(chal[:])
 	hmac, err := run_yk_hmac(hex_chal)

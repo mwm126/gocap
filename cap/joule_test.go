@@ -8,44 +8,70 @@ import (
 	"testing"
 	"time"
 
+	"aeolustec.com/capclient/cap/connection"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-cmp/cmp"
 )
 
-type JouleSpyKnocker struct {
+type FakeConnectionManager struct {
 	username string
 	address  net.IP
-	knocked  bool
 }
 
-func (sk *JouleSpyKnocker) Knock(username string, address net.IP) error {
-	sk.knocked = true
-	sk.username = username
-	sk.address = address
+func (t *FakeConnectionManager) GetConnection() connection.Connection {
 	return nil
 }
 
+func (t *FakeConnectionManager) Close() {
+}
+
+func (cm *FakeConnectionManager) Connect(
+	user, pass string,
+	ext_addr,
+	server net.IP,
+	port uint,
+	pw_expired_cb func(connection.PasswordChecker),
+	ch chan string) error {
+	cm.username = user
+	cm.address = server
+	return nil
+}
+
+func (c *FakeConnectionManager) GetPasswordExpired() bool {
+	return false
+}
+func (c *FakeConnectionManager) SetPasswordExpired() {}
+
 func TestJouleLoginButton(t *testing.T) {
-	spy := &JouleSpyKnocker{}
 	a := app.New()
 
-	var fake_yk FakeYubikey
-	var entropy [32]byte
-	fake_kckr := NewPortKnocker(&fake_yk, entropy)
-	conn_man := NewCapConnectionManager(fake_kckr)
+	var conn_man FakeConnectionManager
 	cfg := GetConfig()
-	jouleTab := NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
-		NewJouleConnected(a, conn_man, func() {}))
 
-	test.Type(jouleTab.usernameEntry, "the_user")
-	test.Type(jouleTab.passwordEntry, "the_pass")
-	jouleTab.networkSelect.SetSelected("alb_admin")
+	jouleTab := NewJouleConnected(a, cfg, &conn_man)
 
-	test.Tap(jouleTab.loginBtn)
+	test.Type(jouleTab.CapTab.usernameEntry, "the_user")
+	test.Type(jouleTab.CapTab.passwordEntry, "the_pass")
+	jouleTab.CapTab.networkSelect.SetSelected("alb_admin")
+
+	test.Tap(jouleTab.CapTab.loginBtn)
 
 	time.Sleep(100 * time.Millisecond)
-	assert.True(t, spy.knocked)
-	assert.Equal(t, "the_user", spy.username)
-	assert.Equal(t, net.IPv4(204, 154, 139, 11), spy.address)
+
+	t.Run("Test username entry", func(t *testing.T) {
+		want := "the_user"
+		got := conn_man.username
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
+	})
+
+	t.Run("Test address selection", func(t *testing.T) {
+		want := net.IPv4(204, 154, 139, 11)
+		got := conn_man.address
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Mismatch: %s", diff)
+		}
+	})
 }
