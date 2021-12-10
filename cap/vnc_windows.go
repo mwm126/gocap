@@ -1,14 +1,12 @@
 package cap
 
 import (
-	"aeolustec.com/capclient/cap/connection"
-
 	"log"
 	"os/exec"
 	"strconv"
 )
 
-func run_vnc(conn connection.Connection, otp, displayNumber string) {
+func RunVnc(conn connection.Connection, otp, displayNumber string) {
 	cmd := exec.Command(
 		"x-terminal-emulator",
 		"--",
