@@ -103,7 +103,11 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 			{Text: "Y-resolution", Widget: yres_entry},
 		},
 		OnSubmit: func() {
-			t.connection.CreateVncSession(xres_entry.Text, yres_entry.Text)
+			otp, displayNumber, err := t.connection.CreateVncSession(xres_entry.Text, yres_entry.Text)
+			if err == nil {
+				t.refresh()
+				go run_vnc(t.connection, otp, displayNumber)
+			}
 			win.Close()
 		},
 		OnCancel:   func() { win.Close() },

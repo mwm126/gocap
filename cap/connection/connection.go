@@ -61,7 +61,7 @@ func (t *CapConnectionManager) Close() {
 
 type Connection interface {
 	FindSessions() ([]Session, error)
-	CreateVncSession(xres string, yres string)
+	CreateVncSession(xres string, yres string) (string, string, error)
 	GetUsername() string
 	UpdateForwards(fwds []string)
 }
@@ -265,6 +265,8 @@ const SSH_LOCAL_PORT = 10022
 const SSH_FWD_ADDR = "localhost"
 const SSH_FWD_PORT = 22
 
+const VNC_LOCAL_PORT = 10055
+
 func openSSHTunnel(
 	client *ssh.Client,
 	user, pass string,
@@ -335,7 +337,61 @@ func (c *CapConnection) FindSessions() ([]Session, error) {
 	return parseSessions(c.GetUsername(), text), nil
 }
 
-func (c *CapConnection) CreateVncSession(xres string, yres string) {}
+const MAX_GUI_COUNT = 4
+
+func (c *CapConnection) CreateVncSession(xres string, yres string) (string, string, error) {
+	sessions, err := c.FindSessions()
+	if err != nil {
+		return "", "", err
+	}
+	gui_count := len(sessions)
+	if MAX_GUI_COUNT <= gui_count {
+		return "", "", errors.New("Users may only have {MAX_GUI_COUNT} VNC sessions open at once.")
+	}
+
+	otp, displayNumber := c.startVncSession(xres, yres)
+
+	//         portNumber = self._get_vnc_fields(displayNumber)
+	//         localPortNumber = find_free_port()
+
+	//         vnc_tunnel = self._ssh.make_tunnel(localPortNumber, X_FWD_ADDR, portNumber)
+	//         vnc_tunnel.start()
+	//         vncviewer(otp, localPortNumber)
+	//         self.refresh()
+
+	return otp, displayNumber, nil
+}
+
+func (c *CapConnection) startVncSession(sizeX string, sizeY string) (string, string) {
+	// command = f"vncserver -geometry {sizeX}x{sizeY} -otp -novncauth -nohttpd"
+	// LOG.debug(command)
+
+	// _stdin, _stdout, stderr = self._ssh.cleanExec(command)
+
+	// display = ""
+	otp := ""
+	// LOG.debug("Parsing vncserver stderr output.")
+	// for line in stderr:
+	//     LOG.debug(line)
+	//     # TurboVNC 1.1
+	//     if line.strip().startswith("New \x27X\x27 desktop is"):
+	//         display = str(line.split()[4].rstrip())
+	//     # TurboVNC 1.2
+	//     if line.strip().startswith("Desktop \x27TurboVNC:"):
+	//         display = str(line.split()[2].rstrip())
+
+	//     if line.strip().startswith("Full control one-time password:"):
+	//         otp = str(line.split()[4].rstrip())
+	displayNumber := ""
+	// foundColon = False
+	// for c in display:
+	//     if foundColon:
+	//         displayNumber += c
+	//     if c == ":":
+	//         foundColon = True
+
+	return otp, displayNumber
+}
 
 func parseSessions(username, text string) []Session {
 	sessions := make([]Session, 0, 10)

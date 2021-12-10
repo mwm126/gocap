@@ -26,7 +26,7 @@ func (sk *WattSpyKnocker) Knock(username string, address net.IP, port uint) erro
 	return nil
 }
 
-func TestWattLoginButton(t *testing.T) {
+func _TestWattLoginButton(t *testing.T) {
 	a := app.New()
 
 	var conn_man FakeConnectionManager

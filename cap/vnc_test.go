@@ -45,7 +45,7 @@ func (c *FakeConnection) GetUsername() string {
 
 func (conn *FakeConnection) UpdateForwards(fwds []string) {}
 
-func (conn *FakeConnection) CreateVncSession(xres string, yres string) {
+func (conn *FakeConnection) CreateVncSession(xres string, yres string) (string, string, error) {
 	conn.sessions = append(conn.sessions, connection.Session{
 		Username:      "test_user",
 		DisplayNumber: ":77",
@@ -54,6 +54,7 @@ func (conn *FakeConnection) CreateVncSession(xres string, yres string) {
 		HostAddress:   "localhost",
 		HostPort:      "8088",
 	})
+	return "", "", nil
 }
 
 func TestVncTab(t *testing.T) {
