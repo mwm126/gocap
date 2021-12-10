@@ -25,6 +25,7 @@ jobs:
                 sudo apt update
                 sudo apt-get -qq -y install --no-install-recommends && sudo apt install -y libgl1-mesa-dev xorg-dev libusb-1.0-0-dev libyubikey-dev libykpers-1-dev
               fi
+              go get github.com/ladydascalie/gorgeous
 
       - name: Generate
         run: go generate ./...
