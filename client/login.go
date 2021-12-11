@@ -183,9 +183,11 @@ func (t *CapTab) NewLogin(
 	}
 
 	network_ips := make(map[string]string)
+	external_ips := make(map[string]string)
 	networkNames := make([]string, 0, len(service.Networks))
 	for name, val := range service.Networks {
 		network_ips[name] = val.CapServerAddress
+		external_ips[name] = val.ClientExternalAddress
 		networkNames = append(networkNames, name)
 	}
 	network := widget.NewSelect(networkNames, func(s string) {})
@@ -196,7 +198,7 @@ func (t *CapTab) NewLogin(
 		if network.Selected == "external" {
 			ext_addr = GetExternalIp()
 		} else {
-			ext_addr = net.ParseIP(GetConfig().External_Ips[network.Selected])
+			ext_addr = net.ParseIP(external_ips[network.Selected])
 		}
 		server_addr = net.ParseIP(network_ips[network.Selected])
 		go connect_cb(username.Text, password.Text, ext_addr, server_addr)
