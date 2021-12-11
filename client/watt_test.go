@@ -30,8 +30,15 @@ func _TestWattLoginButton(t *testing.T) {
 	a := app.New()
 
 	var conn_man FakeConnectionManager
-	cfg := GetConfig()
-	wattTab := NewJouleConnected(a, cfg, &conn_man)
+	InitServices(nil)
+	var watt_service Service
+	services, _ := FindServices()
+	for _, service := range services {
+		if service.Name == "watt" {
+			watt_service = service
+		}
+	}
+	wattTab := NewWattConnected(a, watt_service, &conn_man)
 
 	test.Type(wattTab.CapTab.usernameEntry, "the_user")
 	wattTab.CapTab.networkSelect.SetSelected("vpn")

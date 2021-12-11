@@ -14,7 +14,7 @@ type JouleTab struct {
 	CapTab CapTab
 }
 
-func NewJouleConnected(app fyne.App, cfg config, conn_man cap.ConnectionManager) JouleTab {
+func NewJouleConnected(app fyne.App, service Service, conn_man cap.ConnectionManager) JouleTab {
 	var joule_tab JouleTab
 	tabs := container.NewAppTabs()
 	cont := container.NewMax(tabs)
@@ -22,7 +22,7 @@ func NewJouleConnected(app fyne.App, cfg config, conn_man cap.ConnectionManager)
 	joule_tab = JouleTab{
 		app,
 		tabs,
-		NewCapTab("Joule", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
+		NewCapTab("Joule", "NETL SuperComputer", service, conn_man,
 			func(conn cap.Connection) {
 				joule_tab.Connect(conn)
 			}, cont),

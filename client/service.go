@@ -15,7 +15,7 @@ type Network struct {
 type Service struct {
 	Name     string
 	Forwards []string
-	CapPort  int `json:"port"`
+	CapPort  uint `json:"port"`
 	Networks map[string]Network
 }
 

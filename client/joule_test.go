@@ -47,9 +47,17 @@ func TestJouleLoginButton(t *testing.T) {
 	a := app.New()
 
 	var conn_man FakeConnectionManager
-	cfg := GetConfig()
 
-	jouleTab := NewJouleConnected(a, cfg, &conn_man)
+	InitServices(nil)
+	var joule_service Service
+	services, _ := FindServices()
+	for _, service := range services {
+		if service.Name == "joule" {
+			joule_service = service
+		}
+	}
+
+	jouleTab := NewJouleConnected(a, joule_service, &conn_man)
 
 	test.Type(jouleTab.CapTab.usernameEntry, "the_user")
 	test.Type(jouleTab.CapTab.passwordEntry, "the_pass")

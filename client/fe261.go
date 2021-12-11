@@ -14,7 +14,7 @@ type Fe261Tab struct {
 	CapTab CapTab
 }
 
-func NewFe261Connected(app fyne.App, cfg config, conn_man cap.ConnectionManager) Fe261Tab {
+func NewFe261Connected(app fyne.App, service Service, conn_man cap.ConnectionManager) Fe261Tab {
 	var fe261_tab Fe261Tab
 	tabs := container.NewAppTabs()
 	cont := container.NewMax(tabs)
@@ -22,7 +22,7 @@ func NewFe261Connected(app fyne.App, cfg config, conn_man cap.ConnectionManager)
 	fe261_tab = Fe261Tab{
 		app,
 		tabs,
-		NewCapTab("FE261", "NETL SuperComputer", cfg.Fe261_Ips, conn_man,
+		NewCapTab("FE261", "NETL SuperComputer", service, conn_man,
 			func(conn cap.Connection) {
 				fe261_tab.Connect(conn)
 			}, cont),

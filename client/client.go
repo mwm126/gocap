@@ -25,10 +25,19 @@ func NewClient(a fyne.App, w fyne.Window, cfg config, conn_man cap.ConnectionMan
 			"The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.",
 		),
 	)
+	service := Service{ // TODO: placeholder for real ServiceList service
+		Name: "ServiceList",
+		Networks: map[string]Network{
+			"external": {
+				"0.0.0.0",
+				"204.154.139.11",
+			},
+		},
+	}
 
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
 	tabs := container.NewAppTabs(about_tab)
-	login_tab := NewLoginTab("Login", "NETL SuperComputer", cfg.Joule_Ips, conn_man,
+	login_tab := NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
 		func(conn cap.Connection) {
 			services, err := FindServices()
 			if err != nil {
@@ -36,15 +45,15 @@ func NewClient(a fyne.App, w fyne.Window, cfg config, conn_man cap.ConnectionMan
 			}
 			for _, service := range services {
 				if service.Name == "joule" {
-					joule := NewJouleConnected(a, cfg, conn_man)
+					joule := NewJouleConnected(a, service, conn_man)
 					tabs.Append(joule.CapTab.Tab)
 				}
 				if service.Name == "watt" {
-					watt := NewWattConnected(a, cfg, conn_man)
+					watt := NewWattConnected(a, service, conn_man)
 					tabs.Append(watt.CapTab.Tab)
 				}
 				if service.Name == "fe261" {
-					fe261 := NewFe261Connected(a, cfg, conn_man)
+					fe261 := NewFe261Connected(a, service, conn_man)
 					tabs.Append(fe261.CapTab.Tab)
 				}
 			}

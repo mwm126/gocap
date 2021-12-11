@@ -17,7 +17,6 @@ type config struct {
 	Joule_Forwards []string
 	Watt_Forwards  []string
 	Fe261_Forwards []string
-	CapPort        uint
 	DisableNtp     bool
 	External_Ips   map[string]string
 	Fe261_Ips      map[string]string
@@ -48,7 +47,6 @@ func NewConfig() config {
 			"18888:172.16.1.11:18888", // Plexos port
 			"1399:172.16.1.11:1399",   // Plexos port 2
 		},
-		CapPort:    62201, // Unlikely to change
 		DisableNtp: false,
 		External_Ips: map[string]string{
 			"alb_admin":            "198.99.249.252",

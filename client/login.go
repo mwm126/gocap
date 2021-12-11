@@ -32,7 +32,7 @@ type CapTab struct {
 
 func NewLoginTab(tabname,
 	desc string,
-	ips map[string]string,
+	service Service,
 	conn_man cap.ConnectionManager,
 	connected_cb func(cap cap.Connection),
 	connected *fyne.Container) CapTab {
@@ -42,12 +42,10 @@ func NewLoginTab(tabname,
 
 	tab.ConnectedCallback = connected_cb
 	tab.connection_manager = conn_man
-	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
+	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		cfg := GetConfig()
-		port := cfg.CapPort
 		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
-			port,
+			service.CapPort,
 			tab.pw_expired_cb, ch)
 
 		if err != nil {
@@ -102,7 +100,7 @@ func NewLoginTab(tabname,
 
 func NewCapTab(tabname,
 	desc string,
-	ips map[string]string,
+	service Service,
 	conn_man cap.ConnectionManager,
 	connected_cb func(cap cap.Connection),
 	connected *fyne.Container) CapTab {
@@ -110,11 +108,11 @@ func NewCapTab(tabname,
 	connect_cancelled := false
 	ch := make(chan string)
 
+	port := service.CapPort
+
 	tab.connection_manager = conn_man
-	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
+	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		cfg := GetConfig()
-		port := cfg.CapPort
 		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
 			port,
 			tab.pw_expired_cb, ch)
@@ -169,8 +167,10 @@ func NewCapTab(tabname,
 	return *tab
 }
 
-func (t *CapTab) NewLogin(network_ips map[string]string,
-	connect_cb func(user, pass string, ext_ip, srv_ip net.IP)) *fyne.Container {
+func (t *CapTab) NewLogin(
+	service Service,
+	connect_cb func(user, pass string, ext_ip, srv_ip net.IP),
+) *fyne.Container {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
@@ -182,9 +182,11 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 		password.SetText(pword)
 	}
 
-	networkNames := make([]string, 0, len(network_ips))
-	for network := range network_ips {
-		networkNames = append(networkNames, network)
+	network_ips := make(map[string]string)
+	networkNames := make([]string, 0, len(service.Networks))
+	for name, val := range service.Networks {
+		network_ips[name] = val.CapServerAddress
+		networkNames = append(networkNames, name)
 	}
 	network := widget.NewSelect(networkNames, func(s string) {})
 
