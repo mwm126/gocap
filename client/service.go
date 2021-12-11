@@ -8,11 +8,15 @@ import (
 //go:embed services.json
 var jsonFile []byte
 
+type Network struct {
+	ClientExternalAddress string `json:"client_external_address"`
+	CapServerAddress      string `json:"cap_server_address"`
+}
 type Service struct {
-	Name          string
-	Forwards      []string
-	ServerAddress string
-	ServerPort    int
+	Name     string
+	Forwards []string
+	CapPort  int `json:"port"`
+	Networks map[string]Network
 }
 
 type Services struct {

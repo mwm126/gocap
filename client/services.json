@@ -1,19 +1,133 @@
-{"services":
- [
-     {
-         "name":"joule",
-         "forwards":[],
-         "address": "204.154.139.11",
-         "port": 62201
-     },
-     {
-         "name":"watt",
-         "forwards":[
-             "6082:192.168.101.200:6082",
-             "10080:192.168.101.200:80"
-         ],
-         "address": "204.154.140.10",
-         "port": 62201
-     }
- ]
+{
+    "services": [
+        {
+            "name": "joule",
+            "forwards": [],
+            "port": 62201,
+            "networks": {
+                "alb_admin": {
+                    "client_external_address": "198.99.249.252",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "alb_foreign_national": {
+                    "client_external_address": "205.254.146.76",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "alb_research": {
+                    "client_external_address": "198.99.249.252",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "alb_scientific": {
+                    "client_external_address": "198.99.249.248",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "external": {
+                    "client_external_address": "0.0.0.0",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "mgn_admin": {
+                    "client_external_address": "204.154.136.254",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "mgn_foreign_national": {
+                    "client_external_address": "205.254.146.76",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "mgn_research": {
+                    "client_external_address": "204.154.136.254",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "mgn_scientific": {
+                    "client_external_address": "204.154.139.10",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "pgh_admin": {
+                    "client_external_address": "204.154.137.254",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "pgh_foreign_national": {
+                    "client_external_address": "204.154.137.254",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "pgh_research": {
+                    "client_external_address": "204.154.137.254",
+                    "cap_server_address":"204.154.139.11"
+                },
+                "pgh_scientific": {
+                    "client_external_address": "198.99.246.197",
+                    "cap_server_address":"198.99.246.146"
+                },
+                "vpn": {
+                    "client_external_address": "199.249.243.253",
+                    "cap_server_address":"199.249.243.253"
+                }
+            }
+        },
+        {
+            "name": "watt",
+            "forwards": [
+                "6082:192.168.101.200:6082",
+                "10080:192.168.101.200:80"
+            ],
+            "port": 62201,
+            "networks": {
+                "alb_admin": {
+                    "client_external_address": "198.99.249.252",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "alb_foreign_national": {
+                    "client_external_address": "205.254.146.76",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "alb_research": {
+                    "client_external_address": "198.99.249.252",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "alb_scientific": {
+                    "client_external_address": "198.99.249.248",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "external": {
+                    "client_external_address": "0.0.0.0",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "mgn_admin": {
+                    "client_external_address": "204.154.136.254",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "mgn_foreign_national": {
+                    "client_external_address": "205.254.146.76",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "mgn_research": {
+                    "client_external_address": "204.154.136.254",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "mgn_scientific": {
+                    "client_external_address": "204.154.139.10",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "pgh_admin": {
+                    "client_external_address": "204.154.137.254",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "pgh_foreign_national": {
+                    "client_external_address": "204.154.137.254",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "pgh_research": {
+                    "client_external_address": "204.154.137.254",
+                    "cap_server_address":"204.154.140.10"
+                },
+                "pgh_scientific": {
+                    "client_external_address": "198.99.246.197",
+                    "cap_server_address":"198.99.246.146"
+                },
+                "vpn": {
+                    "client_external_address": "199.249.243.253",
+                    "cap_server_address":"199.249.243.253"
+                }
+            }
+        }
+    ]
 }
