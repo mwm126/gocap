@@ -5,6 +5,7 @@ import (
 )
 
 func TestParseServicesJson(t *testing.T) {
+	InitServices(nil)
 	services, err := FindServices()
 	if err != nil {
 		t.Fatal("failed to find services:", err)

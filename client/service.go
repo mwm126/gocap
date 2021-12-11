@@ -1,10 +1,12 @@
 package client
 
 import (
+	_ "embed"
 	"encoding/json"
-	"io/ioutil"
-	"log"
 )
+
+//go:embed services.json
+var jsonFile []byte
 
 type Service struct {
 	Name          string
@@ -21,17 +23,13 @@ var globalServices []Service
 
 func InitServices(init *[]Service) error {
 	if init != nil {
+		// override for testing
 		globalServices = *init
 		return nil
 	}
 
-	data, err := ioutil.ReadFile("./services.json")
-	if err != nil {
-		log.Fatal("Error when opening file: ", err)
-	}
-
 	var services Services
-	err = json.Unmarshal(data, &services)
+	err := json.Unmarshal(jsonFile, &services)
 	globalServices = services.Services
 	return err
 }
