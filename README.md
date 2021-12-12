@@ -30,7 +30,7 @@ This only needs to be done once (unless the files in `cap/embeds` are deleted)
 To build and run for development:
 
 ```
-go run main.go
+go run client.go
 ```
 
 ## Release
