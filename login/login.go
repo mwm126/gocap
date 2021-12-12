@@ -1,4 +1,4 @@
-package client
+package login
 
 import (
 	"aeolustec.com/capclient/cap"
@@ -18,10 +18,10 @@ import (
 type CapTab struct {
 	Tab                *container.TabItem
 	connection_manager cap.ConnectionManager
-	networkSelect      *widget.Select
-	usernameEntry      *widget.Entry
-	passwordEntry      *widget.Entry
-	loginBtn           *widget.Button
+	NetworkSelect      *widget.Select
+	UsernameEntry      *widget.Entry
+	PasswordEntry      *widget.Entry
+	LoginBtn           *widget.Button
 	card               *widget.Card
 	login              *fyne.Container
 	connecting         *fyne.Container
@@ -203,14 +203,14 @@ func (t *CapTab) NewLogin(
 		server_addr = net.ParseIP(network_ips[network.Selected])
 		go connect_cb(username.Text, password.Text, ext_addr, server_addr)
 	})
-	t.networkSelect = network
-	t.usernameEntry = username
-	t.passwordEntry = password
-	t.loginBtn = login
+	t.NetworkSelect = network
+	t.UsernameEntry = username
+	t.PasswordEntry = password
+	t.LoginBtn = login
 	return container.NewVBox(username, password, network, login)
 }
 
-func (t *CapTab) closeConnection() {
+func (t *CapTab) CloseConnection() {
 	t.connection_manager.Close()
 	t.card.SetContent(t.login)
 }

@@ -1,6 +1,7 @@
-package client
+package forwards
 
 import (
+	"aeolustec.com/capclient/config"
 	"fyne.io/fyne/v2/test"
 	"testing"
 )
@@ -8,7 +9,7 @@ import (
 func TestPortForwardDialog(t *testing.T) {
 	a := test.NewApp()
 
-	cfg := GetConfig()
+	cfg := config.GetConfig()
 	pft := NewPortForwardTab(a, cfg.Joule_Forwards, func(fwds []string) {})
 
 	test.Tap(pft.AddButton)

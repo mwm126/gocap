@@ -1,4 +1,4 @@
-package client
+package login
 
 import (
 	_ "embed"

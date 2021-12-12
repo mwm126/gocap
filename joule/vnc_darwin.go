@@ -1,4 +1,4 @@
-package cap
+package joule
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package client
+package config
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-type config struct {
+type Config struct {
 	Enable_fe261   bool
 	Enable_joule   bool
 	Enable_watt    bool
@@ -20,10 +20,10 @@ type config struct {
 	DisableNtp     bool
 }
 
-func NewConfig() config {
+func NewConfig() Config {
 	// Return default configuration
 
-	return config{
+	return Config{
 		Enable_fe261:   false,
 		Enable_joule:   true,
 		Enable_watt:    true,
@@ -47,7 +47,7 @@ func NewConfig() config {
 	}
 }
 
-func GetConfig() config {
+func GetConfig() Config {
 	cfg_path := get_cfg_path()
 
 	conf := NewConfig()
@@ -59,7 +59,7 @@ func GetConfig() config {
 
 	data, err := ioutil.ReadFile(cfg_path)
 	if err != nil {
-		log.Println("Warning: Could not read config file: ", cfg_path)
+		log.Println("Warning: Could not read Config file: ", cfg_path)
 		return conf
 	}
 	err = toml.Unmarshal(data, &conf)
@@ -70,7 +70,7 @@ func GetConfig() config {
 	return conf
 }
 
-func WriteConfig(conf config) {
+func WriteConfig(conf Config) {
 	cfg_path := get_cfg_path()
 	buf := bytes.Buffer{}
 	encoder := toml.NewEncoder(&buf)

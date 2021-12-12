@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package client
+package joule
 
 import (
 	"aeolustec.com/capclient/cap"
@@ -41,6 +41,10 @@ func (c *FakeConnection) FindSessions() ([]cap.Session, error) {
 
 func (c *FakeConnection) GetUsername() string {
 	return "test_user"
+}
+
+func (c *FakeConnection) GetPassword() string {
+	return "test_pwd"
 }
 
 func (conn *FakeConnection) UpdateForwards(fwds []string) {}

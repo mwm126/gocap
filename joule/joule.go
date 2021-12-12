@@ -1,7 +1,11 @@
-package client
+package joule
 
 import (
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/config"
+	"aeolustec.com/capclient/forwards"
+	"aeolustec.com/capclient/login"
+	"aeolustec.com/capclient/ssh"
 
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -11,10 +15,14 @@ import (
 type JouleTab struct {
 	app    fyne.App
 	Tabs   *container.AppTabs
-	CapTab CapTab
+	CapTab login.CapTab
 }
 
-func NewJouleConnected(app fyne.App, service Service, conn_man cap.ConnectionManager) JouleTab {
+func NewJouleConnected(
+	app fyne.App,
+	service login.Service,
+	conn_man cap.ConnectionManager,
+) JouleTab {
 	var joule_tab JouleTab
 	tabs := container.NewAppTabs()
 	cont := container.NewMax(tabs)
@@ -22,7 +30,7 @@ func NewJouleConnected(app fyne.App, service Service, conn_man cap.ConnectionMan
 	joule_tab = JouleTab{
 		app,
 		tabs,
-		NewCapTab("Joule", "NETL SuperComputer", service, conn_man,
+		login.NewCapTab("Joule", "NETL SuperComputer", service, conn_man,
 			func(conn cap.Connection) {
 				joule_tab.Connect(conn)
 			}, cont),
@@ -31,15 +39,15 @@ func NewJouleConnected(app fyne.App, service Service, conn_man cap.ConnectionMan
 }
 
 func (t *JouleTab) Connect(conn cap.Connection) {
-	homeTab := newJouleHome(t.CapTab.closeConnection)
-	sshTab := newSsh(conn)
+	homeTab := newJouleHome(t.CapTab.CloseConnection)
+	sshTab := ssh.NewSsh(conn)
 	vncTab := newVncTab(t.app, conn)
 	vncTabItem := vncTab.TabItem
 
-	cfg := GetConfig()
-	fwdTab := NewPortForwardTab(t.app, cfg.Joule_Forwards, func(fwds []string) {
+	cfg := config.GetConfig()
+	fwdTab := forwards.NewPortForwardTab(t.app, cfg.Joule_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
-		SaveForwards(fwds)
+		config.SaveForwards(fwds)
 	})
 
 	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, vncTabItem, fwdTab.TabItem})

@@ -1,7 +1,12 @@
-package client
+package main
 
 import (
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/config"
+	"aeolustec.com/capclient/fe261"
+	"aeolustec.com/capclient/joule"
+	"aeolustec.com/capclient/login"
+	"aeolustec.com/capclient/watt"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
@@ -13,10 +18,15 @@ type Client struct {
 	Tabs     *container.AppTabs
 	window   fyne.Window
 	app      fyne.App
-	LoginTab CapTab
+	LoginTab login.CapTab
 }
 
-func NewClient(a fyne.App, w fyne.Window, cfg config, conn_man cap.ConnectionManager) Client {
+func NewClient(
+	a fyne.App,
+	w fyne.Window,
+	cfg config.Config,
+	conn_man cap.ConnectionManager,
+) Client {
 
 	about_tab := container.NewTabItemWithIcon(
 		"About",
@@ -25,35 +35,35 @@ func NewClient(a fyne.App, w fyne.Window, cfg config, conn_man cap.ConnectionMan
 			"The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.",
 		),
 	)
-	service := Service{ // TODO: placeholder for real ServiceList service
+	service := login.Service{ // TODO: placeholder for real ServiceList service
 		Name: "ServiceList",
-		Networks: map[string]Network{
+		Networks: map[string]login.Network{
 			"external": {
-				"0.0.0.0",
-				"204.154.139.11",
+				ClientExternalAddress: "0.0.0.0",
+				CapServerAddress:      "204.154.139.11",
 			},
 		},
 	}
 
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
 	tabs := container.NewAppTabs(about_tab)
-	login_tab := NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
+	login_tab := login.NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
 		func(conn cap.Connection) {
-			services, err := FindServices()
+			services, err := login.FindServices()
 			if err != nil {
 				return
 			}
 			for _, service := range services {
 				if service.Name == "joule" {
-					joule := NewJouleConnected(a, service, conn_man)
+					joule := joule.NewJouleConnected(a, service, conn_man)
 					tabs.Append(joule.CapTab.Tab)
 				}
 				if service.Name == "watt" {
-					watt := NewWattConnected(a, service, conn_man)
+					watt := watt.NewWattConnected(a, service, conn_man)
 					tabs.Append(watt.CapTab.Tab)
 				}
 				if service.Name == "fe261" {
-					fe261 := NewFe261Connected(a, service, conn_man)
+					fe261 := fe261.NewFe261Connected(a, service, conn_man)
 					tabs.Append(fe261.CapTab.Tab)
 				}
 			}

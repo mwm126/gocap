@@ -1,17 +1,48 @@
 //go:build integration
 // +build integration
 
-package client
+package watt
 
 import (
 	"net"
 	"testing"
 	"time"
 
+	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/login"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
 )
+
+type FakeConnectionManager struct {
+	username string
+	address  net.IP
+}
+
+func (t *FakeConnectionManager) GetConnection() cap.Connection {
+	return nil
+}
+
+func (t *FakeConnectionManager) Close() {
+}
+
+func (cm *FakeConnectionManager) Connect(
+	user, pass string,
+	ext_addr,
+	server net.IP,
+	port uint,
+	pw_expired_cb func(cap.PasswordChecker),
+	ch chan string) error {
+	cm.username = user
+	cm.address = server
+	return nil
+}
+
+func (c *FakeConnectionManager) GetPasswordExpired() bool {
+	return false
+}
+func (c *FakeConnectionManager) SetPasswordExpired() {}
 
 type WattSpyKnocker struct {
 	username string
@@ -26,13 +57,13 @@ func (sk *WattSpyKnocker) Knock(username string, address net.IP, port uint) erro
 	return nil
 }
 
-func _TestWattLoginButton(t *testing.T) {
+func TestWattLoginButton(t *testing.T) {
 	a := app.New()
 
 	var conn_man FakeConnectionManager
-	InitServices(nil)
-	var watt_service Service
-	services, _ := FindServices()
+	login.InitServices(nil)
+	var watt_service login.Service
+	services, _ := login.FindServices()
 	for _, service := range services {
 		if service.Name == "watt" {
 			watt_service = service
@@ -40,10 +71,10 @@ func _TestWattLoginButton(t *testing.T) {
 	}
 	wattTab := NewWattConnected(a, watt_service, &conn_man)
 
-	test.Type(wattTab.CapTab.usernameEntry, "the_user")
-	wattTab.CapTab.networkSelect.SetSelected("vpn")
+	test.Type(wattTab.CapTab.UsernameEntry, "the_user")
+	wattTab.CapTab.NetworkSelect.SetSelected("vpn")
 
-	test.Tap(wattTab.CapTab.loginBtn)
+	test.Tap(wattTab.CapTab.LoginBtn)
 
 	time.Sleep(100 * time.Millisecond)
 

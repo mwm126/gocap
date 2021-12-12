@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"aeolustec.com/capclient/client/sshtunnel"
+	"aeolustec.com/capclient/cap/sshtunnel"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -63,6 +63,7 @@ type Connection interface {
 	FindSessions() ([]Session, error)
 	CreateVncSession(xres string, yres string) (string, string, error)
 	GetUsername() string
+	GetPassword() string
 	UpdateForwards(fwds []string)
 }
 
@@ -81,6 +82,10 @@ type CapConnection struct {
 
 func (c *CapConnection) GetUsername() string {
 	return c.username
+}
+
+func (c *CapConnection) GetPassword() string {
+	return c.password
 }
 
 func (conn *CapConnection) UpdateForwards(fwds []string) {
@@ -264,8 +269,6 @@ func getUID(client *ssh.Client) (string, error) {
 const SSH_LOCAL_PORT = 10022
 const SSH_FWD_ADDR = "localhost"
 const SSH_FWD_PORT = 22
-
-const VNC_LOCAL_PORT = 10055
 
 func openSSHTunnel(
 	client *ssh.Client,

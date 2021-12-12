@@ -2,7 +2,8 @@ package main
 
 import (
 	"aeolustec.com/capclient/cap"
-	"aeolustec.com/capclient/client"
+	"aeolustec.com/capclient/config"
+	"aeolustec.com/capclient/login"
 	"crypto/rand"
 	"fyne.io/fyne/v2/app"
 	"log"
@@ -18,16 +19,16 @@ func main() {
 	yk := new(cap.UsbYubikey)
 	knk := cap.NewPortKnocker(yk, entropy)
 
-	cfg := client.GetConfig()
+	cfg := config.GetConfig()
 	cfg.Enable_joule = true
 	cfg.Enable_watt = true
-	client.WriteConfig(cfg)
+	config.WriteConfig(cfg)
 
 	conn_man := cap.NewCapConnectionManager(knk)
 	a := app.New()
 	w := a.NewWindow("CAP Client")
 
-	client.InitServices(nil)
-	client := client.NewClient(a, w, cfg, conn_man)
+	login.InitServices(nil)
+	client := NewClient(a, w, cfg, conn_man)
 	client.Run()
 }

@@ -1,10 +1,12 @@
-package client
+package main
 
 import (
 	"net"
 	"testing"
 
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/config"
+	"aeolustec.com/capclient/login"
 	"fyne.io/fyne/v2/test"
 )
 
@@ -53,24 +55,24 @@ func TestClient(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
 			conn_man := &FakeConnManager{"the_user", net.IPv4(1, 1, 1, 1)}
-			var services []Service
-			var cfg config
+			var services []login.Service
+			var cfg config.Config
 			if tc.fe261 {
-				services = append(services, Service{Name: "fe261"})
+				services = append(services, login.Service{Name: "fe261"})
 			}
 			if tc.joule {
-				services = append(services, Service{Name: "joule"})
+				services = append(services, login.Service{Name: "joule"})
 			}
 			if tc.watt {
-				services = append(services, Service{Name: "watt"})
+				services = append(services, login.Service{Name: "watt"})
 			}
-			InitServices(&services)
+			login.InitServices(&services)
 
 			a := test.NewApp()
 			w := test.NewWindow(nil)
 			client := NewClient(a, w, cfg, conn_man)
 
-			// test.Tap(client.LoginTab.loginBtn)
+			// test.Tap(client.LoginTab.LoginBtn)
 			client.LoginTab.ConnectedCallback(&FkeConnection{})
 
 			if got := len(client.Tabs.Items); got != tc.ntabs {
@@ -90,6 +92,10 @@ func (c *FkeConnection) FindSessions() ([]cap.Session, error) {
 
 func (c *FkeConnection) GetUsername() string {
 	return "test_user"
+}
+
+func (c *FkeConnection) GetPassword() string {
+	return "test_pwd"
 }
 
 func (conn *FkeConnection) UpdateForwards(fwds []string) {}

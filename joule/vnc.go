@@ -1,4 +1,4 @@
-package client
+package joule
 
 import (
 	"aeolustec.com/capclient/cap"
@@ -10,6 +10,8 @@ import (
 	"log"
 	"strings"
 )
+
+const VNC_LOCAL_PORT = 10055
 
 type VncTab struct {
 	TabItem        *container.TabItem
@@ -109,7 +111,7 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 			)
 			if err == nil {
 				t.refresh()
-				go cap.RunVnc(t.connection, otp, displayNumber)
+				go RunVnc(t.connection, otp, displayNumber)
 			}
 			win.Close()
 		},
