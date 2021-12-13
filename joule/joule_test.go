@@ -83,4 +83,9 @@ func TestJouleLoginButton(t *testing.T) {
 			t.Errorf("Mismatch: %s", diff)
 		}
 	})
+
+	t.Run("Test Login", func(t *testing.T) {
+		fake_conn := &FakeConnection{}
+		jouleTab.Connect(fake_conn)
+	})
 }

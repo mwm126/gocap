@@ -7,30 +7,20 @@ import (
 	"aeolustec.com/capclient/joule"
 	"aeolustec.com/capclient/login"
 	"aeolustec.com/capclient/watt"
-	"crypto/rand"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"log"
 )
 
 func main() {
-	var entropy [32]byte
-	_, err := rand.Read(entropy[:])
-	if err != nil {
-		log.Fatal("Unable to get entropy to send CAP packet")
-	}
-
-	yk := new(cap.UsbYubikey)
-	knk := cap.NewPortKnocker(yk, entropy)
-
 	cfg := config.GetConfig()
 	cfg.Enable_joule = true
 	cfg.Enable_watt = true
 	config.WriteConfig(cfg)
 
+	knk := cap.NewPortKnocker()
 	conn_man := cap.NewCapConnectionManager(knk)
 	a := app.New()
 	w := a.NewWindow("CAP Client")

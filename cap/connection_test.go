@@ -26,7 +26,7 @@ func (yk *StubYubikey) ChallengeResponseHMAC(chal SHADigest) ([20]byte, error) {
 func NewFakeKnocker() *PortKnocker {
 	var fake_yk StubYubikey
 	var entropy [32]byte
-	return NewPortKnocker(&fake_yk, entropy)
+	return &PortKnocker{&fake_yk, entropy}
 }
 
 func DisabledTestCapConnection(t *testing.T) {

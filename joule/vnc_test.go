@@ -28,7 +28,7 @@ func (yk *StubYubikey) ChallengeResponseHMAC(chal cap.SHADigest) ([20]byte, erro
 func NewFakeKnocker() *cap.PortKnocker {
 	var fake_yk StubYubikey
 	var entropy [32]byte
-	return cap.NewPortKnocker(&fake_yk, entropy)
+	return &cap.PortKnocker{&fake_yk, entropy}
 }
 
 type FakeConnection struct {
