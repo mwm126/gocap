@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package client
+package joule
 
 import (
 	"net"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/login"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
@@ -47,15 +48,23 @@ func TestJouleLoginButton(t *testing.T) {
 	a := app.New()
 
 	var conn_man FakeConnectionManager
-	cfg := GetConfig()
 
-	jouleTab := NewJouleConnected(a, cfg, &conn_man)
+	login.InitServices(nil)
+	var joule_service login.Service
+	services, _ := login.FindServices()
+	for _, service := range services {
+		if service.Name == "joule" {
+			joule_service = service
+		}
+	}
 
-	test.Type(jouleTab.CapTab.usernameEntry, "the_user")
-	test.Type(jouleTab.CapTab.passwordEntry, "the_pass")
-	jouleTab.CapTab.networkSelect.SetSelected("alb_admin")
+	jouleTab := NewJouleConnected(a, joule_service, &conn_man)
 
-	test.Tap(jouleTab.CapTab.loginBtn)
+	test.Type(jouleTab.CapTab.UsernameEntry, "the_user")
+	test.Type(jouleTab.CapTab.PasswordEntry, "the_pass")
+	jouleTab.CapTab.NetworkSelect.SetSelected("alb_admin")
+
+	test.Tap(jouleTab.CapTab.LoginBtn)
 
 	time.Sleep(100 * time.Millisecond)
 

@@ -1,4 +1,4 @@
-package client
+package ssh
 
 import (
 	"aeolustec.com/capclient/cap"
@@ -16,8 +16,6 @@ import (
 var putty []byte
 
 func run_ssh(conn cap.Connection) {
-	username := conn.connectionInfo.username
-	password := conn.connectionInfo.password
 	file, err := os.CreateTemp("", "putty.*.exe")
 	defer os.Remove(file.Name())
 	if err != nil {
@@ -32,11 +30,11 @@ func run_ssh(conn cap.Connection) {
 	cmd := exec.Command(file.Name(),
 		"127.0.0.1",
 		"-l",
-		username,
+		conn.GetUsername(),
 		"-pw",
-		password,
+		conn.GetPassword(),
 		"-P",
-		strconv.Itoa(SSH_LOCAL_PORT),
+		strconv.Itoa(cap.SSH_LOCAL_PORT),
 	)
 	err = cmd.Run()
 	if err != nil {

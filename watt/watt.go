@@ -1,7 +1,11 @@
-package client
+package watt
 
 import (
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/config"
+	"aeolustec.com/capclient/forwards"
+	"aeolustec.com/capclient/login"
+	"aeolustec.com/capclient/ssh"
 
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -11,10 +15,10 @@ import (
 type WattTab struct {
 	app    fyne.App
 	Tabs   *container.AppTabs
-	CapTab CapTab
+	CapTab login.CapTab
 }
 
-func NewWattConnected(app fyne.App, cfg config, conn_man cap.ConnectionManager) WattTab {
+func NewWattConnected(app fyne.App, service login.Service, conn_man cap.ConnectionManager) WattTab {
 	var watt_tab WattTab
 	tabs := container.NewAppTabs()
 	cont := container.NewMax(tabs)
@@ -22,7 +26,7 @@ func NewWattConnected(app fyne.App, cfg config, conn_man cap.ConnectionManager) 
 	watt_tab = WattTab{
 		app,
 		tabs,
-		NewCapTab("Watt", "NETL SuperComputer", cfg.Watt_Ips, conn_man,
+		login.NewCapTab("Watt", "NETL SuperComputer", service, conn_man,
 			func(conn cap.Connection) {
 				watt_tab.Connect(conn)
 			}, cont),
@@ -31,13 +35,13 @@ func NewWattConnected(app fyne.App, cfg config, conn_man cap.ConnectionManager) 
 }
 
 func (t *WattTab) Connect(conn cap.Connection) {
-	homeTab := newWattHome(t.CapTab.closeConnection)
-	sshTab := newSsh(conn)
+	homeTab := newWattHome(t.CapTab.CloseConnection)
+	sshTab := ssh.NewSsh(conn)
 
-	cfg := GetConfig()
-	fwdTab := NewPortForwardTab(t.app, cfg.Watt_Forwards, func(fwds []string) {
+	cfg := config.GetConfig()
+	fwdTab := forwards.NewPortForwardTab(t.app, cfg.Watt_Forwards, func(fwds []string) {
 		conn.UpdateForwards(fwds)
-		SaveForwards(fwds)
+		config.SaveForwards(fwds)
 	})
 
 	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, fwdTab.TabItem})

@@ -1,4 +1,4 @@
-package client
+package login
 
 import (
 	"aeolustec.com/capclient/cap"
@@ -18,20 +18,21 @@ import (
 type CapTab struct {
 	Tab                *container.TabItem
 	connection_manager cap.ConnectionManager
-	networkSelect      *widget.Select
-	usernameEntry      *widget.Entry
-	passwordEntry      *widget.Entry
-	loginBtn           *widget.Button
+	NetworkSelect      *widget.Select
+	UsernameEntry      *widget.Entry
+	PasswordEntry      *widget.Entry
+	LoginBtn           *widget.Button
 	card               *widget.Card
 	login              *fyne.Container
 	connecting         *fyne.Container
 	change_password    *fyne.Container
 	pw_expired_cb      func(cap.PasswordChecker)
+	ConnectedCallback  func(cap.Connection)
 }
 
-func NewCapTab(tabname,
+func NewLoginTab(tabname,
 	desc string,
-	ips map[string]string,
+	service Service,
 	conn_man cap.ConnectionManager,
 	connected_cb func(cap cap.Connection),
 	connected *fyne.Container) CapTab {
@@ -39,11 +40,79 @@ func NewCapTab(tabname,
 	connect_cancelled := false
 	ch := make(chan string)
 
+	tab.ConnectedCallback = connected_cb
 	tab.connection_manager = conn_man
-	tab.login = tab.NewLogin(ips, func(user, pass string, ext_ip, srv_ip net.IP) {
+	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		cfg := GetConfig()
-		port := cfg.CapPort
+		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
+			service.CapPort,
+			tab.pw_expired_cb, ch)
+
+		if err != nil {
+			log.Println("Unable to make CAP Connection")
+			tab.card.SetContent(tab.login)
+			connect_cancelled = false
+			return
+		}
+
+		if tab.connection_manager.GetPasswordExpired() {
+			tab.card.SetContent(tab.change_password)
+			return
+		}
+
+		if connect_cancelled {
+			log.Println("CAP Connection cancelled.")
+			tab.connection_manager.Close()
+			connect_cancelled = false
+			return
+		}
+
+		time.Sleep(1 * time.Second)
+		tab.card.SetContent(connected)
+		connected_cb(conn_man.GetConnection())
+	})
+
+	tab.pw_expired_cb = func(pw_checker cap.PasswordChecker) {
+		// Detected expired password callback
+		tab.connection_manager.SetPasswordExpired()
+		tab.card.SetContent(tab.change_password)
+	}
+	tab.connecting = func() *fyne.Container {
+		connecting := widget.NewLabel("Connecting......")
+		cancel := widget.NewButton("Cancel", func() {
+			connect_cancelled = true
+			tab.card.SetContent(tab.login)
+		})
+		return container.NewVBox(connecting, cancel)
+	}()
+
+	tab.change_password = NewChangePassword(func(new_password string) {
+		ch <- new_password
+		connect_cancelled = true
+		tab.card.SetContent(tab.login)
+	})
+	tab.card = widget.NewCard(tabname, desc, tab.login)
+
+	tab.Tab = container.NewTabItem(tabname, tab.card)
+	tab.connection_manager = conn_man
+	return *tab
+}
+
+func NewCapTab(tabname,
+	desc string,
+	service Service,
+	conn_man cap.ConnectionManager,
+	connected_cb func(cap cap.Connection),
+	connected *fyne.Container) CapTab {
+	tab := &CapTab{}
+	connect_cancelled := false
+	ch := make(chan string)
+
+	port := service.CapPort
+
+	tab.connection_manager = conn_man
+	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
+		tab.card.SetContent(tab.connecting)
 		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
 			port,
 			tab.pw_expired_cb, ch)
@@ -98,8 +167,10 @@ func NewCapTab(tabname,
 	return *tab
 }
 
-func (t *CapTab) NewLogin(network_ips map[string]string,
-	connect_cb func(user, pass string, ext_ip, srv_ip net.IP)) *fyne.Container {
+func (t *CapTab) NewLogin(
+	service Service,
+	connect_cb func(user, pass string, ext_ip, srv_ip net.IP),
+) *fyne.Container {
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Enter username...")
 	password := widget.NewPasswordEntry()
@@ -111,9 +182,13 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 		password.SetText(pword)
 	}
 
-	networkNames := make([]string, 0, len(network_ips))
-	for network := range network_ips {
-		networkNames = append(networkNames, network)
+	network_ips := make(map[string]string)
+	external_ips := make(map[string]string)
+	networkNames := make([]string, 0, len(service.Networks))
+	for name, val := range service.Networks {
+		network_ips[name] = val.CapServerAddress
+		external_ips[name] = val.ClientExternalAddress
+		networkNames = append(networkNames, name)
 	}
 	network := widget.NewSelect(networkNames, func(s string) {})
 
@@ -123,19 +198,19 @@ func (t *CapTab) NewLogin(network_ips map[string]string,
 		if network.Selected == "external" {
 			ext_addr = GetExternalIp()
 		} else {
-			ext_addr = net.ParseIP(GetConfig().External_Ips[network.Selected])
+			ext_addr = net.ParseIP(external_ips[network.Selected])
 		}
 		server_addr = net.ParseIP(network_ips[network.Selected])
 		go connect_cb(username.Text, password.Text, ext_addr, server_addr)
 	})
-	t.networkSelect = network
-	t.usernameEntry = username
-	t.passwordEntry = password
-	t.loginBtn = login
+	t.NetworkSelect = network
+	t.UsernameEntry = username
+	t.PasswordEntry = password
+	t.LoginBtn = login
 	return container.NewVBox(username, password, network, login)
 }
 
-func (t *CapTab) closeConnection() {
+func (t *CapTab) CloseConnection() {
 	t.connection_manager.Close()
 	t.card.SetContent(t.login)
 }
