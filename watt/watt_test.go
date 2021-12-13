@@ -4,6 +4,7 @@
 package watt
 
 import (
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -43,6 +44,38 @@ func (c *FakeConnectionManager) GetPasswordExpired() bool {
 	return false
 }
 func (c *FakeConnectionManager) SetPasswordExpired() {}
+
+
+type FakeConnection struct {
+	sessions []cap.Session
+}
+
+func (c *FakeConnection) FindSessions() ([]cap.Session, error) {
+	return c.sessions, nil
+}
+
+func (c *FakeConnection) GetUsername() string {
+	return "test_user"
+}
+
+func (c *FakeConnection) GetPassword() string {
+	return "test_pwd"
+}
+
+func (conn *FakeConnection) UpdateForwards(fwds []string) {}
+
+func (conn *FakeConnection) CreateVncSession(xres string, yres string) (string, string, error) {
+	conn.sessions = append(conn.sessions, cap.Session{
+		Username:      "test_user",
+		DisplayNumber: ":77",
+		Geometry:      fmt.Sprintf("%sx%s", xres, yres),
+		DateCreated:   "2222-33-44",
+		HostAddress:   "localhost",
+		HostPort:      "8088",
+	})
+	return "", "", nil
+}
+
 
 type WattSpyKnocker struct {
 	username string
@@ -92,5 +125,11 @@ func TestWattLoginButton(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("Mismatch: %s", diff)
 		}
+	})
+
+
+	t.Run("Test Login", func(t *testing.T) {
+		fake_conn := &FakeConnection{}
+		wattTab.Connect(fake_conn)
 	})
 }
