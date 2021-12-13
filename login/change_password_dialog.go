@@ -81,7 +81,7 @@ func password_passes(old, new, new2 string) error {
 		return errors.New("Passwords do not match")
 	}
 	if old == new {
-		return errors.New("Passwords is the same as previous password")
+		return errors.New("Password is the same as the previous password")
 	}
 	if len(new) < 12 {
 		return errors.New("Password must have length >=12 characters")

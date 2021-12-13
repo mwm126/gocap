@@ -2,7 +2,6 @@ package cap
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -90,28 +89,6 @@ func (pc *PasswordChecker) change_password(
 	for !strings.Contains(buf.String(), "updated") {
 		time.Sleep(1 * time.Second)
 		log.Println("Expected: updated not found in string: ", buf.String())
-	}
-	return nil
-}
-
-func password_passes(old, new, new2 string) error {
-	if new != new2 {
-		return errors.New("Passwords do not match")
-	}
-	if old == new {
-		return errors.New("Passwords is the same as previous password")
-	}
-	if len(new) < 12 {
-		return errors.New("Password must have length >=12 characters")
-	}
-	if !strings.ContainsAny(new, "abcdefghijklmnopqrstuvwxyz") {
-		return errors.New("Password must contain a lowercase letter")
-	}
-	if !strings.ContainsAny(new, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-		return errors.New("Password must contain an uppercase letter")
-	}
-	if !strings.ContainsAny(new, "0123456789") {
-		return errors.New("Password must contain a digit")
 	}
 	return nil
 }

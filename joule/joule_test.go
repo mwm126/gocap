@@ -10,7 +10,6 @@ import (
 
 	"aeolustec.com/capclient/cap"
 	"aeolustec.com/capclient/login"
-	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
 )
@@ -45,7 +44,7 @@ func (c *FakeConnectionManager) GetPasswordExpired() bool {
 func (c *FakeConnectionManager) SetPasswordExpired() {}
 
 func TestJouleLoginButton(t *testing.T) {
-	a := app.New()
+	a := test.NewApp()
 
 	var conn_man FakeConnectionManager
 
