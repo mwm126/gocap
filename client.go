@@ -63,7 +63,8 @@ func NewClient(
 		),
 	)
 	service := login.Service{ // TODO: placeholder for real ServiceList service
-		Name: "ServiceList",
+		Name:    "ServiceList",
+		CapPort: 62201,
 		Networks: map[string]login.Network{
 			"external": {
 				ClientExternalAddress: "0.0.0.0",
