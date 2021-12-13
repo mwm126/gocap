@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -29,12 +30,19 @@ type Knocker interface {
 
 // PortKnocker for actual Knocker implementation
 type PortKnocker struct {
-	yubikey Yubikey
-	entropy [32]byte
+	Yubikey Yubikey
+	Entropy [32]byte
 }
 
-func NewPortKnocker(yk Yubikey, ent [32]byte) *PortKnocker {
-	return &PortKnocker{yk, ent}
+func NewPortKnocker() *PortKnocker {
+	var entropy [32]byte
+	_, err := rand.Read(entropy[:])
+	if err != nil {
+		log.Fatal("Unable to get entropy to send CAP packet")
+	}
+
+	yk := new(UsbYubikey)
+	return &PortKnocker{yk, entropy}
 }
 
 func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
@@ -81,16 +89,16 @@ func (sk *PortKnocker) makePacket(
 	timestamp int32,
 	auth_addr, ssh_addr, server_addr net.IP,
 ) ([]byte, error) {
-	OTP, err := getOTP(sk.yubikey, sk.entropy[:])
+	OTP, err := getOTP(sk.Yubikey, sk.Entropy[:])
 	if err != nil {
 		log.Println("could not get OTP", err)
 		return nil, err
 	}
 
 	var initVec [16]byte
-	digest := makeSHADigest(sk.entropy[:], OTP[:])
+	digest := makeSHADigest(sk.Entropy[:], OTP[:])
 	copy(initVec[:], digest[:16])
-	challenge, response, err := getChallengeResponse(sk.yubikey, OTP, sk.entropy[:])
+	challenge, response, err := getChallengeResponse(sk.Yubikey, OTP, sk.Entropy[:])
 	if err != nil {
 		log.Println("could not get challenge response", err)
 		return nil, err
@@ -112,7 +120,7 @@ func (sk *PortKnocker) makePacket(
 	buf.Write(server[:])
 	buf.Write(OTP[:])
 	buf.Write(user[:])
-	buf.Write(sk.entropy[:])
+	buf.Write(sk.Entropy[:])
 	plainBlock := plainBlockWithChecksum(buf.Bytes())
 
 	key := []byte(aeskey[:])
@@ -132,7 +140,7 @@ func (sk *PortKnocker) makePacket(
 	var trimmedCiphertext [160]byte
 	copy(trimmedCiphertext[:], ciphertext[16:])
 
-	serial, err := sk.yubikey.FindSerial()
+	serial, err := sk.Yubikey.FindSerial()
 	if err != nil {
 		log.Println("Unable to get yubikey serial number: ", err)
 		return nil, err
