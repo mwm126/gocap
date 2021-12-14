@@ -56,10 +56,25 @@ func newVncTab(a fyne.App, conn *cap.Connection) *VncTab {
 
 	sessions := widget.NewListWithData(t.session_labels,
 		func() fyne.CanvasObject {
-			return widget.NewLabel("template")
+			hidden := widget.NewLabel("")
+			hidden.Hide()
+			connect_btn := widget.NewButton("Connect", func() {
+				RunVnc(conn, hidden.Text, hidden.Text)
+			})
+			label := widget.NewLabel("template")
+			delete_btn := widget.NewButton("Kill", func() {
+				KillSession(conn, hidden.Text, hidden.Text)
+			})
+			return container.NewHBox(hidden, connect_btn, label, delete_btn)
 		},
-		func(fwd binding.DataItem, obj fyne.CanvasObject) {
-			obj.(*widget.Label).Bind(fwd.(binding.String))
+		func(session binding.DataItem, obj fyne.CanvasObject) {
+			box, ok := obj.(*fyne.Container)
+			if ok {
+				box.Objects[0].(*widget.Label).Bind(session.(binding.String))
+				box.Objects[2].(*widget.Label).Bind(session.(binding.String))
+			} else {
+				log.Println("Warning: could not update VNC session list: ", box, session)
+			}
 		})
 
 	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
@@ -124,4 +139,7 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 		yres_entry,
 	}
 	return vsf
+}
+
+func KillSession(conn cap.Connection, otp, displayNumber string) {
 }
