@@ -22,7 +22,7 @@ func NewJouleConnected(
 	app fyne.App,
 	service login.Service,
 	conn_man cap.ConnectionManager,
-) JouleTab {
+	login_info login.LoginInfo) JouleTab {
 	var joule_tab JouleTab
 	tabs := container.NewAppTabs()
 	cont := container.NewMax(tabs)
@@ -33,7 +33,7 @@ func NewJouleConnected(
 		login.NewCapTab("Joule", "NETL SuperComputer", service, conn_man,
 			func(conn cap.Connection) {
 				joule_tab.Connect(conn)
-			}, cont),
+			}, cont, login_info),
 	}
 	return joule_tab
 }

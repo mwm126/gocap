@@ -20,7 +20,7 @@ func NewFe261Connected(
 	app fyne.App,
 	service login.Service,
 	conn_man cap.ConnectionManager,
-) Fe261Tab {
+	login_info login.LoginInfo) Fe261Tab {
 	var fe261_tab Fe261Tab
 	tabs := container.NewAppTabs()
 	cont := container.NewMax(tabs)
@@ -31,7 +31,7 @@ func NewFe261Connected(
 		login.NewCapTab("FE261", "NETL SuperComputer", service, conn_man,
 			func(conn cap.Connection) {
 				fe261_tab.Connect(conn)
-			}, cont),
+			}, cont, login_info),
 	}
 	return fe261_tab
 }

@@ -74,24 +74,23 @@ func TestLoginTab(t *testing.T) {
 	a := test.NewApp()
 	a.Run()
 	var w fyne.Window
+	var login_info LoginInfo
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
 	service := Service{}
 	conn_man := &FakeConnectionManager{}
 	tabs := container.NewAppTabs()
 	login_tab := NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
-		func(conn cap.Connection) {
+		func(conn cap.Connection, login_info LoginInfo) {
 			ct := NewCapTab("test tab", "for testing", Service{},
 				conn_man, func(cap cap.Connection) {},
-				connctd)
+				connctd, login_info)
 			tabs.Append(ct.Tab)
 			w.SetContent(tabs)
-
-			// fe261_tab.Connect(conn)
-		}, connctd)
+		}, connctd, "", "")
 	w = test.NewWindow(tabs)
 
 	conn := &FakeConnection{}
-	login_tab.ConnectedCallback(conn)
+	login_tab.ConnectedCallback(conn, login_info)
 
 	login_tab.CloseConnection()
 
