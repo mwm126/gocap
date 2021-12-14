@@ -18,7 +18,12 @@ type WattTab struct {
 	CapTab login.CapTab
 }
 
-func NewWattConnected(app fyne.App, service login.Service, conn_man cap.ConnectionManager) WattTab {
+func NewWattConnected(
+	app fyne.App,
+	service login.Service,
+	conn_man cap.ConnectionManager,
+	login_info login.LoginInfo,
+) WattTab {
 	var watt_tab WattTab
 	tabs := container.NewAppTabs()
 	cont := container.NewMax(tabs)
@@ -29,7 +34,7 @@ func NewWattConnected(app fyne.App, service login.Service, conn_man cap.Connecti
 		login.NewCapTab("Watt", "NETL SuperComputer", service, conn_man,
 			func(conn cap.Connection) {
 				watt_tab.Connect(conn)
-			}, cont),
+			}, cont, login_info),
 	}
 	return watt_tab
 }

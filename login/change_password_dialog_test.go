@@ -15,8 +15,20 @@ func TestValidateNewPassword(t *testing.T) {
 		{"mismatch", "abc", "abc", "abcd", "Passwords do not match"},
 		{"same", "abc", "abc", "abc", "Password is the same as the previous password"},
 		{"short", "abcd", "abc", "abc", "Password must have length >=12 characters"},
-		{"needlower", "", "ABCDEFGHIJKL", "ABCDEFGHIJKL", "Password must contain a lowercase letter"},
-		{"needupper", "", "abcdefghijkl", "abcdefghijkl", "Password must contain an uppercase letter"},
+		{
+			"needlower",
+			"",
+			"ABCDEFGHIJKL",
+			"ABCDEFGHIJKL",
+			"Password must contain a lowercase letter",
+		},
+		{
+			"needupper",
+			"",
+			"abcdefghijkl",
+			"abcdefghijkl",
+			"Password must contain an uppercase letter",
+		},
 		{"needdigit", "", "Abcdefghijkl", "Abcdefghijkl", "Password must contain a digit"},
 	}
 

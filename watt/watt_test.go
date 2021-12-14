@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package watt
 
 import (
@@ -45,7 +42,6 @@ func (c *FakeConnectionManager) GetPasswordExpired() bool {
 }
 func (c *FakeConnectionManager) SetPasswordExpired() {}
 
-
 type FakeConnection struct {
 	sessions []cap.Session
 }
@@ -76,7 +72,6 @@ func (conn *FakeConnection) CreateVncSession(xres string, yres string) (string, 
 	return "", "", nil
 }
 
-
 type WattSpyKnocker struct {
 	username string
 	address  net.IP
@@ -102,12 +97,9 @@ func TestWattLoginButton(t *testing.T) {
 			watt_service = service
 		}
 	}
-	wattTab := NewWattConnected(a, watt_service, &conn_man)
+	wattTab := NewWattConnected(a, watt_service, &conn_man, login.LoginInfo{"vpn", "the_user", ""})
 
-	test.Type(wattTab.CapTab.UsernameEntry, "the_user")
-	wattTab.CapTab.NetworkSelect.SetSelected("vpn")
-
-	test.Tap(wattTab.CapTab.LoginBtn)
+	test.Tap(wattTab.CapTab.ConnectBtn)
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -126,7 +118,6 @@ func TestWattLoginButton(t *testing.T) {
 			t.Errorf("Mismatch: %s", diff)
 		}
 	})
-
 
 	t.Run("Test Login", func(t *testing.T) {
 		fake_conn := &FakeConnection{}

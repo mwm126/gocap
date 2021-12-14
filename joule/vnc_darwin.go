@@ -1,8 +1,8 @@
 package joule
 
 import (
-	"fmt"
 	"aeolustec.com/capclient/cap"
+	"fmt"
 	"log"
 	"os/exec"
 	"strconv"

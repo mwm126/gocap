@@ -10,38 +10,42 @@ import (
 	"time"
 )
 
-type LoginTab struct {
+type LoginInfo struct {
+	Network  string
+	Username string
+	Password string
+}
+
+type CapTab struct {
 	Tab                *container.TabItem
 	connection_manager cap.ConnectionManager
-	NetworkSelect      *widget.Select
-	UsernameEntry      *widget.Entry
-	PasswordEntry      *widget.Entry
-	LoginBtn           *widget.Button
+	LoginInfo          LoginInfo
+	ConnectBtn         *widget.Button
 	card               *widget.Card
 	login              *fyne.Container
 	connecting         *fyne.Container
 	change_password    *fyne.Container
 	pw_expired_cb      func(cap.PasswordChecker)
-	ConnectedCallback  func(LoginInfo)
+	ConnectedCallback  func(cap.Connection)
 }
 
-func NewLoginTab(tabname,
+func NewCapTab(tabname,
 	desc string,
 	service Service,
 	conn_man cap.ConnectionManager,
-	connected_cb func(login_info LoginInfo),
-	connected *fyne.Container,
-	username, password string) LoginTab {
-	tab := &LoginTab{}
+	connected_cb func(cap cap.Connection),
+	connected *fyne.Container, login_info LoginInfo) CapTab {
+	tab := &CapTab{}
 	connect_cancelled := false
 	ch := make(chan string)
 
-	tab.ConnectedCallback = connected_cb
+	port := service.CapPort
+
 	tab.connection_manager = conn_man
-	tab.login = tab.NewLogin(service, func(network, user, pass string, ext_ip, srv_ip net.IP) {
+	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
 		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
-			service.CapPort,
+			port,
 			tab.pw_expired_cb, ch)
 
 		if err != nil {
@@ -65,13 +69,8 @@ func NewLoginTab(tabname,
 
 		time.Sleep(1 * time.Second)
 		tab.card.SetContent(connected)
-		login_info := LoginInfo{
-			Network:  network,
-			Username: username,
-			Password: password,
-		}
-		connected_cb(login_info)
-	}, username, password)
+		connected_cb(conn_man.GetConnection())
+	}, login_info)
 
 	tab.pw_expired_cb = func(pw_checker cap.PasswordChecker) {
 		// Detected expired password callback
@@ -99,16 +98,10 @@ func NewLoginTab(tabname,
 	return *tab
 }
 
-func (t *LoginTab) NewLogin(
+func (t *CapTab) NewLogin(
 	service Service,
-	connect_cb func(network, user, pass string, ext_ip, srv_ip net.IP),
-	uname, pword string) *fyne.Container {
-	username := widget.NewEntry()
-	username.SetText(uname)
-	username.SetPlaceHolder("Enter username...")
-	password := widget.NewPasswordEntry()
-	password.SetText(pword)
-	password.SetPlaceHolder("Enter password...")
+	connect_cb func(user, pass string, ext_ip, srv_ip net.IP),
+	linfo LoginInfo) *fyne.Container {
 
 	network_ips := make(map[string]string)
 	external_ips := make(map[string]string)
@@ -118,27 +111,21 @@ func (t *LoginTab) NewLogin(
 		external_ips[name] = val.ClientExternalAddress
 		networkNames = append(networkNames, name)
 	}
-	network := widget.NewSelect(networkNames, func(s string) {})
-
-	network.SetSelected("external")
-	login := widget.NewButton("Login", func() {
+	t.ConnectBtn = widget.NewButton("Connect", func() {
 		var ext_addr, server_addr net.IP
-		if network.Selected == "external" {
+		if linfo.Network == "external" {
 			ext_addr = GetExternalIp()
 		} else {
-			ext_addr = net.ParseIP(external_ips[network.Selected])
+			ext_addr = net.ParseIP(external_ips[linfo.Network])
 		}
-		server_addr = net.ParseIP(network_ips[network.Selected])
-		go connect_cb(network.Selected, username.Text, password.Text, ext_addr, server_addr)
+		server_addr = net.ParseIP(network_ips[linfo.Network])
+		go connect_cb(linfo.Username, linfo.Password, ext_addr, server_addr)
 	})
-	t.NetworkSelect = network
-	t.UsernameEntry = username
-	t.PasswordEntry = password
-	t.LoginBtn = login
-	return container.NewVBox(username, password, network, login)
+	t.LoginInfo = linfo
+	return container.NewVBox(t.ConnectBtn)
 }
 
-func (t *LoginTab) CloseConnection() {
+func (t *CapTab) CloseConnection() {
 	t.connection_manager.Close()
 	t.card.SetContent(t.login)
 }

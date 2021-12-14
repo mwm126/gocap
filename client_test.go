@@ -73,41 +73,11 @@ func TestClient(t *testing.T) {
 			client := NewClient(a, w, cfg, conn_man)
 
 			// test.Tap(client.LoginTab.LoginBtn)
-			client.LoginTab.ConnectedCallback(&FkeConnection{})
+			client.LoginTab.ConnectedCallback(login.LoginInfo{"", "", ""})
 
 			if got := len(client.Tabs.Items); got != tc.ntabs {
 				t.Errorf("Got %d; want %d", got, tc.ntabs)
 			}
 		})
 	}
-}
-
-type FkeConnection struct {
-	sessions []cap.Session
-}
-
-func (c *FkeConnection) FindSessions() ([]cap.Session, error) {
-	return c.sessions, nil
-}
-
-func (c *FkeConnection) GetUsername() string {
-	return "test_user"
-}
-
-func (c *FkeConnection) GetPassword() string {
-	return "test_pwd"
-}
-
-func (conn *FkeConnection) UpdateForwards(fwds []string) {}
-
-func (conn *FkeConnection) CreateVncSession(xres string, yres string) (string, string, error) {
-	conn.sessions = append(conn.sessions, cap.Session{
-		Username:      "test_user",
-		DisplayNumber: ":77",
-		Geometry:      "geo",
-		DateCreated:   "2222-33-44",
-		HostAddress:   "localhost",
-		HostPort:      "8088",
-	})
-	return "", "", nil
 }

@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package joule
 
 import (
@@ -57,13 +54,14 @@ func TestJouleLoginButton(t *testing.T) {
 		}
 	}
 
-	jouleTab := NewJouleConnected(a, joule_service, &conn_man)
+	jouleTab := NewJouleConnected(
+		a,
+		joule_service,
+		&conn_man,
+		login.LoginInfo{"alb_admin", "the_user", "the_pass"},
+	)
 
-	test.Type(jouleTab.CapTab.UsernameEntry, "the_user")
-	test.Type(jouleTab.CapTab.PasswordEntry, "the_pass")
-	jouleTab.CapTab.NetworkSelect.SetSelected("alb_admin")
-
-	test.Tap(jouleTab.CapTab.LoginBtn)
+	test.Tap(jouleTab.CapTab.ConnectBtn)
 
 	time.Sleep(100 * time.Millisecond)
 

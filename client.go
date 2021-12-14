@@ -35,7 +35,7 @@ type Client struct {
 	Tabs     *container.AppTabs
 	window   fyne.Window
 	app      fyne.App
-	LoginTab login.CapTab
+	LoginTab login.LoginTab
 }
 
 func NewClient(
@@ -65,30 +65,32 @@ func NewClient(
 
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
 	tabs := container.NewAppTabs(about_tab)
+
+	uname, pword, _ := login.GetSavedLogin()
 	login_tab := login.NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
-		func(conn cap.Connection) {
+		func(login_info login.LoginInfo) {
 			services, err := login.FindServices()
 			if err != nil {
 				return
 			}
 			for _, service := range services {
 				if service.Name == "joule" {
-					joule := joule.NewJouleConnected(a, service, conn_man)
+					joule := joule.NewJouleConnected(a, service, conn_man, login_info)
 					tabs.Append(joule.CapTab.Tab)
 				}
 				if service.Name == "watt" {
-					watt := watt.NewWattConnected(a, service, conn_man)
+					watt := watt.NewWattConnected(a, service, conn_man, login_info)
 					tabs.Append(watt.CapTab.Tab)
 				}
 				if service.Name == "fe261" {
-					fe261 := fe261.NewFe261Connected(a, service, conn_man)
+					fe261 := fe261.NewFe261Connected(a, service, conn_man, login_info)
 					tabs.Append(fe261.CapTab.Tab)
 				}
 			}
 			w.SetContent(tabs)
 
 			// fe261_tab.Connect(conn)
-		}, connctd)
+		}, connctd, uname, pword)
 
 	tabs.Append(login_tab.Tab)
 
