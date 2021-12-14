@@ -22,14 +22,14 @@ type LoginTab struct {
 	connecting         *fyne.Container
 	change_password    *fyne.Container
 	pw_expired_cb      func(cap.PasswordChecker)
-	ConnectedCallback  func(cap.Connection, LoginInfo)
+	ConnectedCallback  func(LoginInfo)
 }
 
 func NewLoginTab(tabname,
 	desc string,
 	service Service,
 	conn_man cap.ConnectionManager,
-	connected_cb func(cap cap.Connection, login_info LoginInfo),
+	connected_cb func(login_info LoginInfo),
 	connected *fyne.Container,
 	username, password string) LoginTab {
 	tab := &LoginTab{}
@@ -70,7 +70,7 @@ func NewLoginTab(tabname,
 			Username: username,
 			Password: password,
 		}
-		connected_cb(conn_man.GetConnection(), login_info)
+		connected_cb(login_info)
 	}, username, password)
 
 	tab.pw_expired_cb = func(pw_checker cap.PasswordChecker) {

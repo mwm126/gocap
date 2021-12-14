@@ -68,7 +68,7 @@ func NewClient(
 
 	uname, pword, _ := login.GetSavedLogin()
 	login_tab := login.NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
-		func(conn cap.Connection, login_info login.LoginInfo) {
+		func(login_info login.LoginInfo) {
 			services, err := login.FindServices()
 			if err != nil {
 				return
