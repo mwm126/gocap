@@ -76,7 +76,9 @@ func TestClient(t *testing.T) {
 			client := NewClient(a, w, cfg, conn_man)
 
 			// test.Tap(client.LoginTab.LoginBtn)
-			client.LoginTab.ConnectedCallback(login.LoginInfo{Network: "", Username: "", Password: ""})
+			client.LoginTab.ConnectedCallback(
+				login.LoginInfo{Network: "", Username: "", Password: ""},
+			)
 
 			if got := len(client.Tabs.Items); got != tc.ntabs {
 				t.Errorf("Got %d; want %d", got, tc.ntabs)

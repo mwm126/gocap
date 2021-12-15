@@ -100,7 +100,12 @@ func TestWattLoginButton(t *testing.T) {
 			watt_service = service
 		}
 	}
-	wattTab := NewWattConnected(a, watt_service, &conn_man, login.LoginInfo{Network: "vpn", Username: "the_user", Password: ""})
+	wattTab := NewWattConnected(
+		a,
+		watt_service,
+		&conn_man,
+		login.LoginInfo{Network: "vpn", Username: "the_user", Password: ""},
+	)
 
 	test.Tap(wattTab.CapTab.ConnectBtn)
 

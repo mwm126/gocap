@@ -26,14 +26,16 @@ type SHADigest [32]byte
 // Knocker send port knock UDP packet
 type Knocker interface {
 	Knock(username string, ext_addr, server_addr net.IP, port uint) error
+	YubikeyAvailable() bool
 }
 
 // PortKnocker for actual Knocker implementation
 type PortKnocker struct {
-	Yubikey          Yubikey
+	AlertCallback    func(int32)
 	Entropy          [32]byte
-	YubikeyAvailable bool
+	Yubikey          Yubikey
 	delay            uint
+	yubikeyAvailable bool
 }
 
 func NewPortKnocker(yk Yubikey, delay uint) *PortKnocker {
@@ -43,7 +45,11 @@ func NewPortKnocker(yk Yubikey, delay uint) *PortKnocker {
 		log.Fatal("Unable to get entropy to send CAP packet")
 	}
 
-	return &PortKnocker{yk, entropy, false, delay}
+	return &PortKnocker{func(int32) {}, entropy, yk, delay, false}
+}
+
+func (sk *PortKnocker) YubikeyAvailable() bool {
+	return sk.yubikeyAvailable
 }
 
 func (sk *PortKnocker) StartMonitor() {
@@ -58,8 +64,9 @@ func (sk *PortKnocker) StartMonitor() {
 			serial, err := sk.Yubikey.FindSerial()
 			if err != nil {
 				log.Println("error finding yubikey serial number:", err)
+				sk.AlertCallback(serial)
 			}
-			sk.YubikeyAvailable = serial != 0
+			sk.yubikeyAvailable = serial != 0
 		}
 	}()
 }

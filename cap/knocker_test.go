@@ -8,7 +8,13 @@ import (
 	"testing"
 )
 
-type FakeYubikey struct{}
+type FakeYubikey struct {
+	Available bool
+}
+
+func (yk *FakeYubikey) YubikeyAvailable() bool {
+	return true
+}
 
 func (yk *FakeYubikey) FindSerial() (int32, error) {
 	return 5417533, nil
@@ -45,7 +51,7 @@ func TestPacketFactory(t *testing.T) {
 	)
 	var entropyBufArray [32]byte
 	copy(entropyBufArray[:], entropyBuf)
-	pk := &PortKnocker{&FakeYubikey{}, entropyBufArray, false, 0}
+	pk := &PortKnocker{func(int32) {}, entropyBufArray, &FakeYubikey{}, 0, false}
 	timestamp := int32(1627324072)
 	auth_addr := net.ParseIP("74.109.234.77").To4()
 	ssh_addr := net.ParseIP("74.109.234.77").To4()

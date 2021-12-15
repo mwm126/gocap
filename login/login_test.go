@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/widget"
+	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
 )
@@ -57,6 +58,27 @@ func TestLoginTab(t *testing.T) {
 			w.SetContent(tabs)
 		}, connctd, "", "")
 	w = test.NewWindow(tabs)
+
+	t.Run("Enabled", func(t *testing.T) {
+		assert.False(t, login_tab.NetworkSelect.Disabled())
+		assert.False(t, login_tab.UsernameEntry.Disabled())
+		assert.False(t, login_tab.PasswordEntry.Disabled())
+		assert.False(t, login_tab.LoginBtn.Disabled())
+	})
+
+	t.Run("Disabled", func(t *testing.T) {
+		login_tab.Disable()
+		assert.True(t, login_tab.NetworkSelect.Disabled())
+		assert.True(t, login_tab.UsernameEntry.Disabled())
+		assert.True(t, login_tab.PasswordEntry.Disabled())
+		assert.True(t, login_tab.LoginBtn.Disabled())
+
+		login_tab.Enable()
+		assert.False(t, login_tab.NetworkSelect.Disabled())
+		assert.False(t, login_tab.UsernameEntry.Disabled())
+		assert.False(t, login_tab.PasswordEntry.Disabled())
+		assert.False(t, login_tab.LoginBtn.Disabled())
+	})
 
 	login_tab.ConnectedCallback(login_info)
 

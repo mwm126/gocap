@@ -142,3 +142,17 @@ func (t *LoginTab) CloseConnection() {
 	t.connection_manager.Close()
 	t.card.SetContent(t.login)
 }
+
+func (t *LoginTab) Disable() {
+	t.NetworkSelect.Disable()
+	t.UsernameEntry.Disable()
+	t.PasswordEntry.Disable()
+	t.LoginBtn.Disable()
+}
+
+func (t *LoginTab) Enable() {
+	t.NetworkSelect.Enable()
+	t.UsernameEntry.Enable()
+	t.PasswordEntry.Enable()
+	t.LoginBtn.Enable()
+}
