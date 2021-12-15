@@ -30,19 +30,38 @@ type Knocker interface {
 
 // PortKnocker for actual Knocker implementation
 type PortKnocker struct {
-	Yubikey Yubikey
-	Entropy [32]byte
+	Yubikey          Yubikey
+	Entropy          [32]byte
+	YubikeyAvailable bool
+	delay            uint
 }
 
-func NewPortKnocker() *PortKnocker {
+func NewPortKnocker(yk Yubikey, delay uint) *PortKnocker {
 	var entropy [32]byte
 	_, err := rand.Read(entropy[:])
 	if err != nil {
 		log.Fatal("Unable to get entropy to send CAP packet")
 	}
 
-	yk := new(UsbYubikey)
-	return &PortKnocker{yk, entropy}
+	return &PortKnocker{yk, entropy, false, delay}
+}
+
+func (sk *PortKnocker) StartMonitor() {
+	if sk.delay == 0 {
+		return
+	}
+	go func() {
+		for true {
+			for i := uint(0); i < sk.delay; i++ {
+				time.Sleep(time.Second)
+			}
+			serial, err := sk.Yubikey.FindSerial()
+			if err != nil {
+				log.Println("error finding yubikey serial number:", err)
+			}
+			sk.YubikeyAvailable = serial != 0
+		}
+	}()
 }
 
 func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {

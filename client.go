@@ -20,7 +20,8 @@ func main() {
 	cfg.Enable_watt = true
 	config.WriteConfig(cfg)
 
-	knk := cap.NewPortKnocker()
+	yk := new(cap.UsbYubikey)
+	knk := cap.NewPortKnocker(yk, cfg.YubikeyTimeout)
 	conn_man := cap.NewCapConnectionManager(knk)
 	a := app.New()
 	w := a.NewWindow("CAP Client")
