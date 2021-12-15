@@ -89,7 +89,10 @@ func TestWattLoginButton(t *testing.T) {
 	a := app.New()
 
 	var conn_man FakeConnectionManager
-	login.InitServices(nil)
+	err := login.InitServices(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var watt_service login.Service
 	services, _ := login.FindServices()
 	for _, service := range services {
@@ -97,7 +100,7 @@ func TestWattLoginButton(t *testing.T) {
 			watt_service = service
 		}
 	}
-	wattTab := NewWattConnected(a, watt_service, &conn_man, login.LoginInfo{"vpn", "the_user", ""})
+	wattTab := NewWattConnected(a, watt_service, &conn_man, login.LoginInfo{Network: "vpn", Username: "the_user", Password: ""})
 
 	test.Tap(wattTab.CapTab.ConnectBtn)
 

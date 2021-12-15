@@ -105,11 +105,9 @@ func (t *CapTab) NewLogin(
 
 	network_ips := make(map[string]string)
 	external_ips := make(map[string]string)
-	networkNames := make([]string, 0, len(service.Networks))
 	for name, val := range service.Networks {
 		network_ips[name] = val.CapServerAddress
 		external_ips[name] = val.ClientExternalAddress
-		networkNames = append(networkNames, name)
 	}
 	t.ConnectBtn = widget.NewButton("Connect", func() {
 		var ext_addr, server_addr net.IP

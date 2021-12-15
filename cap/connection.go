@@ -232,7 +232,7 @@ func NewCapConnection(client *ssh.Client, user, pass string) (*CapConnection, er
 	log.Println("Connected.")
 	conn := CapConnection{
 		client,
-		make(map[string]sshtunnel.SSHTunnel, 0),
+		make(map[string]sshtunnel.SSHTunnel),
 		user,
 		pass,
 		uid,

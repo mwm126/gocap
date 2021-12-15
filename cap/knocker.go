@@ -51,7 +51,7 @@ func (sk *PortKnocker) StartMonitor() {
 		return
 	}
 	go func() {
-		for true {
+		for {
 			for i := uint(0); i < sk.delay; i++ {
 				time.Sleep(time.Second)
 			}

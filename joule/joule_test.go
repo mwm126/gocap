@@ -45,7 +45,10 @@ func TestJouleLoginButton(t *testing.T) {
 
 	var conn_man FakeConnectionManager
 
-	login.InitServices(nil)
+	err := login.InitServices(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var joule_service login.Service
 	services, _ := login.FindServices()
 	for _, service := range services {
@@ -58,7 +61,7 @@ func TestJouleLoginButton(t *testing.T) {
 		a,
 		joule_service,
 		&conn_man,
-		login.LoginInfo{"alb_admin", "the_user", "the_pass"},
+		login.LoginInfo{Network: "alb_admin", Username: "the_user", Password: "the_pass"},
 	)
 
 	test.Tap(jouleTab.CapTab.ConnectBtn)

@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"log"
 )
 
 func main() {
@@ -26,7 +27,11 @@ func main() {
 	a := app.New()
 	w := a.NewWindow("CAP Client")
 
-	login.InitServices(nil)
+	err := login.InitServices(nil)
+	if err != nil {
+		log.Println("Could not contact Service List server:", err)
+		return
+	}
 	client := NewClient(a, w, cfg, conn_man)
 	client.Run()
 }
