@@ -70,6 +70,14 @@ func (c *FakeConnection) GetPassword() string {
 	return "test_pwd"
 }
 
+func (c *FakeConnection) GetUid() string {
+	return "test_uid"
+}
+
+func (c *FakeConnection) GetClient() *ssh.Client {
+	return nil
+}
+
 func (conn *FakeConnection) UpdateForwards(fwds []string) {}
 
 func (conn *FakeConnection) CreateVncSession(xres string, yres string) (string, string, error) {

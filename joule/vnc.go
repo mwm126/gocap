@@ -1,8 +1,10 @@
 package joule
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"aeolustec.com/capclient/cap"
@@ -59,7 +61,12 @@ func newVncTab(a fyne.App, conn *cap.Connection) *VncTab {
 			hidden := widget.NewLabel("")
 			hidden.Hide()
 			connect_btn := widget.NewButton("Connect", func() {
-				RunVnc(conn, hidden.Text, hidden.Text)
+				strs := strings.Split(hidden.Text, ",")
+				owner_uid := strs[0]
+				display := strs[1]
+
+				otp := get_otp(conn, owner_uid, display)
+				RunVnc(conn, otp, display)
 			})
 			label := widget.NewLabel("template")
 			delete_btn := widget.NewButton("Kill", func() {
@@ -141,5 +148,75 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 	return vsf
 }
 
-func KillSession(conn cap.Connection, otp, displayNumber string) {
+func get_otp(conn *cap.Connection, owner_uid, display string) string {
+	// Use vncpasswd to generate OTP for sessions we own
+	// log.Println("Checking %s ? %s", owner_uid, ssh.uid)
+	if owner_uid == conn.GetUid() {
+		return *get_owner_otp(conn, display)
+	}
+
+	return get_shared_otp(display)
+}
+
+func get_owner_otp(conn *cap.Connection, display string) *string {
+	client := conn.GetClient()
+	// loginName := conn.GetUsername()
+	// if !display.startswith(loginName) {
+	// panic("BAD DISPLAY")
+	// }
+	command := fmt.Sprintf("vncpasswd -o -display %s", display)
+	log.Println("VNCPASSWD: ", command)
+	output, err := client.CleanExec(command)
+	if err != nil {
+		log.Println("Error executing: ", command)
+		return nil
+	}
+	for _, line := range strings.Split(output, "\n") {
+		log.Println(line)
+		prefix := "Full control one-time password:"
+		if strings.HasPrefix(line, prefix) {
+			otp := strings.TrimSpace(line[len(prefix):])
+			return &otp
+		}
+	}
+	log.Println("OTP not found from vncpasswd")
+	return nil
+}
+
+func get_shared_otp(display string) string {
+	// Use session manager to make OTP for shared sessions
+	var response []string
+	// response := ssh.sessionMessage("OTP", display).split()
+
+	log.Println(response)
+
+	nonce := strings.TrimSpace(response[0])
+	encOTP := strings.TrimSpace(response[1])
+	return decryptOTP([]byte(nonce), []byte(encOTP))
+}
+
+func MAC(message []byte) string {
+	digest := cap.MakeSHADigest(
+		// self._session_manager_secret[0:32],
+		message,
+	// self._session_manager_secret[33:64],
+	)
+	return hex.EncodeToString(digest[:])
+}
+
+func decryptOTP(nonce, encOTP []byte) string {
+
+	key := MAC(nonce)
+	decOTP := ""
+	for ii, key_char := range key {
+		encOTP_char := int64(encOTP[ii])
+		k, _ := strconv.ParseInt(string(key_char), 16, 8)
+		e := encOTP_char - 65
+		o := (e - k) % 16
+		decOTP += fmt.Sprint(o)
+	}
+	return decOTP
+}
+
+func KillSession(conn *cap.Connection, otp, displayNumber string) {
 }

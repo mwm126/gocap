@@ -49,6 +49,14 @@ func (c *Connection) GetAddress() string {
 	return c.loginAddr
 }
 
+func (c *Connection) GetUid() string {
+	return c.uid
+}
+
+func (c *Connection) GetClient() Client {
+	return c.client
+}
+
 func (conn *Connection) UpdateForwards(fwds []string) {
 	for _, fwd := range fwds {
 		if _, missing := conn.forwards[fwd]; missing {

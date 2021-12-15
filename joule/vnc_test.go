@@ -1,11 +1,13 @@
 package joule
 
 import (
+	"fmt"
 	"testing"
 
 	"aeolustec.com/capclient/cap"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/crypto/ssh"
 )
 
 type StubYubikey struct{}
@@ -22,7 +24,45 @@ func (yk *StubYubikey) ChallengeResponseHMAC(chal cap.SHADigest) ([20]byte, erro
 	return [20]byte{}, nil
 }
 
-func _TestVncTab(t *testing.T) {
+type FakeConnection struct {
+	sessions []cap.Session
+}
+
+func (c *FakeConnection) FindSessions() ([]cap.Session, error) {
+	return c.sessions, nil
+}
+
+func (c *FakeConnection) GetUsername() string {
+	return "test_user"
+}
+
+func (c *FakeConnection) GetPassword() string {
+	return "test_pwd"
+}
+
+func (c *FakeConnection) GetUid() string {
+	return "test_uid"
+}
+
+func (c *FakeConnection) GetClient() *ssh.Client {
+	return nil
+}
+
+func (conn *FakeConnection) UpdateForwards(fwds []string) {}
+
+func (conn *FakeConnection) CreateVncSession(xres string, yres string) (string, string, error) {
+	conn.sessions = append(conn.sessions, cap.Session{
+		Username:      "test_user",
+		DisplayNumber: ":77",
+		Geometry:      fmt.Sprintf("%sx%s", xres, yres),
+		DateCreated:   "2222-33-44",
+		HostAddress:   "localhost",
+		HostPort:      "8088",
+	})
+	return "", "", nil
+}
+
+func TestVncTab(t *testing.T) {
 	a := test.NewApp()
 
 	// init_session := cap.Session{
