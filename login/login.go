@@ -21,7 +21,7 @@ type LoginTab struct {
 	login              *fyne.Container
 	connecting         *fyne.Container
 	change_password    *fyne.Container
-	pw_expired_cb      func(cap.PasswordChecker)
+	pw_expired_cb      func(cap.Client)
 	ConnectedCallback  func(LoginInfo)
 }
 
@@ -32,12 +32,20 @@ func NewLoginTab(tabname,
 	connected_cb func(login_info LoginInfo),
 	connected *fyne.Container,
 	username, password string) LoginTab {
+
 	tab := &LoginTab{}
 	connect_cancelled := false
 	ch := make(chan string)
 
 	tab.ConnectedCallback = connected_cb
 	tab.connection_manager = conn_man
+	tab.connection_manager.Knocker().AlertCallback = func(serial int32) {
+		if serial == 0 {
+			tab.Disable()
+		} else {
+			tab.Enable()
+		}
+	}
 	tab.login = tab.NewLogin(service, func(network, user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
 		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
@@ -73,7 +81,7 @@ func NewLoginTab(tabname,
 		connected_cb(login_info)
 	}, username, password)
 
-	tab.pw_expired_cb = func(pw_checker cap.PasswordChecker) {
+	tab.pw_expired_cb = func(pw_checker cap.Client) {
 		// Detected expired password callback
 		tab.connection_manager.SetPasswordExpired()
 		tab.card.SetContent(tab.change_password)
@@ -95,7 +103,6 @@ func NewLoginTab(tabname,
 	tab.card = widget.NewCard(tabname, desc, tab.login)
 
 	tab.Tab = container.NewTabItem(tabname, tab.card)
-	tab.connection_manager = conn_man
 	return *tab
 }
 

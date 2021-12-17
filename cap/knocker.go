@@ -24,13 +24,7 @@ type OneTimePassword [16]byte
 type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
-type Knocker interface {
-	Knock(username string, ext_addr, server_addr net.IP, port uint) error
-	YubikeyAvailable() bool
-}
-
-// PortKnocker for actual Knocker implementation
-type PortKnocker struct {
+type Knocker struct {
 	AlertCallback    func(int32)
 	Entropy          [32]byte
 	Yubikey          Yubikey
@@ -38,21 +32,21 @@ type PortKnocker struct {
 	yubikeyAvailable bool
 }
 
-func NewPortKnocker(yk Yubikey, delay uint) *PortKnocker {
+func NewKnocker(yk Yubikey, delay uint) Knocker {
 	var entropy [32]byte
 	_, err := rand.Read(entropy[:])
 	if err != nil {
 		log.Fatal("Unable to get entropy to send CAP packet")
 	}
 
-	return &PortKnocker{func(int32) {}, entropy, yk, delay, false}
+	return Knocker{func(int32) {}, entropy, yk, delay, false}
 }
 
-func (sk *PortKnocker) YubikeyAvailable() bool {
+func (sk *Knocker) YubikeyAvailable() bool {
 	return sk.yubikeyAvailable
 }
 
-func (sk *PortKnocker) StartMonitor() {
+func (sk *Knocker) StartMonitor() {
 	if sk.delay == 0 {
 		return
 	}
@@ -71,7 +65,7 @@ func (sk *PortKnocker) StartMonitor() {
 	}()
 }
 
-func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
+func (sk *Knocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	timestamp, err := getNtpTime()
@@ -110,7 +104,7 @@ func getNtpTime() (int32, error) {
 	return int32(timestamp.Unix()), err
 }
 
-func (sk *PortKnocker) makePacket(
+func (sk *Knocker) makePacket(
 	uname string,
 	timestamp int32,
 	auth_addr, ssh_addr, server_addr net.IP,

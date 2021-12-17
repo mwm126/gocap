@@ -46,9 +46,6 @@ func (vt *VncTab) refresh() error {
 }
 
 func newVncTab(a fyne.App, conn cap.Connection) *VncTab {
-	if conn == nil {
-		panic("Invalid")
-	}
 	t := VncTab{
 		app:        a,
 		connection: conn,

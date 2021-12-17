@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package cap
 
 import (
@@ -23,19 +20,13 @@ func (yk *StubYubikey) ChallengeResponseHMAC(chal SHADigest) ([20]byte, error) {
 	return [20]byte{}, nil
 }
 
-func NewFakeKnocker() *PortKnocker {
-	var fake_yk StubYubikey
-	return NewPortKnocker(&fake_yk, 0)
-}
-
-func DisabledTestCapConnection(t *testing.T) {
+func _TestCapConnection(t *testing.T) {
 	username := "testusername"
 	password := "testpassword"
 	ext_ip := net.IPv4(11, 22, 33, 44)
 	server := net.IPv4(55, 66, 77, 88)
 
-	fake_kckr := NewFakeKnocker()
-	conn_man := NewCapConnectionManager(fake_kckr)
+	conn_man := NewCapConnectionManager(NewKnocker(nil, 0))
 	ch := make(chan string)
 	err := conn_man.Connect(
 		username,
@@ -43,7 +34,7 @@ func DisabledTestCapConnection(t *testing.T) {
 		ext_ip,
 		server,
 		123,
-		func(pwc PasswordChecker) {},
+		func(pwc Client) {},
 		ch,
 	)
 	if err != nil {

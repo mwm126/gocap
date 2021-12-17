@@ -25,7 +25,7 @@ type CapTab struct {
 	login              *fyne.Container
 	connecting         *fyne.Container
 	change_password    *fyne.Container
-	pw_expired_cb      func(cap.PasswordChecker)
+	pw_expired_cb      func(cap.Client)
 	ConnectedCallback  func(cap.Connection)
 }
 
@@ -69,10 +69,10 @@ func NewCapTab(tabname,
 
 		time.Sleep(1 * time.Second)
 		tab.card.SetContent(connected)
-		connected_cb(conn_man.GetConnection())
+		connected_cb(*conn_man.GetConnection())
 	}, login_info)
 
-	tab.pw_expired_cb = func(pw_checker cap.PasswordChecker) {
+	tab.pw_expired_cb = func(pw_checker cap.Client) {
 		// Detected expired password callback
 		tab.connection_manager.SetPasswordExpired()
 		tab.card.SetContent(tab.change_password)

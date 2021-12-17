@@ -22,7 +22,7 @@ func main() {
 	config.WriteConfig(cfg)
 
 	yk := new(cap.UsbYubikey)
-	knk := cap.NewPortKnocker(yk, cfg.YubikeyTimeout)
+	knk := cap.NewKnocker(yk, cfg.YubikeyTimeout)
 	conn_man := cap.NewCapConnectionManager(knk)
 	a := app.New()
 	w := a.NewWindow("CAP Client")
@@ -32,7 +32,7 @@ func main() {
 		log.Println("Could not contact Service List server:", err)
 		return
 	}
-	client := NewClient(a, w, cfg, conn_man)
+	client := NewClient(a, w, cfg, *conn_man)
 	client.Run()
 }
 
@@ -94,8 +94,6 @@ func NewClient(
 				}
 			}
 			w.SetContent(tabs)
-
-			// fe261_tab.Connect(conn)
 		}, connctd, uname, pword)
 
 	tabs.Append(login_tab.Tab)
