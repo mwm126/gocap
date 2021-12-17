@@ -26,7 +26,7 @@ func _TestCapConnection(t *testing.T) {
 	ext_ip := net.IPv4(11, 22, 33, 44)
 	server := net.IPv4(55, 66, 77, 88)
 
-	conn_man := NewCapConnectionManager(NewKnocker(nil, 0))
+	conn_man := NewCapConnectionManager(NewKnocker(&StubYubikey{}, 0))
 	ch := make(chan string)
 	err := conn_man.Connect(
 		username,

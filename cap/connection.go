@@ -21,17 +21,7 @@ type Client interface {
 		remote_addr string,
 		remote_port int,
 	) sshtunnel.SSHTunnel
-	IsPasswordExpired() bool
-	ChangePassword(old_pw string, newPasswd string) error
-}
-
-func (client *sshClient) IsPasswordExpired() bool {
-	out, err := client.CleanExec("echo")
-	if err != nil {
-		log.Println("errTxt=", err)
-	}
-	log.Println("outTxt=", out)
-	return strings.Contains(strings.ToLower(out), "expired")
+	CheckPasswordExpired(string, func(Client), chan string) error
 }
 
 // A Connection represents a successful SSH connection after the port knock

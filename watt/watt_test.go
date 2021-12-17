@@ -25,15 +25,12 @@ func (fsc FakeClient) CleanExec(command string) (string, error) {
 func (fsc FakeClient) Close() {
 }
 
-func (client FakeClient) ChangePassword(
-	old_pw string,
-	newPasswd string,
+func (client FakeClient) CheckPasswordExpired(
+	pass string,
+	pw_expired_cb func(cap.Client),
+	ch chan string,
 ) error {
 	return nil
-}
-
-func (client FakeClient) IsPasswordExpired() bool {
-	return false
 }
 
 func (sc FakeClient) OpenSSHTunnel(

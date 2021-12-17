@@ -3,6 +3,7 @@ package cap
 import (
 	"aeolustec.com/capclient/cap/sshtunnel"
 	"bytes"
+	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"log"
@@ -97,7 +98,38 @@ func (sc *sshClient) OpenSSHTunnel(
 	return *tunnel
 }
 
-func (client *sshClient) ChangePassword(
+func (client *sshClient) CheckPasswordExpired(
+	pass string,
+	pw_expired_cb func(Client),
+	ch chan string,
+) error {
+	if client.isPasswordExpired() {
+		log.Println("Password expired.")
+		pw_expired_cb(client)
+		new_password := <-ch
+		log.Println("Got new password.")
+		err := client.changePassword(pass, new_password)
+		defer client.Close()
+		if err != nil {
+			log.Println("Unable to change password")
+			return err
+		}
+		log.Println("Password changed.")
+		return errors.New("Could not connect; password was expired")
+	}
+	return nil
+}
+
+func (client *sshClient) isPasswordExpired() bool {
+	out, err := client.CleanExec("echo")
+	if err != nil {
+		log.Println("errTxt=", err)
+	}
+	log.Println("outTxt=", out)
+	return strings.Contains(strings.ToLower(out), "expired")
+}
+
+func (client *sshClient) changePassword(
 	old_pw string,
 	newPasswd string,
 ) error {

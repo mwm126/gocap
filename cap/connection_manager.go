@@ -1,7 +1,6 @@
 package cap
 
 import (
-	"errors"
 	"log"
 	"net"
 	"strings"
@@ -68,19 +67,8 @@ func (cm *ConnectionManager) Connect(
 
 	// password_checker := PasswordChecker{client, pass}
 	log.Println("Checking for expired password...")
-	if client.IsPasswordExpired() {
-		log.Println("Password expired.")
-		pw_expired_cb(client)
-		new_password := <-ch
-		log.Println("Got new password.")
-		err := client.ChangePassword(pass, new_password)
-		defer client.Close()
-		if err != nil {
-			log.Println("Unable to change password")
-			return err
-		}
-		log.Println("Password changed.")
-		return errors.New("Could not connect; password was expired")
+	if err := client.CheckPasswordExpired(pass, pw_expired_cb, ch); err != nil {
+		return err
 	}
 
 	cm.connection, err = NewCapConnection(client, user, pass)
