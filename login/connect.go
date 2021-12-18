@@ -18,7 +18,8 @@ type LoginInfo struct {
 
 type CapTab struct {
 	Tab                *container.TabItem
-	connection_manager cap.ConnectionManager
+	connection_manager *cap.ConnectionManager
+	connection         *cap.Connection
 	LoginInfo          LoginInfo
 	ConnectBtn         *widget.Button
 	card               *widget.Card
@@ -32,8 +33,8 @@ type CapTab struct {
 func NewCapTab(tabname,
 	desc string,
 	service Service,
-	conn_man cap.ConnectionManager,
-	connected_cb func(cap cap.Connection),
+	conn_man *cap.ConnectionManager,
+	connected_cb func(cap *cap.Connection),
 	connected *fyne.Container, login_info LoginInfo) CapTab {
 	tab := &CapTab{}
 	connect_cancelled := false
@@ -41,19 +42,19 @@ func NewCapTab(tabname,
 
 	port := service.CapPort
 	tab.connection_manager = conn_man
-	tab.connection_manager.SetYubikeyCallback(func(serial int32) {
-		if serial > 0 {
+	tab.LoginInfo = login_info
+	tab.connection_manager.AddYubikeyCallback(func(enable bool) {
+		if enable {
 			tab.Enable()
 		} else {
 			tab.Disable()
 		}
 	})
-	tab.connection_manager.Knocker().StartMonitor()
 
 	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
 
-		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
+		conn, err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
 			port,
 			tab.pw_expired_cb, ch)
 
@@ -71,7 +72,7 @@ func NewCapTab(tabname,
 
 		if connect_cancelled {
 			log.Println("CAP Connection cancelled.")
-			tab.connection_manager.Close()
+			conn.Close()
 			connect_cancelled = false
 			return
 		}
@@ -79,11 +80,11 @@ func NewCapTab(tabname,
 		time.Sleep(1 * time.Second)
 		tab.card.SetContent(connected)
 
-		if tab.connection_manager.GetConnection() == nil {
+		if tab.connection == nil {
 			return
 		}
-		connected_cb(*tab.connection_manager.GetConnection())
-	}, login_info)
+		connected_cb(tab.connection)
+	})
 
 	tab.pw_expired_cb = func(pw_checker cap.Client) {
 		// Detected expired password callback
@@ -112,8 +113,7 @@ func NewCapTab(tabname,
 
 func (t *CapTab) NewLogin(
 	service Service,
-	connect_cb func(user, pass string, ext_ip, srv_ip net.IP),
-	linfo LoginInfo) *fyne.Container {
+	connect_cb func(user, pass string, ext_ip, srv_ip net.IP)) *fyne.Container {
 
 	network_ips := make(map[string]string)
 	external_ips := make(map[string]string)
@@ -123,20 +123,24 @@ func (t *CapTab) NewLogin(
 	}
 	t.ConnectBtn = widget.NewButton("Connect", func() {
 		var ext_addr, server_addr net.IP
-		if linfo.Network == "external" {
+		if t.LoginInfo.Network == "external" {
 			ext_addr = GetExternalIp()
 		} else {
-			ext_addr = net.ParseIP(external_ips[linfo.Network])
+			ext_addr = net.ParseIP(external_ips[t.LoginInfo.Network])
 		}
-		server_addr = net.ParseIP(network_ips[linfo.Network])
-		go connect_cb(linfo.Username, linfo.Password, ext_addr, server_addr)
+		server_addr = net.ParseIP(network_ips[t.LoginInfo.Network])
+		go connect_cb(t.LoginInfo.Username, t.LoginInfo.Password, ext_addr, server_addr)
 	})
-	t.LoginInfo = linfo
 	return container.NewVBox(t.ConnectBtn)
 }
 
 func (t *CapTab) CloseConnection() {
-	t.connection_manager.Close()
+	if t.connection == nil {
+		log.Println("No connection connection; cannot close connection")
+		return
+	}
+	defer t.connection.Close()
+	t.connection = nil
 	t.card.SetContent(t.login)
 }
 

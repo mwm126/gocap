@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func RunVnc(conn cap.Connection, otp, displayNumber string) {
+func RunVnc(conn *cap.Connection, otp, displayNumber string) {
 	cmd := exec.Command(
 		"x-terminal-emulator",
 		"--",

@@ -73,7 +73,8 @@ func (fsc *FakeClient) Wait() error {
 func TestJouleLoginButton(t *testing.T) {
 	a := test.NewApp()
 
-	var conn_man cap.ConnectionManager
+	knk := cap.NewKnocker(&StubYubikey{}, 0)
+	conn_man := cap.NewCapConnectionManager(knk)
 
 	err := login.InitServices(nil)
 	if err != nil {

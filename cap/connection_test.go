@@ -26,9 +26,10 @@ func _TestCapConnection(t *testing.T) {
 	ext_ip := net.IPv4(11, 22, 33, 44)
 	server := net.IPv4(55, 66, 77, 88)
 
-	conn_man := NewCapConnectionManager(NewKnocker(&StubYubikey{}, 0))
+	knk := NewKnocker(&StubYubikey{}, 0)
+	conn_man := NewCapConnectionManager(knk)
 	ch := make(chan string)
-	err := conn_man.Connect(
+	conn, err := conn_man.Connect(
 		username,
 		password,
 		ext_ip,
@@ -43,14 +44,14 @@ func _TestCapConnection(t *testing.T) {
 
 	t.Run("Test connection username", func(t *testing.T) {
 		want := "0estusername"
-		got := conn_man.connection.username
+		got := conn.username
 		if want != got {
 			t.Errorf("Did not set connection username: want %s but got %s", want, got)
 		}
 	})
 	t.Run("Test connection password", func(t *testing.T) {
 		want := "0estpassword"
-		got := conn_man.connection.password
+		got := conn.password
 		if want != got {
 			t.Errorf("Did not set connection password: want %s but got %s", want, got)
 		}

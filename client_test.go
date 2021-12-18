@@ -45,7 +45,7 @@ func TestClient(t *testing.T) {
 			a := test.NewApp()
 			w := test.NewWindow(nil)
 			var cfg config.Config
-			client := NewClient(a, w, cfg, *conn_man)
+			client := NewClient(a, w, cfg, conn_man)
 
 			// test.Tap(client.LoginTab.LoginBtn)
 			client.LoginTab.ConnectedCallback(

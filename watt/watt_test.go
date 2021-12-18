@@ -91,10 +91,25 @@ func (sk *WattSpyKnocker) Knock(username string, address net.IP, port uint) erro
 	return nil
 }
 
+type FakeYubikey struct{}
+
+func (yk *FakeYubikey) FindSerial() (int32, error) {
+	return 0, nil
+}
+
+func (yk *FakeYubikey) ChallengeResponse(chal [6]byte) ([16]byte, error) {
+	return [16]byte{}, nil
+}
+
+func (yk *FakeYubikey) ChallengeResponseHMAC(chal cap.SHADigest) ([20]byte, error) {
+	return [20]byte{}, nil
+}
+
 func TestWattLoginButton(t *testing.T) {
 	a := app.New()
 
-	var conn_man cap.ConnectionManager
+	knk := cap.NewKnocker(&FakeYubikey{}, 0)
+	conn_man := cap.NewCapConnectionManager(knk)
 	err := login.InitServices(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -147,6 +162,6 @@ func TestWattLoginButton(t *testing.T) {
 
 	t.Run("Test Login", func(t *testing.T) {
 		var fake_conn cap.Connection
-		wattTab.Connect(fake_conn)
+		wattTab.Connect(&fake_conn)
 	})
 }

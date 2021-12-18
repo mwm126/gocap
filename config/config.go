@@ -45,7 +45,7 @@ func NewConfig() Config {
 			"1399:172.16.1.11:1399",   // Plexos port 2
 		},
 		DisableNtp:     false,
-		YubikeyTimeout: 0,
+		YubikeyTimeout: 10,
 	}
 }
 

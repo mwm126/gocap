@@ -16,7 +16,7 @@ const VNC_LOCAL_PORT = 10055
 type VncTab struct {
 	TabItem        *container.TabItem
 	app            fyne.App
-	connection     cap.Connection
+	connection     *cap.Connection
 	refresh_btn    *widget.Button
 	new_btn        *widget.Button
 	session_labels binding.StringList
@@ -45,7 +45,7 @@ func (vt *VncTab) refresh() error {
 	return err
 }
 
-func newVncTab(a fyne.App, conn cap.Connection) *VncTab {
+func newVncTab(a fyne.App, conn *cap.Connection) *VncTab {
 	t := VncTab{
 		app:        a,
 		connection: conn,

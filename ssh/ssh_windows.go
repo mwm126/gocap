@@ -15,7 +15,7 @@ import (
 //go:embed embeds/putty.exe
 var putty []byte
 
-func run_ssh(conn cap.Connection) {
+func run_ssh(conn *cap.Connection) {
 	file, err := os.CreateTemp("", "putty.*.exe")
 	defer os.Remove(file.Name())
 	if err != nil {

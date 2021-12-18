@@ -21,7 +21,7 @@ type WattTab struct {
 func NewWattConnected(
 	app fyne.App,
 	service login.Service,
-	conn_man cap.ConnectionManager,
+	conn_man *cap.ConnectionManager,
 	login_info login.LoginInfo,
 ) WattTab {
 	var watt_tab WattTab
@@ -32,14 +32,14 @@ func NewWattConnected(
 		app,
 		tabs,
 		login.NewCapTab("Watt", "NETL SuperComputer", service, conn_man,
-			func(conn cap.Connection) {
+			func(conn *cap.Connection) {
 				watt_tab.Connect(conn)
 			}, cont, login_info),
 	}
 	return watt_tab
 }
 
-func (t *WattTab) Connect(conn cap.Connection) {
+func (t *WattTab) Connect(conn *cap.Connection) {
 	homeTab := newWattHome(t.CapTab.CloseConnection)
 	sshTab := ssh.NewSsh(conn)
 

@@ -36,7 +36,7 @@ func _TestVncTab(t *testing.T) {
 	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
 		var conn cap.Connection
 		// conn.sessions = []cap.Session{init_session}
-		vncTab := newVncTab(a, conn)
+		vncTab := newVncTab(a, &conn)
 
 		want := 0
 		got := len(vncTab.sessions)
@@ -56,7 +56,7 @@ func _TestVncTab(t *testing.T) {
 	t.Run("Vnc New Session", func(t *testing.T) {
 		var conn cap.Connection
 		// conn.sessions = []cap.Session{init_session}
-		vncTab := newVncTab(a, conn)
+		vncTab := newVncTab(a, &conn)
 
 		want := 0
 		got := len(vncTab.sessions)
@@ -91,7 +91,7 @@ func _TestNewSessionDialog(t *testing.T) {
 	t.Run("Test Preset Resolution", func(t *testing.T) {
 		var conn cap.Connection
 		// conn.sessions = []cap.Session{init_session}
-		vncTab := newVncTab(a, conn)
+		vncTab := newVncTab(a, &conn)
 		w := test.NewWindow(nil)
 		vsf := vncTab.NewVncSessionForm(w, default_rezs)
 		last_index := len(vsf.preset_select.Options) - 1
@@ -125,7 +125,7 @@ func _TestNewSessionDialog(t *testing.T) {
 	t.Run("Test Custom Resolution", func(t *testing.T) {
 		var conn cap.Connection
 		// conn.sessions = []cap.Session{init_session}
-		vncTab := newVncTab(a, conn)
+		vncTab := newVncTab(a, &conn)
 		w := test.NewWindow(nil)
 		vsf := vncTab.NewVncSessionForm(w, default_rezs)
 		vsf.xres_entry.SetText("999")

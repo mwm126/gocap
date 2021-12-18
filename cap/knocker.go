@@ -25,45 +25,47 @@ type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
 type Knocker struct {
-	AlertCallback    func(int32)
+	Callbacks        []func(bool)
 	Entropy          [32]byte
 	Yubikey          Yubikey
 	delay            uint
 	yubikeyAvailable bool
 }
 
-func NewKnocker(yk Yubikey, delay uint) Knocker {
+func NewKnocker(yk Yubikey, delay uint) *Knocker {
 	var entropy [32]byte
 	_, err := rand.Read(entropy[:])
 	if err != nil {
 		log.Fatal("Unable to get entropy to send CAP packet")
 	}
 
-	return Knocker{func(int32) {}, entropy, yk, delay, false}
+	return &Knocker{make([]func(bool), 0), entropy, yk, delay, false}
 }
 
-func (sk Knocker) YubikeyAvailable() bool {
+func (sk *Knocker) YubikeyAvailable() bool {
 	return sk.yubikeyAvailable
 }
 
-func (sk Knocker) StartMonitor() {
+func (sk *Knocker) AddCallback(cb func(bool)) {
+	sk.Callbacks = append(sk.Callbacks, cb)
+}
+
+func (sk *Knocker) StartMonitor() {
 	if sk.delay == 0 {
 		return
 	}
 	go func() {
 		for {
-			i := uint(0)
-			for i < sk.delay {
+			for i := uint(0); i < sk.delay; i++ {
 				time.Sleep(time.Second)
 				serial, err := sk.Yubikey.FindSerial()
-				if err == nil && serial > 0 {
-					sk.yubikeyAvailable = true
-					sk.AlertCallback(serial)
+				sk.yubikeyAvailable = err == nil && serial > 0
+				for _, cb := range sk.Callbacks {
+					cb(sk.yubikeyAvailable)
+				}
+				if sk.yubikeyAvailable {
 					break
 				}
-				sk.yubikeyAvailable = false
-				sk.AlertCallback(serial)
-				i++
 			}
 		}
 	}()

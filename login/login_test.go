@@ -56,12 +56,13 @@ func TestLoginTab(t *testing.T) {
 	var login_info LoginInfo
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
 	service := Service{}
-	conn_man := &cap.ConnectionManager{}
+	knk := cap.NewKnocker(&FakeYubikey{}, 0)
+	conn_man := cap.NewCapConnectionManager(knk)
 	tabs := container.NewAppTabs()
-	login_tab := NewLoginTab("Login", "NETL SuperComputer", service, *conn_man,
+	login_tab := NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
 		func(login_info LoginInfo) {
 			ct := NewCapTab("test tab", "for testing", Service{},
-				*conn_man, func(cap cap.Connection) {},
+				conn_man, func(cap *cap.Connection) {},
 				connctd, login_info)
 			tabs.Append(ct.Tab)
 			w.SetContent(tabs)

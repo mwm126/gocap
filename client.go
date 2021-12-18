@@ -23,6 +23,7 @@ func main() {
 
 	yk := new(cap.UsbYubikey)
 	knk := cap.NewKnocker(yk, cfg.YubikeyTimeout)
+	knk.StartMonitor()
 	conn_man := cap.NewCapConnectionManager(knk)
 	a := app.New()
 	w := a.NewWindow("CAP Client")
@@ -32,7 +33,7 @@ func main() {
 		log.Println("Could not contact Service List server:", err)
 		return
 	}
-	client := NewClient(a, w, cfg, *conn_man)
+	client := NewClient(a, w, cfg, conn_man)
 	client.Run()
 }
 
@@ -48,7 +49,7 @@ func NewClient(
 	a fyne.App,
 	w fyne.Window,
 	cfg config.Config,
-	conn_man cap.ConnectionManager,
+	conn_man *cap.ConnectionManager,
 ) Client {
 
 	about_tab := container.NewTabItemWithIcon(

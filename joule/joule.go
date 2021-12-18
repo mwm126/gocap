@@ -21,7 +21,7 @@ type JouleTab struct {
 func NewJouleConnected(
 	app fyne.App,
 	service login.Service,
-	conn_man cap.ConnectionManager,
+	conn_man *cap.ConnectionManager,
 	login_info login.LoginInfo) JouleTab {
 	var joule_tab JouleTab
 	tabs := container.NewAppTabs()
@@ -31,14 +31,14 @@ func NewJouleConnected(
 		app,
 		tabs,
 		login.NewCapTab("Joule", "NETL SuperComputer", service, conn_man,
-			func(conn cap.Connection) {
+			func(conn *cap.Connection) {
 				joule_tab.Connect(conn)
 			}, cont, login_info),
 	}
 	return joule_tab
 }
 
-func (t *JouleTab) Connect(conn cap.Connection) {
+func (t *JouleTab) Connect(conn *cap.Connection) {
 	homeTab := newJouleHome(t.CapTab.CloseConnection)
 	sshTab := ssh.NewSsh(conn)
 	vncTab := newVncTab(t.app, conn)

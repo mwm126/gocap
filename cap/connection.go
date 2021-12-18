@@ -86,11 +86,15 @@ func (conn *Connection) forward(fwd string) sshtunnel.SSHTunnel {
 		conn.password, local_p, remote_h, remote_p)
 }
 
-func (conn *Connection) close() {
-	for _, fwd := range conn.forwards {
+func (c Connection) Close() {
+	if c.client == nil {
+		log.Println("Not connected; Cannot close connection")
+		return
+	}
+	for _, fwd := range c.forwards {
 		fwd.Close()
 	}
-	conn.client.Close()
+	c.client.Close()
 }
 
 // func readSessionManagerSecret(client Client) string {

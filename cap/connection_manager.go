@@ -9,25 +9,16 @@ import (
 )
 
 type ConnectionManager struct {
-	knocker          Knocker
-	connection       *Connection
+	knocker          *Knocker
 	password_expired bool
 }
 
-func NewCapConnectionManager(knocker Knocker) *ConnectionManager {
-	return &ConnectionManager{knocker, nil, false}
+func NewCapConnectionManager(knocker *Knocker) *ConnectionManager {
+	return &ConnectionManager{knocker, false}
 }
 
-func (t *ConnectionManager) SetYubikeyCallback(cb func(int32)) {
-	t.knocker.AlertCallback = cb
-}
-
-func (t *ConnectionManager) Knocker() Knocker {
-	return t.knocker
-}
-
-func (t *ConnectionManager) GetConnection() *Connection {
-	return t.connection
+func (t *ConnectionManager) AddYubikeyCallback(cb func(bool)) {
+	t.knocker.AddCallback(cb)
 }
 
 func (c *ConnectionManager) GetPasswordExpired() bool {
@@ -38,27 +29,18 @@ func (c *ConnectionManager) SetPasswordExpired() {
 	c.password_expired = true
 }
 
-func (t *ConnectionManager) Close() {
-	if t.connection == nil {
-		log.Println("Not connected; Cannot close connection")
-		return
-	}
-	t.connection.close()
-	t.connection = nil
-}
-
 func (cm *ConnectionManager) Connect(
 	user, pass string,
 	ext_addr,
 	server net.IP,
 	port uint,
 	pw_expired_cb func(Client),
-	ch chan string) error {
+	ch chan string) (*Connection, error) {
 
 	log.Println("Opening SSH Connection...", cm.knocker.Yubikey)
 	err := cm.knocker.Knock(user, ext_addr, server, port)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
@@ -66,33 +48,31 @@ func (cm *ConnectionManager) Connect(
 	client, err := NewSshClient(server, user, pass)
 	if err != nil {
 		log.Println("Could not connect to", server, err)
-		return err
+		return nil, err
 	}
 
 	log.Println("Checking for expired password...")
 	if err := client.CheckPasswordExpired(pass, pw_expired_cb, ch); err != nil {
-		return err
+		return nil, err
 	}
 
-	connn, err := NewCapConnection(client, user, pass)
+	conn, err := NewCapConnection(client, user, pass)
 	if err != nil {
 		defer client.Close()
-		return err
+		return nil, err
 	}
-	cm.connection = &connn
 
-	return nil
+	return conn, nil
 }
 
 const webLocalPort = 10080
 
-func NewCapConnection(client Client, user, pass string) (Connection, error) {
-	var conn Connection
+func NewCapConnection(client Client, user, pass string) (*Connection, error) {
 	log.Println("Getting connection info...")
 	loginName, err := client.CleanExec("hostname")
 	if err != nil {
 		log.Println("Failed hostname")
-		return conn, err
+		return nil, err
 	}
 	loginName = strings.TrimSpace(loginName)
 	log.Println("Got login hostname:", loginName)
@@ -100,21 +80,21 @@ func NewCapConnection(client Client, user, pass string) (Connection, error) {
 	loginAddr, err := getLoginIP(client, loginName)
 	if err != nil {
 		log.Println("Failed to lookup login IP")
-		return conn, err
+		return nil, err
 	}
 	log.Println("Got login server IP:", loginAddr)
 
 	uid, err := getUID(client)
 	if err != nil {
 		log.Println("Failed to lookup UID")
-		return conn, err
+		return nil, err
 	}
 	log.Println("Got UID:", uid)
 
 	sshLocalPort := client.OpenSSHTunnel(user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	log.Println("Connected.")
-	return Connection{
+	return &Connection{
 		client,
 		make(map[string]sshtunnel.SSHTunnel),
 		user,

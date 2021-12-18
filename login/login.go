@@ -12,7 +12,8 @@ import (
 
 type LoginTab struct {
 	Tab                *container.TabItem
-	connection_manager cap.ConnectionManager
+	connection_manager *cap.ConnectionManager
+	connection         *cap.Connection
 	NetworkSelect      *widget.Select
 	UsernameEntry      *widget.Entry
 	PasswordEntry      *widget.Entry
@@ -28,7 +29,7 @@ type LoginTab struct {
 func NewLoginTab(tabname,
 	desc string,
 	service Service,
-	conn_man cap.ConnectionManager,
+	conn_man *cap.ConnectionManager,
 	connected_cb func(login_info LoginInfo),
 	connected *fyne.Container,
 	username, password string) LoginTab {
@@ -39,17 +40,16 @@ func NewLoginTab(tabname,
 
 	tab.ConnectedCallback = connected_cb
 	tab.connection_manager = conn_man
-	tab.connection_manager.SetYubikeyCallback(func(serial int32) {
-		if serial > 0 {
+	tab.connection_manager.AddYubikeyCallback(func(enable bool) {
+		if enable {
 			tab.Enable()
 		} else {
 			tab.Disable()
 		}
 	})
-	tab.connection_manager.Knocker().StartMonitor()
 	tab.login = tab.NewLogin(service, func(network, user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
+		conn, err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
 			service.CapPort,
 			tab.pw_expired_cb, ch)
 
@@ -59,7 +59,7 @@ func NewLoginTab(tabname,
 			connect_cancelled = false
 			return
 		}
-		log.Println("Made CAP Connection: ", tab.connection_manager.GetConnection())
+		log.Println("Made CAP Connection: ", conn)
 
 		if tab.connection_manager.GetPasswordExpired() {
 			tab.card.SetContent(tab.change_password)
@@ -68,7 +68,7 @@ func NewLoginTab(tabname,
 
 		if connect_cancelled {
 			log.Println("CAP Connection cancelled.")
-			tab.connection_manager.Close()
+			conn.Close()
 			connect_cancelled = false
 			return
 		}
@@ -148,7 +148,12 @@ func (t *LoginTab) NewLogin(
 }
 
 func (t *LoginTab) CloseConnection() {
-	t.connection_manager.Close()
+	if t.connection == nil {
+		log.Println("No connection connection; cannot close connection")
+		return
+	}
+	defer t.connection.Close()
+	t.connection = nil
 	t.card.SetContent(t.login)
 }
 
