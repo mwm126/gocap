@@ -42,12 +42,13 @@ func NewCapTab(tabname,
 	port := service.CapPort
 	tab.connection_manager = conn_man
 	tab.connection_manager.SetYubikeyCallback(func(serial int32) {
-		if serial == 0 {
-			tab.Disable()
-		} else {
+		if serial > 0 {
 			tab.Enable()
+		} else {
+			tab.Disable()
 		}
 	})
+	tab.connection_manager.Knocker().StartMonitor()
 
 	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)

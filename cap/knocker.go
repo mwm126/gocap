@@ -42,30 +42,34 @@ func NewKnocker(yk Yubikey, delay uint) Knocker {
 	return Knocker{func(int32) {}, entropy, yk, delay, false}
 }
 
-func (sk *Knocker) YubikeyAvailable() bool {
+func (sk Knocker) YubikeyAvailable() bool {
 	return sk.yubikeyAvailable
 }
 
-func (sk *Knocker) StartMonitor() {
+func (sk Knocker) StartMonitor() {
 	if sk.delay == 0 {
 		return
 	}
 	go func() {
 		for {
-			for i := uint(0); i < sk.delay; i++ {
+			i := uint(0)
+			for i < sk.delay {
 				time.Sleep(time.Second)
-			}
-			serial, err := sk.Yubikey.FindSerial()
-			if err != nil {
-				log.Println("error finding yubikey serial number:", err)
+				serial, err := sk.Yubikey.FindSerial()
+				if err == nil && serial > 0 {
+					sk.yubikeyAvailable = true
+					sk.AlertCallback(serial)
+					break
+				}
+				sk.yubikeyAvailable = false
 				sk.AlertCallback(serial)
+				i++
 			}
-			sk.yubikeyAvailable = serial != 0
 		}
 	}()
 }
 
-func (sk *Knocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
+func (sk Knocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	timestamp, err := getNtpTime()
@@ -104,7 +108,7 @@ func getNtpTime() (int32, error) {
 	return int32(timestamp.Unix()), err
 }
 
-func (sk *Knocker) makePacket(
+func (sk Knocker) makePacket(
 	uname string,
 	timestamp int32,
 	auth_addr, ssh_addr, server_addr net.IP,
