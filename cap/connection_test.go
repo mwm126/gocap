@@ -38,7 +38,7 @@ func _TestCapConnection(t *testing.T) {
 		ch,
 	)
 	if err != nil {
-		t.Error("failed to make cap connection:", err)
+		t.Error("Error making cap connection:", err)
 	}
 
 	t.Run("Test connection username", func(t *testing.T) {

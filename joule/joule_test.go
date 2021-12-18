@@ -128,6 +128,6 @@ func TestJouleLoginButton(t *testing.T) {
 			t.Error(err)
 		}
 
-		jouleTab.Connect(*fake_conn)
+		jouleTab.Connect(fake_conn)
 	})
 }

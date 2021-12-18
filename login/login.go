@@ -39,13 +39,13 @@ func NewLoginTab(tabname,
 
 	tab.ConnectedCallback = connected_cb
 	tab.connection_manager = conn_man
-	tab.connection_manager.Knocker().AlertCallback = func(serial int32) {
+	tab.connection_manager.SetYubikeyCallback(func(serial int32) {
 		if serial == 0 {
 			tab.Disable()
 		} else {
 			tab.Enable()
 		}
-	}
+	})
 	tab.login = tab.NewLogin(service, func(network, user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
 		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
@@ -53,11 +53,12 @@ func NewLoginTab(tabname,
 			tab.pw_expired_cb, ch)
 
 		if err != nil {
-			log.Println("Unable to make CAP Connection")
+			log.Println("Unable to make CAP Connection: ", err)
 			tab.card.SetContent(tab.login)
 			connect_cancelled = false
 			return
 		}
+		log.Println("Made CAP Connection: ", tab.connection_manager.GetConnection())
 
 		if tab.connection_manager.GetPasswordExpired() {
 			tab.card.SetContent(tab.change_password)

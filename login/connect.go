@@ -40,10 +40,18 @@ func NewCapTab(tabname,
 	ch := make(chan string)
 
 	port := service.CapPort
-
 	tab.connection_manager = conn_man
+	tab.connection_manager.SetYubikeyCallback(func(serial int32) {
+		if serial == 0 {
+			tab.Disable()
+		} else {
+			tab.Enable()
+		}
+	})
+
 	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
+
 		err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
 			port,
 			tab.pw_expired_cb, ch)
@@ -69,7 +77,11 @@ func NewCapTab(tabname,
 
 		time.Sleep(1 * time.Second)
 		tab.card.SetContent(connected)
-		connected_cb(*conn_man.GetConnection())
+
+		if tab.connection_manager.GetConnection() == nil {
+			return
+		}
+		connected_cb(*tab.connection_manager.GetConnection())
 	}, login_info)
 
 	tab.pw_expired_cb = func(pw_checker cap.Client) {
@@ -94,7 +106,6 @@ func NewCapTab(tabname,
 	tab.card = widget.NewCard(tabname, desc, tab.login)
 
 	tab.Tab = container.NewTabItem(tabname, tab.card)
-	tab.connection_manager = conn_man
 	return *tab
 }
 
@@ -126,4 +137,12 @@ func (t *CapTab) NewLogin(
 func (t *CapTab) CloseConnection() {
 	t.connection_manager.Close()
 	t.card.SetContent(t.login)
+}
+
+func (t *CapTab) Disable() {
+	t.ConnectBtn.Disable()
+}
+
+func (t *CapTab) Enable() {
+	t.ConnectBtn.Enable()
 }

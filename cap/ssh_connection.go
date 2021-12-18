@@ -21,6 +21,7 @@ type sshClient struct {
 func (sc sshClient) Close() {
 	sc.client.Close()
 }
+
 func (sc sshClient) CleanExec(cmd string) (string, error) {
 	// Each ClientConn can support multiple interactive sessions,
 	// represented by a Session.

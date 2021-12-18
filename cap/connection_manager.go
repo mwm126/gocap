@@ -18,8 +18,12 @@ func NewCapConnectionManager(knocker Knocker) *ConnectionManager {
 	return &ConnectionManager{knocker, nil, false}
 }
 
-func (t *ConnectionManager) Knocker() *Knocker {
-	return &t.knocker
+func (t *ConnectionManager) SetYubikeyCallback(cb func(int32)) {
+	t.knocker.AlertCallback = cb
+}
+
+func (t *ConnectionManager) Knocker() Knocker {
+	return t.knocker
 }
 
 func (t *ConnectionManager) GetConnection() *Connection {
@@ -51,7 +55,7 @@ func (cm *ConnectionManager) Connect(
 	pw_expired_cb func(Client),
 	ch chan string) error {
 
-	log.Println("Opening SSH Connection...")
+	log.Println("Opening SSH Connection...", cm.knocker.Yubikey)
 	err := cm.knocker.Knock(user, ext_addr, server, port)
 	if err != nil {
 		return err
@@ -65,27 +69,30 @@ func (cm *ConnectionManager) Connect(
 		return err
 	}
 
-	// password_checker := PasswordChecker{client, pass}
 	log.Println("Checking for expired password...")
 	if err := client.CheckPasswordExpired(pass, pw_expired_cb, ch); err != nil {
 		return err
 	}
 
-	cm.connection, err = NewCapConnection(client, user, pass)
+	connn, err := NewCapConnection(client, user, pass)
 	if err != nil {
 		defer client.Close()
+		return err
 	}
-	return err
+	cm.connection = &connn
+
+	return nil
 }
 
 const webLocalPort = 10080
 
-func NewCapConnection(client Client, user, pass string) (*Connection, error) {
+func NewCapConnection(client Client, user, pass string) (Connection, error) {
+	var conn Connection
 	log.Println("Getting connection info...")
 	loginName, err := client.CleanExec("hostname")
 	if err != nil {
 		log.Println("Failed hostname")
-		return nil, err
+		return conn, err
 	}
 	loginName = strings.TrimSpace(loginName)
 	log.Println("Got login hostname:", loginName)
@@ -93,21 +100,21 @@ func NewCapConnection(client Client, user, pass string) (*Connection, error) {
 	loginAddr, err := getLoginIP(client, loginName)
 	if err != nil {
 		log.Println("Failed to lookup login IP")
-		return nil, err
+		return conn, err
 	}
 	log.Println("Got login server IP:", loginAddr)
 
 	uid, err := getUID(client)
 	if err != nil {
 		log.Println("Failed to lookup UID")
-		return nil, err
+		return conn, err
 	}
 	log.Println("Got UID:", uid)
 
 	sshLocalPort := client.OpenSSHTunnel(user, pass, SSH_LOCAL_PORT, SSH_FWD_ADDR, SSH_FWD_PORT)
 
 	log.Println("Connected.")
-	conn := Connection{
+	return Connection{
 		client,
 		make(map[string]sshtunnel.SSHTunnel),
 		user,
@@ -117,8 +124,7 @@ func NewCapConnection(client Client, user, pass string) (*Connection, error) {
 		loginAddr,
 		webLocalPort,
 		sshLocalPort.Local.Port,
-	}
-	return &conn, nil
+	}, nil
 }
 
 func getLoginIP(client Client, loginName string) (string, error) {
