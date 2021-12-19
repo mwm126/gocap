@@ -1,14 +1,15 @@
 package joule
 
 import (
-	"aeolustec.com/capclient/cap"
 	"fmt"
+	"log"
+	"strings"
+
+	"aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
-	"log"
-	"strings"
 )
 
 const VNC_LOCAL_PORT = 10055

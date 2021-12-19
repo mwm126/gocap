@@ -1,17 +1,18 @@
 package cap
 
 import (
-	"aeolustec.com/capclient/cap/sshtunnel"
 	"bytes"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"log"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"aeolustec.com/capclient/cap/sshtunnel"
+	"golang.org/x/crypto/ssh"
 )
 
 type sshClient struct {
@@ -101,12 +102,12 @@ func (sc *sshClient) OpenSSHTunnel(
 
 func (client *sshClient) CheckPasswordExpired(
 	pass string,
-	pw_expired_cb func(Client),
+	request_password func(Client),
 	ch chan string,
 ) error {
 	if client.isPasswordExpired() {
 		log.Println("Password expired.")
-		pw_expired_cb(client)
+		request_password(client)
 		new_password := <-ch
 		log.Println("Got new password.")
 		err := client.changePassword(pass, new_password)

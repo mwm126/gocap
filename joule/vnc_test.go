@@ -1,10 +1,11 @@
 package joule
 
 import (
+	"testing"
+
 	"aeolustec.com/capclient/cap"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
-	"testing"
 )
 
 type StubYubikey struct{}

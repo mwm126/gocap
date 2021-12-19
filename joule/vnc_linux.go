@@ -1,11 +1,12 @@
 package joule
 
 import (
-	"aeolustec.com/capclient/cap"
 	"fmt"
 	"log"
 	"os/exec"
 	"strconv"
+
+	"aeolustec.com/capclient/cap"
 )
 
 func RunVnc(conn *cap.Connection, otp, displayNumber string) {

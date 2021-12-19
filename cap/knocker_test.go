@@ -2,10 +2,11 @@ package cap
 
 import (
 	"encoding/hex"
-	"github.com/google/go-cmp/cmp"
 	"log"
 	"net"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type FakeYubikey struct {

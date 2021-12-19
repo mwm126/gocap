@@ -1,26 +1,25 @@
 package joule
 
 import (
+	"io"
+	"net"
+	"testing"
+	"time"
+
 	"aeolustec.com/capclient/cap"
 	"aeolustec.com/capclient/cap/sshtunnel"
 	"aeolustec.com/capclient/login"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/crypto/ssh"
-	"io"
-	"testing"
-	"time"
 )
 
-type CmdResult struct {
-	Out string
-	Err error
+func NewFakeClient(server net.IP, user, pass string) (cap.Client, error) {
+	client := FakeClient{}
+	return &client, nil
 }
 
-type FakeClient struct {
-	ActivatedShell []string
-	Outputs        map[string]CmdResult
-}
+type FakeClient struct{}
 
 func (fsc FakeClient) CleanExec(command string) (string, error) {
 	return "", nil
@@ -52,16 +51,6 @@ func (sc FakeClient) OpenSSHTunnel(
 	)
 }
 
-func (fsc *FakeClient) Output(command string) (string, error) {
-	outerr := fsc.Outputs[command]
-	return outerr.Out, outerr.Err
-}
-
-func (fsc *FakeClient) Shell(args ...string) error {
-	fsc.ActivatedShell = args
-	return nil
-}
-
 func (fsc *FakeClient) Start(command string) (io.ReadCloser, io.ReadCloser, error) {
 	return nil, nil, nil
 }
@@ -74,7 +63,7 @@ func TestJouleLoginButton(t *testing.T) {
 	a := test.NewApp()
 
 	knk := cap.NewKnocker(&StubYubikey{}, 0)
-	conn_man := cap.NewCapConnectionManager(knk)
+	conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
 
 	err := login.InitServices(nil)
 	if err != nil {

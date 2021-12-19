@@ -1,18 +1,24 @@
 package watt
 
 import (
+	"fmt"
+	"net"
+	"testing"
+	"time"
+
 	"aeolustec.com/capclient/cap"
 	"aeolustec.com/capclient/cap/sshtunnel"
 	"aeolustec.com/capclient/login"
-	"fmt"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/crypto/ssh"
-	"net"
-	"testing"
-	"time"
 )
+
+func NewFakeClient(server net.IP, user, pass string) (cap.Client, error) {
+	client := FakeClient{}
+	return &client, nil
+}
 
 type FakeClient struct {
 	ActivatedShell []string
@@ -109,7 +115,7 @@ func TestWattLoginButton(t *testing.T) {
 	a := app.New()
 
 	knk := cap.NewKnocker(&FakeYubikey{}, 0)
-	conn_man := cap.NewCapConnectionManager(knk)
+	conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
 	err := login.InitServices(nil)
 	if err != nil {
 		t.Fatal(err)

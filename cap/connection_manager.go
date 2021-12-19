@@ -8,13 +8,17 @@ import (
 	"aeolustec.com/capclient/cap/sshtunnel"
 )
 
+type ClientFactory func(server net.IP, user, pass string) (Client, error)
+
 type ConnectionManager struct {
-	knocker          *Knocker
-	password_expired bool
+	clientFactory      ClientFactory
+	knocker            *Knocker
+	password_expired   bool
+	NewPasswordChannel chan string
 }
 
-func NewCapConnectionManager(knocker *Knocker) *ConnectionManager {
-	return &ConnectionManager{knocker, false}
+func NewCapConnectionManager(cf ClientFactory, knocker *Knocker) *ConnectionManager {
+	return &ConnectionManager{cf, knocker, false, make(chan string)}
 }
 
 func (t *ConnectionManager) AddYubikeyCallback(cb func(bool)) {
@@ -25,16 +29,12 @@ func (c *ConnectionManager) GetPasswordExpired() bool {
 	return c.password_expired
 }
 
-func (c *ConnectionManager) SetPasswordExpired() {
-	c.password_expired = true
-}
-
 func (cm *ConnectionManager) Connect(
 	user, pass string,
 	ext_addr,
 	server net.IP,
 	port uint,
-	pw_expired_cb func(Client),
+	request_password func(Client),
 	ch chan string) (*Connection, error) {
 
 	log.Println("Opening SSH Connection...", cm.knocker.Yubikey)
@@ -45,14 +45,15 @@ func (cm *ConnectionManager) Connect(
 
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
 
-	client, err := NewSshClient(server, user, pass)
+	client, err := cm.clientFactory(server, user, pass)
 	if err != nil {
 		log.Println("Could not connect to", server, err)
 		return nil, err
 	}
 
 	log.Println("Checking for expired password...")
-	if err := client.CheckPasswordExpired(pass, pw_expired_cb, ch); err != nil {
+	if err := client.CheckPasswordExpired(pass, request_password, ch); err != nil {
+		cm.password_expired = true
 		return nil, err
 	}
 

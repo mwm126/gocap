@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"aeolustec.com/capclient/cap"
 	"aeolustec.com/capclient/config"
 	"aeolustec.com/capclient/fe261"
@@ -12,7 +14,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"log"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	yk := new(cap.UsbYubikey)
 	knk := cap.NewKnocker(yk, cfg.YubikeyTimeout)
 	knk.StartMonitor()
-	conn_man := cap.NewCapConnectionManager(knk)
+	conn_man := cap.NewCapConnectionManager(cap.NewSshClient, knk)
 	a := app.New()
 	w := a.NewWindow("CAP Client")
 
@@ -39,10 +40,11 @@ func main() {
 
 // Client represents the Main window of CAP client
 type Client struct {
-	Tabs     *container.AppTabs
-	window   fyne.Window
-	app      fyne.App
-	LoginTab login.LoginTab
+	connectionManager *cap.ConnectionManager
+	Tabs              *container.AppTabs
+	window            fyne.Window
+	app               fyne.App
+	LoginTab          *login.LoginTab
 }
 
 func NewClient(
@@ -50,7 +52,8 @@ func NewClient(
 	w fyne.Window,
 	cfg config.Config,
 	conn_man *cap.ConnectionManager,
-) Client {
+) *Client {
+	var client Client
 
 	about_tab := container.NewTabItemWithIcon(
 		"About",
@@ -74,28 +77,16 @@ func NewClient(
 	tabs := container.NewAppTabs(about_tab)
 
 	uname, pword, _ := login.GetSavedLogin()
-	login_tab := login.NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
-		func(login_info login.LoginInfo) {
-			services, err := login.FindServices()
-			if err != nil {
-				return
-			}
-			for _, service := range services {
-				if service.Name == "joule" {
-					joule := joule.NewJouleConnected(a, service, conn_man, login_info)
-					tabs.Append(joule.CapTab.Tab)
-				}
-				if service.Name == "watt" {
-					watt := watt.NewWattConnected(a, service, conn_man, login_info)
-					tabs.Append(watt.CapTab.Tab)
-				}
-				if service.Name == "fe261" {
-					fe261 := fe261.NewFe261Connected(a, service, conn_man, login_info)
-					tabs.Append(fe261.CapTab.Tab)
-				}
-			}
-			w.SetContent(tabs)
-		}, connctd, uname, pword)
+	login_tab := login.NewLoginTab(
+		"Login",
+		"NETL SuperComputer",
+		service,
+		conn_man,
+		client.setupServices,
+		connctd,
+		uname,
+		pword,
+	)
 
 	tabs.Append(login_tab.Tab)
 
@@ -103,7 +94,36 @@ func NewClient(
 
 	w.SetContent(tabs)
 
-	return Client{tabs, w, a, login_tab}
+	client = Client{conn_man, tabs, w, a, login_tab}
+	return &client
+}
+
+func (client *Client) setupServices(login_info login.LoginInfo, services []login.Service) {
+	for _, service := range services {
+		if service.Name == "joule" {
+			joule := joule.NewJouleConnected(
+				client.app,
+				service,
+				client.connectionManager,
+				login_info,
+			)
+			client.Tabs.Append(joule.CapTab.Tab)
+		}
+		if service.Name == "watt" {
+			watt := watt.NewWattConnected(client.app, service, client.connectionManager, login_info)
+			client.Tabs.Append(watt.CapTab.Tab)
+		}
+		if service.Name == "fe261" {
+			fe261 := fe261.NewFe261Connected(
+				client.app,
+				service,
+				client.connectionManager,
+				login_info,
+			)
+			client.Tabs.Append(fe261.CapTab.Tab)
+		}
+	}
+	client.window.SetContent(client.Tabs)
 }
 
 func (client *Client) Run() {

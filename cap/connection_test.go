@@ -1,10 +1,57 @@
 package cap
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"net"
 	"testing"
+
+	"aeolustec.com/capclient/cap/sshtunnel"
+	"github.com/google/go-cmp/cmp"
+	"golang.org/x/crypto/ssh"
 )
+
+func NewFakeClient(server net.IP, user, pass string) (Client, error) {
+	client := FakeClient{}
+	return &client, nil
+}
+
+type CmdResult struct {
+	Out string
+	Err error
+}
+type FakeClient struct {
+	ActivatedShell []string
+	Outputs        map[string]CmdResult
+}
+
+func (fsc FakeClient) CleanExec(command string) (string, error) {
+	return "", nil
+}
+
+func (fsc FakeClient) Close() {
+}
+
+func (client FakeClient) CheckPasswordExpired(
+	pass string,
+	pw_expired_cb func(Client),
+	ch chan string,
+) error {
+	return nil
+}
+
+func (sc FakeClient) OpenSSHTunnel(
+	user, pass string,
+	local_port int,
+	remote_addr string,
+	remote_port int,
+) sshtunnel.SSHTunnel {
+	return *sshtunnel.NewSSHTunnel(
+		nil,
+		"testuser@localhost",
+		ssh.Password(pass),
+		"rem_addr:123",
+		"123",
+	)
+}
 
 type StubYubikey struct{}
 
@@ -27,7 +74,7 @@ func _TestCapConnection(t *testing.T) {
 	server := net.IPv4(55, 66, 77, 88)
 
 	knk := NewKnocker(&StubYubikey{}, 0)
-	conn_man := NewCapConnectionManager(knk)
+	conn_man := NewCapConnectionManager(NewFakeClient, knk)
 	ch := make(chan string)
 	conn, err := conn_man.Connect(
 		username,

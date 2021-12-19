@@ -1,9 +1,10 @@
 package forwards
 
 import (
+	"testing"
+
 	"aeolustec.com/capclient/config"
 	"fyne.io/fyne/v2/test"
-	"testing"
 )
 
 func TestPortForwardDialog(t *testing.T) {

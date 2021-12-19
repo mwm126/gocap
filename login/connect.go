@@ -1,13 +1,14 @@
 package login
 
 import (
+	"log"
+	"net"
+	"time"
+
 	"aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"log"
-	"net"
-	"time"
 )
 
 type LoginInfo struct {
@@ -40,30 +41,22 @@ func NewCapTab(tabname,
 	connect_cancelled := false
 	ch := make(chan string)
 
-	port := service.CapPort
 	tab.connection_manager = conn_man
 	tab.LoginInfo = login_info
-	tab.connection_manager.AddYubikeyCallback(func(enable bool) {
-		if enable {
-			tab.Enable()
-		} else {
-			tab.Disable()
-		}
-	})
-
+	tab.connection_manager.AddYubikeyCallback(tab.setEnabled)
 	tab.login = tab.NewLogin(service, func(user, pass string, ext_ip, srv_ip net.IP) {
 		tab.card.SetContent(tab.connecting)
-
 		conn, err := tab.connection_manager.Connect(user, pass, ext_ip, srv_ip,
-			port,
+			service.CapPort,
 			tab.pw_expired_cb, ch)
 
 		if err != nil {
-			log.Println("Unable to make CAP Connection")
+			log.Println("Unable to make CAP Connection: ", err)
 			tab.card.SetContent(tab.login)
 			connect_cancelled = false
 			return
 		}
+		log.Println("Made CAP Connection: ", conn)
 
 		if tab.connection_manager.GetPasswordExpired() {
 			tab.card.SetContent(tab.change_password)
@@ -88,7 +81,6 @@ func NewCapTab(tabname,
 
 	tab.pw_expired_cb = func(pw_checker cap.Client) {
 		// Detected expired password callback
-		tab.connection_manager.SetPasswordExpired()
 		tab.card.SetContent(tab.change_password)
 	}
 	tab.connecting = func() *fyne.Container {
@@ -144,10 +136,10 @@ func (t *CapTab) CloseConnection() {
 	t.card.SetContent(t.login)
 }
 
-func (t *CapTab) Disable() {
-	t.ConnectBtn.Disable()
-}
-
-func (t *CapTab) Enable() {
-	t.ConnectBtn.Enable()
+func (t *CapTab) setEnabled(enabled bool) {
+	if enabled {
+		t.ConnectBtn.Enable()
+	} else {
+		t.ConnectBtn.Disable()
+	}
 }
