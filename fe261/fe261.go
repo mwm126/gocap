@@ -13,7 +13,7 @@ import (
 type Fe261Tab struct {
 	app    fyne.App
 	Tabs   *container.AppTabs
-	CapTab login.CapTab
+	CapTab *login.CapTab
 }
 
 func NewFe261Connected(

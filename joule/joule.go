@@ -15,7 +15,7 @@ import (
 type JouleTab struct {
 	app    fyne.App
 	Tabs   *container.AppTabs
-	CapTab login.CapTab
+	CapTab *login.CapTab
 }
 
 func NewJouleConnected(

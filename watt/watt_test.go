@@ -134,7 +134,7 @@ func TestWattLoginButton(t *testing.T) {
 		login.LoginInfo{Network: "vpn", Username: "the_user", Password: ""},
 	)
 
-	test.Tap(wattTab.CapTab.ConnectBtn)
+	test.Tap(wattTab.CapTab.ConnectForm.ConnectButton)
 
 	time.Sleep(100 * time.Millisecond)
 

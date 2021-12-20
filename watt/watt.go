@@ -15,7 +15,7 @@ import (
 type WattTab struct {
 	app    fyne.App
 	Tabs   *container.AppTabs
-	CapTab login.CapTab
+	CapTab *login.CapTab
 }
 
 func NewWattConnected(

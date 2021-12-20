@@ -84,7 +84,7 @@ func TestJouleLoginButton(t *testing.T) {
 		login.LoginInfo{Network: "alb_admin", Username: "the_user", Password: "the_pass"},
 	)
 
-	test.Tap(jouleTab.CapTab.ConnectBtn)
+	test.Tap(jouleTab.CapTab.ConnectForm.ConnectButton)
 
 	time.Sleep(100 * time.Millisecond)
 
