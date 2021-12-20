@@ -1,13 +1,14 @@
 package joule
 
 import (
-	"aeolustec.com/capclient/cap"
 	"log"
 	"os/exec"
 	"strconv"
+
+	"aeolustec.com/capclient/cap"
 )
 
-func RunVnc(conn cap.Connection, otp, displayNumber string) {
+func RunVnc(conn *cap.Connection, otp, displayNumber string) {
 	cmd := exec.Command(
 		"x-terminal-emulator",
 		"--",

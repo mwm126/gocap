@@ -1,14 +1,15 @@
 package joule
 
 import (
-	"aeolustec.com/capclient/cap"
 	"fmt"
 	"log"
 	"os/exec"
 	"strconv"
+
+	"aeolustec.com/capclient/cap"
 )
 
-func RunVnc(conn cap.Connection, otp, displayNumber string) {
+func RunVnc(conn *cap.Connection, otp, displayNumber string) {
 	cmd := exec.Command(
 		fmt.Sprintf(
 			"echo %s | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::%s &",

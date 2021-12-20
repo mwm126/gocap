@@ -24,28 +24,54 @@ type OneTimePassword [16]byte
 type SHADigest [32]byte
 
 // Knocker send port knock UDP packet
-type Knocker interface {
-	Knock(username string, ext_addr, server_addr net.IP, port uint) error
+type Knocker struct {
+	Callbacks        []func(bool)
+	Entropy          [32]byte
+	Yubikey          Yubikey
+	delay            uint
+	yubikeyAvailable bool
 }
 
-// PortKnocker for actual Knocker implementation
-type PortKnocker struct {
-	Yubikey Yubikey
-	Entropy [32]byte
-}
-
-func NewPortKnocker() *PortKnocker {
+func NewKnocker(yk Yubikey, delay uint) *Knocker {
 	var entropy [32]byte
 	_, err := rand.Read(entropy[:])
 	if err != nil {
 		log.Fatal("Unable to get entropy to send CAP packet")
 	}
 
-	yk := new(UsbYubikey)
-	return &PortKnocker{yk, entropy}
+	return &Knocker{make([]func(bool), 0), entropy, yk, delay, false}
 }
 
-func (sk *PortKnocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
+func (sk *Knocker) YubikeyAvailable() bool {
+	return sk.yubikeyAvailable
+}
+
+func (sk *Knocker) AddCallback(cb func(bool)) {
+	sk.Callbacks = append(sk.Callbacks, cb)
+}
+
+func (sk *Knocker) StartMonitor() {
+	if sk.delay == 0 {
+		return
+	}
+	go func() {
+		for {
+			for i := uint(0); i < sk.delay; i++ {
+				time.Sleep(time.Second)
+				serial, err := sk.Yubikey.FindSerial()
+				sk.yubikeyAvailable = err == nil && serial > 0
+				for _, cb := range sk.Callbacks {
+					cb(sk.yubikeyAvailable)
+				}
+				if sk.yubikeyAvailable {
+					break
+				}
+			}
+		}
+	}()
+}
+
+func (sk Knocker) Knock(uname string, ext_addr, server_addr net.IP, port uint) error {
 	log.Println("Sending CAP packet...")
 	time.Sleep(1 * time.Second)
 	timestamp, err := getNtpTime()
@@ -84,7 +110,7 @@ func getNtpTime() (int32, error) {
 	return int32(timestamp.Unix()), err
 }
 
-func (sk *PortKnocker) makePacket(
+func (sk Knocker) makePacket(
 	uname string,
 	timestamp int32,
 	auth_addr, ssh_addr, server_addr net.IP,

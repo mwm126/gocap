@@ -18,6 +18,7 @@ type Config struct {
 	Watt_Forwards  []string
 	Fe261_Forwards []string
 	DisableNtp     bool
+	YubikeyTimeout uint
 }
 
 func NewConfig() Config {
@@ -43,7 +44,8 @@ func NewConfig() Config {
 			"18888:172.16.1.11:18888", // Plexos port
 			"1399:172.16.1.11:1399",   // Plexos port 2
 		},
-		DisableNtp: false,
+		DisableNtp:     false,
+		YubikeyTimeout: 10,
 	}
 }
 

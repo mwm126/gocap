@@ -5,34 +5,48 @@ import (
 	"testing"
 
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/cap/sshtunnel"
 	"aeolustec.com/capclient/config"
 	"aeolustec.com/capclient/login"
 	"fyne.io/fyne/v2/test"
+	"golang.org/x/crypto/ssh"
 )
 
-type FakeConnManager struct {
-	username string
-	address  net.IP
+type FakeClient struct{}
+
+func NewFakeClient(server net.IP, user, pass string) (cap.Client, error) {
+	client := FakeClient{}
+	return &client, nil
 }
 
-func (t *FakeConnManager) GetConnection() cap.Connection {
+func (fsc FakeClient) CleanExec(command string) (string, error) {
+	return "", nil
+}
+
+func (fsc FakeClient) Close() {
+}
+
+func (client FakeClient) CheckPasswordExpired(
+	pass string,
+	pw_expired_cb func(cap.Client),
+	ch chan string,
+) error {
 	return nil
 }
-func (cm *FakeConnManager) Connect(
+
+func (sc FakeClient) OpenSSHTunnel(
 	user, pass string,
-	ext_addr,
-	server net.IP,
-	port uint,
-	pw_expired_cb func(cap.PasswordChecker),
-	ch chan string) error {
-	cm.username = user
-	cm.address = server
-	return nil
-}
-func (t *FakeConnManager) Close()              {}
-func (c *FakeConnManager) SetPasswordExpired() {}
-func (c *FakeConnManager) GetPasswordExpired() bool {
-	return false
+	local_port int,
+	remote_addr string,
+	remote_port int,
+) sshtunnel.SSHTunnel {
+	return *sshtunnel.NewSSHTunnel(
+		nil,
+		"testuser@localhost",
+		ssh.Password(pass),
+		"rem_addr:123",
+		"123",
+	)
 }
 
 func TestClient(t *testing.T) {
@@ -54,9 +68,9 @@ func TestClient(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
-			conn_man := &FakeConnManager{"the_user", net.IPv4(1, 1, 1, 1)}
+			knk := cap.NewKnocker(&FakeYubikey{}, 0)
+			conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
 			var services []login.Service
-			var cfg config.Config
 			if tc.fe261 {
 				services = append(services, login.Service{Name: "fe261"})
 			}
@@ -66,18 +80,42 @@ func TestClient(t *testing.T) {
 			if tc.watt {
 				services = append(services, login.Service{Name: "watt"})
 			}
-			login.InitServices(&services)
-
+			if err := login.InitServices(&services); err != nil {
+				t.Fatal(err)
+			}
 			a := test.NewApp()
 			w := test.NewWindow(nil)
+			var cfg config.Config
 			client := NewClient(a, w, cfg, conn_man)
 
-			// test.Tap(client.LoginTab.LoginBtn)
-			client.LoginTab.ConnectedCallback(login.LoginInfo{"", "", ""})
+			test.Tap(client.LoginTab.LoginForm.LoginButton)
+			client.setupServices(login.LoginInfo{Network: "", Username: "", Password: ""}, services)
 
 			if got := len(client.Tabs.Items); got != tc.ntabs {
 				t.Errorf("Got %d; want %d", got, tc.ntabs)
 			}
 		})
 	}
+}
+
+type FakeYubikey struct {
+	Available bool
+}
+
+func (yk *FakeYubikey) YubikeyAvailable() bool {
+	return true
+}
+
+func (yk *FakeYubikey) FindSerial() (int32, error) {
+	return 5417533, nil
+}
+
+func (yk *FakeYubikey) ChallengeResponse(chal [6]byte) ([16]byte, error) {
+	var resp [16]byte
+	return resp, nil
+}
+
+func (yk *FakeYubikey) ChallengeResponseHMAC(chal cap.SHADigest) ([20]byte, error) {
+	var hmac [20]byte
+	return hmac, nil
 }

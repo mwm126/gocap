@@ -1,14 +1,15 @@
 package joule
 
 import (
-	"aeolustec.com/capclient/cap"
 	"fmt"
+	"log"
+	"strings"
+
+	"aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
-	"log"
-	"strings"
 )
 
 const VNC_LOCAL_PORT = 10055
@@ -16,7 +17,7 @@ const VNC_LOCAL_PORT = 10055
 type VncTab struct {
 	TabItem        *container.TabItem
 	app            fyne.App
-	connection     cap.Connection
+	connection     *cap.Connection
 	refresh_btn    *widget.Button
 	new_btn        *widget.Button
 	session_labels binding.StringList
@@ -45,10 +46,7 @@ func (vt *VncTab) refresh() error {
 	return err
 }
 
-func newVncTab(a fyne.App, conn cap.Connection) *VncTab {
-	if conn == nil {
-		panic("Invalid")
-	}
+func newVncTab(a fyne.App, conn *cap.Connection) *VncTab {
 	t := VncTab{
 		app:        a,
 		connection: conn,

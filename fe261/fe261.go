@@ -13,13 +13,13 @@ import (
 type Fe261Tab struct {
 	app    fyne.App
 	Tabs   *container.AppTabs
-	CapTab login.CapTab
+	CapTab *login.CapTab
 }
 
 func NewFe261Connected(
 	app fyne.App,
 	service login.Service,
-	conn_man cap.ConnectionManager,
+	conn_man *cap.ConnectionManager,
 	login_info login.LoginInfo) Fe261Tab {
 	var fe261_tab Fe261Tab
 	tabs := container.NewAppTabs()
@@ -29,14 +29,14 @@ func NewFe261Connected(
 		app,
 		tabs,
 		login.NewCapTab("FE261", "NETL SuperComputer", service, conn_man,
-			func(conn cap.Connection) {
+			func(conn *cap.Connection) {
 				fe261_tab.Connect(conn)
 			}, cont, login_info),
 	}
 	return fe261_tab
 }
 
-func (t *Fe261Tab) Connect(conn cap.Connection) {
+func (t *Fe261Tab) Connect(conn *cap.Connection) {
 	homeTab := newFe261Home(t.CapTab.CloseConnection)
 	sshTab := ssh.NewSsh(conn)
 	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab})

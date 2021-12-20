@@ -31,6 +31,11 @@ func TestValidateNewPassword(t *testing.T) {
 		},
 		{"needdigit", "", "Abcdefghijkl", "Abcdefghijkl", "Password must contain a digit"},
 	}
+	t.Run("match", func(t *testing.T) {
+		if err := password_passes("abc", "Abcde6789012", "Abcde6789012"); err != nil {
+			t.Errorf("Should have matched: %s", err)
+		}
+	})
 
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
