@@ -1,14 +1,74 @@
 package joule
 
 import (
-	"fmt"
+	"errors"
+	"io"
+	"log"
+	"net"
 	"testing"
 
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/cap/sshtunnel"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/crypto/ssh"
 )
+
+func NewFakeVncClient(server net.IP, user, pass string) (cap.Client, error) {
+	client := FakeVncClient{}
+	return &client, nil
+}
+
+type FakeVncClient struct{}
+
+func (fsc FakeVncClient) CleanExec(command string) (string, error) {
+	replies := map[string]string{
+		"hostname": "the_hostname",
+		`ping -c 1 the_hostname| grep PING|awk '{print $3}'| sed "s/(//"|sed "s/)//"`: "1.2.3.4",
+		`id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'`:                             "the_uid",
+		"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
+	}
+	reply, exists := replies[command]
+	if !exists {
+		log.Println(command, " : ", reply)
+		return "", errors.New("Unexpected command")
+	}
+	return replies[command], nil
+}
+
+func (fsc FakeVncClient) Close() {
+}
+
+func (client FakeVncClient) CheckPasswordExpired(
+	pass string,
+	pw_expired_cb func(cap.Client),
+	ch chan string,
+) error {
+	return nil
+}
+
+func (sc FakeVncClient) OpenSSHTunnel(
+	user, pass string,
+	local_port int,
+	remote_addr string,
+	remote_port int,
+) sshtunnel.SSHTunnel {
+	return *sshtunnel.NewSSHTunnel(
+		nil,
+		"testuser@localhost",
+		ssh.Password(pass),
+		"rem_addr:123",
+		"123",
+	)
+}
+
+func (fsc *FakeVncClient) Start(command string) (io.ReadCloser, io.ReadCloser, error) {
+	return nil, nil, nil
+}
+
+func (fsc *FakeVncClient) Wait() error {
+	return nil
+}
 
 type StubYubikey struct{}
 
@@ -24,60 +84,27 @@ func (yk *StubYubikey) ChallengeResponseHMAC(chal cap.SHADigest) ([20]byte, erro
 	return [20]byte{}, nil
 }
 
-type FakeConnection struct {
-	sessions []cap.Session
-}
-
-func (c *FakeConnection) FindSessions() ([]cap.Session, error) {
-	return c.sessions, nil
-}
-
-func (c *FakeConnection) GetUsername() string {
-	return "test_user"
-}
-
-func (c *FakeConnection) GetPassword() string {
-	return "test_pwd"
-}
-
-func (c *FakeConnection) GetUid() string {
-	return "test_uid"
-}
-
-func (c *FakeConnection) GetClient() *ssh.Client {
-	return nil
-}
-
-func (conn *FakeConnection) UpdateForwards(fwds []string) {}
-
-func (conn *FakeConnection) CreateVncSession(xres string, yres string) (string, string, error) {
-	conn.sessions = append(conn.sessions, cap.Session{
-		Username:      "test_user",
-		DisplayNumber: ":77",
-		Geometry:      fmt.Sprintf("%sx%s", xres, yres),
-		DateCreated:   "2222-33-44",
-		HostAddress:   "localhost",
-		HostPort:      "8088",
-	})
-	return "", "", nil
-}
-
 func TestVncTab(t *testing.T) {
 	a := test.NewApp()
 
-	// init_session := cap.Session{
-	//	Username:      "the_user",
-	//	DisplayNumber: ":123",
-	//	Geometry:      "1661x888",
-	//	DateCreated:   "2021-12-02",
-	//	HostAddress:   "localhost",
-	//	HostPort:      "789",
-	// }
-
 	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
-		var conn cap.Connection
-		// conn.sessions = []cap.Session{init_session}
-		vncTab := newVncTab(a, &conn)
+		knk := cap.NewKnocker(&StubYubikey{}, 0)
+		conn_man := cap.NewCapConnectionManager(NewFakeVncClient, knk)
+		ext := net.IPv4(1, 1, 1, 1)
+		srv := net.IPv4(1, 1, 1, 1)
+		conn, err := conn_man.Connect(
+			"the_user",
+			"pass",
+			ext,
+			srv,
+			123,
+			func(cap.Client) {},
+			make(chan string),
+		)
+		if err != nil {
+			t.Error(err)
+		}
+		vncTab := newVncTab(a, conn)
 
 		want := 0
 		got := len(vncTab.sessions)
@@ -197,4 +224,14 @@ func _TestNewSessionDialog(t *testing.T) {
 		}
 	})
 
+}
+
+func TestVncCmd(t *testing.T) {
+	cmd := VncCmd("abc", "xyz")
+
+	want := "echo abc | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::10055 &"
+	got := cmd
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("Mismatch: %s", diff)
+	}
 }
