@@ -57,7 +57,7 @@ func (c *LoginCard) handle_login(
 	service Service,
 	login_info LoginInfo,
 	connected *fyne.Container,
-) error {
+) (*cap.Connection, error) {
 	c.Card.SetContent(c.connecting)
 	ext_ip, srv_ip := service.FindAddresses(login_info.Network)
 	conn, err := c.connectionManager.Connect(
@@ -74,7 +74,7 @@ func (c *LoginCard) handle_login(
 		log.Println("Unable to make CAP Connection: ", err)
 		c.Card.SetContent(c.LoginForm)
 		c.connect_cancelled = false
-		return errors.New("Connection failed.")
+		return nil, errors.New("Connection failed.")
 	}
 	log.Println("Made CAP Connection: ", conn)
 
@@ -82,14 +82,14 @@ func (c *LoginCard) handle_login(
 		log.Println("CAP Connection cancelled.")
 		conn.Close()
 		c.connect_cancelled = false
-		return errors.New("Connection cancelled.")
+		return nil, errors.New("Connection cancelled.")
 	}
 
 	if c.connectionManager.GetPasswordExpired() {
-		return errors.New("Password expired; needs changed.")
+		return nil, errors.New("Password expired; needs changed.")
 	}
 
 	time.Sleep(1 * time.Second)
 	c.Card.SetContent(connected)
-	return nil
+	return conn, nil
 }

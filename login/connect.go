@@ -30,23 +30,23 @@ func NewCapTab(tabname,
 	connected_cb func(cap *cap.Connection),
 	connected *fyne.Container, login_info LoginInfo) *CapTab {
 
-	tab := &CapTab{}
+	var tab CapTab
 
 	tab.connection_manager = conn_man
 	tab.LoginInfo = login_info
-	tab.connection_manager.AddYubikeyCallback(tab.ConnectForm.setEnabled)
 	tab.ConnectForm = NewConnectForm(service, login_info, func(linfo LoginInfo) {
-		err := tab.LoginCard.handle_login(service, linfo, connected)
+		conn, err := tab.LoginCard.handle_login(service, linfo, connected)
 		if err != nil {
 			log.Println("Could not login to service ", service, " because ", err)
 			return
 		}
-
+		tab.connection = conn
 		connected_cb(tab.connection)
 	})
+	tab.connection_manager.AddYubikeyCallback(tab.ConnectForm.setEnabled)
 	tab.LoginCard = NewLoginCard(conn_man, tabname, desc, service, tab.ConnectForm.Container)
 	tab.Tab = container.NewTabItem(tabname, tab.LoginCard.Card)
-	return tab
+	return &tab
 }
 
 func (t *CapTab) CloseConnection() {

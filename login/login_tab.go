@@ -25,16 +25,16 @@ func NewLoginTab(tabname,
 	connected *fyne.Container,
 	username, password string) *LoginTab {
 
-	tab := &LoginTab{}
+	var tab LoginTab
 
 	tab.connection_manager = conn_man
-	tab.connection_manager.AddYubikeyCallback(tab.LoginForm.setEnabled)
 
 	tab.LoginForm = NewLoginForm(service, func(linfo LoginInfo) {
-		err := tab.LoginCard.handle_login(service, linfo, connected)
+		conn, err := tab.LoginCard.handle_login(service, linfo, connected)
 		if err != nil {
 			log.Println("Could not login to lookup services: ", err)
 		}
+		tab.connection = conn
 		services, err := FindServices()
 		if err != nil {
 			log.Println("Could not find services: ", err)
@@ -42,10 +42,11 @@ func NewLoginTab(tabname,
 		login_cb(linfo, services)
 
 	}, username, password)
+	tab.connection_manager.AddYubikeyCallback(tab.LoginForm.setEnabled)
 	tab.LoginCard = NewLoginCard(conn_man, tabname, desc, service, tab.LoginForm.Container)
 
 	tab.Tab = container.NewTabItem(tabname, tab.LoginCard.Card)
-	return tab
+	return &tab
 }
 
 func (t *LoginTab) CloseConnection() {

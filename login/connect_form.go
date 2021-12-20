@@ -29,7 +29,7 @@ func NewConnectForm(
 		networkNames = append(networkNames, name)
 	}
 
-	connect := widget.NewButton("Login", func() {
+	connect := widget.NewButton("Connect", func() {
 		go connect_cb(login_info)
 	})
 	return &ConnectForm{
