@@ -16,7 +16,7 @@ func (r *SpyRunner) Run(conn *cap.Connection, otp, display string) {
 	r.calls = append(r.calls, VncCmd(otp, display))
 }
 
-func _TestVncTab(t *testing.T) {
+func TestVncTab(t *testing.T) {
 	a := test.NewApp()
 
 	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
@@ -51,7 +51,6 @@ func _TestVncTab(t *testing.T) {
 
 		test.Tap(vncTab.new_btn) // Should show new session dialog (without error)
 	})
-
 }
 
 func TestNewSessionDialog(t *testing.T) {
@@ -118,10 +117,9 @@ func TestNewSessionDialog(t *testing.T) {
 			t.Errorf("Mismatch: %s", diff)
 		}
 	})
-
 }
 
-func _TestVncCmd(t *testing.T) {
+func TestVncCmd(t *testing.T) {
 	cmd := VncCmd("abc", "xyz")
 
 	want := "echo abc | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::10055 &"
