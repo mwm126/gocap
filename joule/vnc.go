@@ -2,6 +2,7 @@ package joule
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -16,78 +17,119 @@ import (
 
 const VNC_LOCAL_PORT = 10055
 
+type VncRunner interface {
+	Run(conn *cap.Connection, otp, display string)
+}
+
+type ExeRunner struct{}
+
+func (r *ExeRunner) Run(conn *cap.Connection, otp, display string) {
+	RunVnc(conn, otp, display)
+}
+
+type ItemButton struct {
+	widget.Button
+	session cap.Session
+}
+
+type ItemList struct {
+	items []cap.Session
+}
+
+func (i *ItemList) Set(items []cap.Session) {
+	i.items = items
+}
+
+func (i *ItemList) AddListener(listener binding.DataListener) {
+}
+
+func (i *ItemList) RemoveListener(listener binding.DataListener) {
+}
+
+func (i *ItemList) GetItem(index int) (binding.DataItem, error) {
+	var s cap.Session
+	if index > i.Length()-1 {
+		return &s, errors.New(fmt.Sprintf("ugh %d", index))
+	}
+	return i.items[index], nil
+}
+
+func (i *ItemList) Length() int {
+	return len(i.items)
+}
+
 type VncTab struct {
-	TabItem        *container.TabItem
-	app            fyne.App
-	connection     *cap.Connection
-	refresh_btn    *widget.Button
-	new_btn        *widget.Button
-	session_labels binding.StringList
-	sessions       []cap.Session
+	TabItem     *container.TabItem
+	List        *widget.List
+	VncRunner   VncRunner
+	list_items  map[cap.Session]*fyne.Container
+	app         fyne.App
+	connection  *cap.Connection
+	refresh_btn *widget.Button
+	new_btn     *widget.Button
+	sessions    *ItemList
 }
 
 func (vt *VncTab) refresh() error {
-	// refreshes sessions attribute
 	sessions, err := vt.connection.FindSessions()
 	if err != nil {
 		log.Println("Warning - unable to refresh: ", err)
 	}
-	vt.sessions = sessions
-	labels := make([]string, 0)
-	for _, session := range vt.sessions {
-		label := fmt.Sprintf(
-			"Session %s - %s - %s",
-			session.DisplayNumber,
-			session.Geometry,
-			session.DateCreated,
-		)
-		labels = append(labels, label)
-
+	items := make([]cap.Session, 0)
+	for _, session := range sessions {
+		items = append(items, session)
 	}
-	vt.session_labels.Set(labels)
+	vt.sessions.Set(items)
+	vt.List.Refresh()
 	return err
 }
 
-func newVncTab(a fyne.App, conn *cap.Connection) *VncTab {
+func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner) *VncTab {
 	t := VncTab{
+		list_items: make(map[cap.Session]*fyne.Container, 0),
+		VncRunner:  vnc_runner,
 		app:        a,
 		connection: conn,
-		// save: cb,
-		session_labels: binding.BindStringList(&[]string{}),
+		sessions:   &ItemList{},
 	}
 
-	sessions := widget.NewListWithData(t.session_labels,
+	t.List = widget.NewListWithData(t.sessions,
 		func() fyne.CanvasObject {
-			hidden := widget.NewLabel("")
-			hidden.Hide()
-			connect_btn := widget.NewButton("Connect", func() {
-				strs := strings.Split(hidden.Text, ",")
-				owner_uid := strs[0]
-				display := strs[1]
+			label := widget.NewLabel("placeholder")
+
+			connect_btn := &ItemButton{}
+			connect_btn.ExtendBaseWidget(connect_btn)
+			connect_btn.Text = "Connect"
+			connect_btn.OnTapped = func() {
+				owner_uid := connect_btn.session.Username
+				display := connect_btn.session.DisplayNumber
 
 				otp := get_otp(conn, owner_uid, display)
-				RunVnc(conn, otp, display)
-			})
-			label := widget.NewLabel("template")
-			delete_btn := widget.NewButton("Kill", func() {
-				KillSession(conn, hidden.Text, hidden.Text)
-			})
-			return container.NewHBox(hidden, connect_btn, label, delete_btn)
-		},
-		func(session binding.DataItem, obj fyne.CanvasObject) {
-			box, ok := obj.(*fyne.Container)
-			if ok {
-				box.Objects[0].(*widget.Label).Bind(session.(binding.String))
-				box.Objects[2].(*widget.Label).Bind(session.(binding.String))
-			} else {
-				log.Println("Warning: could not update VNC session list: ", box, session)
+				connect_btn.SetText(otp)
+
+				t.VncRunner.Run(conn, otp, display)
 			}
+			delete_btn := widget.NewButton("Kill", func() {
+				KillSession(conn, connect_btn.session.Username, connect_btn.session.DisplayNumber)
+			})
+			return container.NewHBox(connect_btn, label, delete_btn)
+		},
+		func(item binding.DataItem, obj fyne.CanvasObject) {
+			box, ok := obj.(*fyne.Container)
+			if !ok {
+				log.Println("Warning: could not update VNC session list: ", box, item)
+				return
+			}
+			session := item.(cap.Session)
+			box.Objects[0].(*ItemButton).session = session
+			box.Objects[1].(*widget.Label).SetText(session.Label())
+			t.list_items[session] = box
 		})
 
 	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
 	t.new_btn = widget.NewButton("New VNC Session", t.showNewVncSessionDialog)
 	vcard := widget.NewCard("GUI", "List of VNC Sessions", t.new_btn)
-	box := container.NewBorder(vcard, t.refresh_btn, nil, nil, sessions)
+	box := container.NewBorder(vcard, t.refresh_btn, nil, nil, t.List)
 
 	t.TabItem = container.NewTabItem("VNC", box)
 	return &t
@@ -185,13 +227,12 @@ func get_owner_otp(conn *cap.Connection, display string) *string {
 
 func get_shared_otp(display string) string {
 	// Use session manager to make OTP for shared sessions
-	var response []string
+	response := []string{"abc", "123"}
 	// response := ssh.sessionMessage("OTP", display).split()
-
-	log.Println(response)
 
 	nonce := strings.TrimSpace(response[0])
 	encOTP := strings.TrimSpace(response[1])
+	return "test_get_shared_otp"
 	return decryptOTP([]byte(nonce), []byte(encOTP))
 }
 
@@ -205,7 +246,6 @@ func MAC(message []byte) string {
 }
 
 func decryptOTP(nonce, encOTP []byte) string {
-
 	key := MAC(nonce)
 	decOTP := ""
 	for ii, key_char := range key {

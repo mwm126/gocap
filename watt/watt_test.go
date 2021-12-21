@@ -1,7 +1,6 @@
 package watt
 
 import (
-	"fmt"
 	"net"
 	"testing"
 	"time"
