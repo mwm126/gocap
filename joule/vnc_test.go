@@ -12,7 +12,7 @@ type SpyRunner struct {
 	calls []string
 }
 
-func (r *SpyRunner) RunVnc(conn *cap.Connection, otp, display string, port int) {
+func (r *SpyRunner) RunVnc(otp, display string, port int) {
 	r.calls = append(r.calls, VncCmd(otp, display, port))
 }
 

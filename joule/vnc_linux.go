@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
-
-	"aeolustec.com/capclient/cap"
 )
 
 func VncCmd(otp, displayNumber string, localPort int) string {
@@ -16,7 +14,7 @@ func VncCmd(otp, displayNumber string, localPort int) string {
 	)
 }
 
-func RunVnc(conn *cap.Connection, otp, displayNumber string, localPort int) {
+func RunVnc(otp, displayNumber string, localPort int) {
 	cmd_string := VncCmd(otp, displayNumber, localPort)
 	cmd := exec.Command("sh", "-c", cmd_string)
 	log.Println("\n\n\nRunVnc: ", cmd)

@@ -17,13 +17,13 @@ import (
 )
 
 type VncRunner interface {
-	RunVnc(conn *cap.Connection, otp, display string, port int)
+	RunVnc(otp, display string, port int)
 }
 
 type ExeRunner struct{}
 
-func (r *ExeRunner) RunVnc(conn *cap.Connection, otp, display string, port int) {
-	RunVnc(conn, otp, display, port)
+func (r *ExeRunner) RunVnc(otp, display string, port int) {
+	RunVnc(otp, display, port)
 }
 
 type ItemButton struct {
@@ -112,36 +112,29 @@ func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFi
 			connect_btn.ExtendBaseWidget(connect_btn)
 			connect_btn.Text = "Connect"
 			connect_btn.OnTapped = func() {
-				display := fmt.Sprintf(
-					"%s%s",
-					conn.GetAddress(),
-					connect_btn.session.DisplayNumber,
-				)
-
 				local_p, err := t.PortFinder.FindPort()
 				if err != nil {
 					log.Println("Could not find free port for VNC session: ", err)
 					return
 				}
-
 				remote_h := conn.GetAddress()
 				remote_p := connect_btn.session.HostPort
-
 				tunnel, err := conn.NewTunnel(local_p, remote_h, remote_p)
 				if err != nil {
 					log.Println("Could not forward VNC port: ", err)
 					return
 				}
-
+				display_num := connect_btn.session.DisplayNumber
+				display := fmt.Sprintf("%s%s", remote_h, display_num)
 				otp := get_otp(conn, conn.GetUid(), display)
 				if otp == nil {
 					log.Println("WARNING: OTP is missing, cannot connect.")
 					return
 				}
-				connect_btn.SetText(*otp)
-
-				t.VncRunner.RunVnc(conn, *otp, display, local_p)
+				connect_btn.Disable()
+				t.VncRunner.RunVnc(*otp, display, local_p)
 				tunnel.Close()
+				connect_btn.Enable()
 			}
 			delete_btn := widget.NewButton("Kill", func() {
 				KillSession(conn, connect_btn.session.Username, connect_btn.session.DisplayNumber)
@@ -216,7 +209,7 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 				return
 			}
 			t.refresh()
-			go RunVnc(t.connection, otp, displayNumber, local_p)
+			go RunVnc(otp, displayNumber, local_p)
 		},
 		OnCancel:   func() { win.Close() },
 		SubmitText: "Create Session",
