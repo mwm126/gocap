@@ -3,4 +3,4 @@
 capclient
 /.cap-credentials
 /coverage.html
-/cover.out
+cover.out

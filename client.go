@@ -16,7 +16,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+//go:generate cmake -S subprojects/turbovnc/ -B build -DCMAKE_INSTALL_PREFIX=joule/turbovnc/ -GNinja -DTVNC_BUILDSERVER=0
+//go:generate cmake --build build --target install
+
 func main() {
+	joule.RunVnc("otp", "disp", 123)
 	cfg := config.GetConfig()
 	cfg.Enable_joule = true
 	cfg.Enable_watt = true
