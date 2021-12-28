@@ -198,3 +198,7 @@ func (client *sshClient) changePassword(
 	}
 	return nil
 }
+
+func (client *sshClient) Dial(protocol, endpoint string) (net.Conn, error) {
+	return client.client.Dial(protocol, endpoint)
+}

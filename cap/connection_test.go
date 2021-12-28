@@ -53,6 +53,10 @@ func (sc FakeClient) OpenSSHTunnel(
 	)
 }
 
+func (sc FakeClient) Dial(protocol, endpoint string) (net.Conn, error) {
+	return nil, nil
+}
+
 type StubYubikey struct{}
 
 func (yk *StubYubikey) FindSerial() (int32, error) {
@@ -148,8 +152,7 @@ func TestParseVncProcesses(t *testing.T) {
 		":5",
 		"3840x2160",
 		"Aug03",
-		"localhost",
-		"5905",
+		5905,
 	}
 	got := sessions[0]
 	if diff := cmp.Diff(want, got); diff != "" {

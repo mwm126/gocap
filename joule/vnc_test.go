@@ -12,16 +12,28 @@ type SpyRunner struct {
 	calls []string
 }
 
-func (r *SpyRunner) Run(conn *cap.Connection, otp, display string) {
-	r.calls = append(r.calls, VncCmd(otp, display))
+func (r *SpyRunner) RunVnc(conn *cap.Connection, otp, display string, port int) {
+	r.calls = append(r.calls, VncCmd(otp, display, port))
+}
+
+type TestPortFinder struct{}
+
+func (tpf TestPortFinder) FindPort() (int, error) {
+	return 54321, nil
 }
 
 func TestVncTab(t *testing.T) {
 	a := test.NewApp()
 
 	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
-		conn := NewFakeVncConnection(t)
-		vncTab := newVncTab(a, conn, &SpyRunner{})
+		conn := NewFakeVncConnection(t, map[string]string{
+			"hostname": "the_hostname",
+			`ping -c 1 the_hostname| grep PING|awk '{print $3}'| sed "s/(//"|sed "s/)//"`: "1.2.3.4",
+			`id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'`:                             "the_uid",
+			"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
+		})
+
+		vncTab := newVncTab(a, conn, &SpyRunner{}, &TestPortFinder{})
 
 		want := 0
 		got := vncTab.sessions.Length()
@@ -41,7 +53,7 @@ func TestVncTab(t *testing.T) {
 	t.Run("Vnc New Session", func(t *testing.T) {
 		var conn cap.Connection
 		// conn.sessions = []cap.Session{init_session}
-		vncTab := newVncTab(a, &conn, &SpyRunner{})
+		vncTab := newVncTab(a, &conn, &SpyRunner{}, &TestPortFinder{})
 
 		want := 0
 		got := vncTab.sessions.Length()
@@ -63,11 +75,24 @@ func TestNewSessionDialog(t *testing.T) {
 		"1600x1200",
 	}
 
-	t.Run("Test Preset Resolution", func(t *testing.T) {
-		conn := NewFakeVncConnection(t)
-		vncTab := newVncTab(a, conn, &SpyRunner{})
-		w := test.NewWindow(nil)
-		vsf := vncTab.NewVncSessionForm(w, default_rezs)
+	t.Run("Preset Resolution", func(t *testing.T) {
+		conn := NewFakeVncConnection(t, map[string]string{
+			"hostname": "the_hostname",
+			`ping -c 1 the_hostname| grep PING|awk '{print $3}'| sed "s/(//"|sed "s/)//"`: "1.2.3.4",
+			`id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'`:                             "the_uid",
+			"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
+			"vncserver -geometry 1600x1200 -otp -novncauth -nohttpd": `Desktop 'TurboVNC: login03.super:22 (mmeredith)' started on display login03.super:22
+
+			One-Time Password authentication enabled.  Generating initial OTP ...
+				Full control one-time password: 22256714
+			Run 'vncpasswd -o' from within the TurboVNC session or
+			'vncpasswd -o -display login03.super:22' from within this shell
+			to generate additional OTPs
+			Starting applications specified in /nfs/home/3/mmeredith/.vnc/xstartup.turbovnc
+			Log file is /nfs/home/3/mmeredith/.vnc/login03.super:22.log`,
+		})
+		vncTab := newVncTab(a, conn, &SpyRunner{}, &TestPortFinder{})
+		vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), default_rezs)
 		last_index := len(vsf.preset_select.Options) - 1
 		vsf.preset_select.SetSelectedIndex(last_index)
 
@@ -79,8 +104,7 @@ func TestNewSessionDialog(t *testing.T) {
 				DisplayNumber: ":123",
 				Geometry:      "3840x2160",
 				DateCreated:   "Aug03",
-				HostAddress:   "localhost",
-				HostPort:      "5905"}}
+				HostPort:      5905}}
 		got, err := conn.FindSessions()
 		if err != nil {
 			t.Error(err)
@@ -90,11 +114,26 @@ func TestNewSessionDialog(t *testing.T) {
 		}
 	})
 
-	t.Run("Test Custom Resolution", func(t *testing.T) {
-		conn := NewFakeVncConnection(t)
-		vncTab := newVncTab(a, conn, &SpyRunner{})
-		w := test.NewWindow(nil)
-		vsf := vncTab.NewVncSessionForm(w, default_rezs)
+	t.Run("Custom Resolution", func(t *testing.T) {
+
+		conn := NewFakeVncConnection(t, map[string]string{
+			"hostname": "the_hostname",
+			`ping -c 1 the_hostname| grep PING|awk '{print $3}'| sed "s/(//"|sed "s/)//"`: "1.2.3.4",
+			`id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'`:                             "the_uid",
+			"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
+			"vncserver -geometry 999x555 -otp -novncauth -nohttpd": `Desktop 'TurboVNC: login03.super:22 (mmeredith)' started on display login03.super:22
+
+			One-Time Password authentication enabled.  Generating initial OTP ...
+				Full control one-time password: 22256714
+			Run 'vncpasswd -o' from within the TurboVNC session or
+			'vncpasswd -o -display login03.super:22' from within this shell
+			to generate additional OTPs
+			Starting applications specified in /nfs/home/3/mmeredith/.vnc/xstartup.turbovnc
+			Log file is /nfs/home/3/mmeredith/.vnc/login03.super:22.log`,
+		})
+
+		vncTab := newVncTab(a, conn, &SpyRunner{}, &TestPortFinder{})
+		vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), default_rezs)
 		vsf.xres_entry.SetText("999")
 		vsf.yres_entry.SetText("555")
 
@@ -106,8 +145,7 @@ func TestNewSessionDialog(t *testing.T) {
 				DisplayNumber: ":123",
 				Geometry:      "3840x2160",
 				DateCreated:   "Aug03",
-				HostAddress:   "localhost",
-				HostPort:      "5905"}}
+				HostPort:      5905}}
 
 		got, err := conn.FindSessions()
 		if err != nil {
@@ -120,9 +158,9 @@ func TestNewSessionDialog(t *testing.T) {
 }
 
 func TestVncCmd(t *testing.T) {
-	cmd := VncCmd("abc", "xyz")
+	cmd := VncCmd("abc", "xyz", 123)
 
-	want := "echo abc | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::10055 &"
+	want := "echo abc | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::123"
 	got := cmd
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Mismatch: %s", diff)
@@ -130,14 +168,17 @@ func TestVncCmd(t *testing.T) {
 }
 
 func TestVncConnect(t *testing.T) {
-	a := test.NewApp()
-	conn := NewFakeVncConnection(t)
-	vncTab := newVncTab(a, conn, &SpyRunner{})
-	w := test.NewWindow(nil)
-	vsf := vncTab.NewVncSessionForm(w, make([]string, 0))
+	conn := NewFakeVncConnection(t, map[string]string{
+		"hostname": "the_hostname",
+		`ping -c 1 the_hostname| grep PING|awk '{print $3}'| sed "s/(//"|sed "s/)//"`: "1.2.3.4",
+		`id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'`:                             "the_uid",
+		"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
+		"vncpasswd -o -display 1.2.3.4:123":                                           "Full control one-time password: 17760704",
+	})
+	vncTab := newVncTab(test.NewApp(), conn, &SpyRunner{}, &TestPortFinder{})
+	vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), make([]string, 0))
 
 	vncTab.refresh()
-	vncTab.List.Refresh()
 
 	last_index := len(vsf.preset_select.Options) - 1
 	vsf.preset_select.SetSelectedIndex(last_index)
@@ -151,7 +192,7 @@ func TestVncConnect(t *testing.T) {
 
 	test.Tap(connect_btn)
 
-	want := "echo test_get_shared_otp | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::10055 &"
+	want := "echo 17760704 | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::54321"
 
 	got := vncTab.VncRunner.(*SpyRunner).calls[0]
 	if diff := cmp.Diff(want, got); diff != "" {

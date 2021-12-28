@@ -49,6 +49,10 @@ func (sc FakeClient) OpenSSHTunnel(
 	)
 }
 
+func (sc FakeClient) Dial(protocol, endpoint string) (net.Conn, error) {
+	return nil, nil
+}
+
 func TestClient(t *testing.T) {
 	testCases := []struct {
 		label string

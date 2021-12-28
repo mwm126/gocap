@@ -53,6 +53,10 @@ func (sc FakeClient) OpenSSHTunnel(
 	)
 }
 
+func (sc FakeClient) Dial(protocol, endpoint string) (net.Conn, error) {
+	return nil, nil
+}
+
 type FakeYubikey struct {
 	Available bool
 }

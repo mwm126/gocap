@@ -12,34 +12,27 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func NewFakeVncConnection(t *testing.T) *cap.Connection {
-	conn, err := cap.NewCapConnection(&FakeVncClient{}, "the_user", "pass")
-	if err != nil {
-		t.Error(err)
+func NewFakeVncConnection(t *testing.T, expectations map[string]string) *cap.Connection {
+	conn, err := cap.NewCapConnection(&FakeVncClient{t, expectations}, "the_user", "pass")
+	if err != nil || conn == nil {
+		t.Fatal(err)
 	}
 	return conn
 }
 
-func NewFakeVncClient(server net.IP, user, pass string) (cap.Client, error) {
-	client := FakeVncClient{}
-	return &client, nil
+type FakeVncClient struct {
+	t            *testing.T
+	expectations map[string]string
 }
 
-type FakeVncClient struct{}
-
 func (fsc FakeVncClient) CleanExec(command string) (string, error) {
-	replies := map[string]string{
-		"hostname": "the_hostname",
-		`ping -c 1 the_hostname| grep PING|awk '{print $3}'| sed "s/(//"|sed "s/)//"`: "1.2.3.4",
-		`id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'`:                             "the_uid",
-		"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
-	}
-	reply, exists := replies[command]
+	reply, exists := fsc.expectations[command]
 	if !exists {
 		log.Println(command, " : ", reply)
-		return "", errors.New("Unexpected command")
+		fsc.t.Fatal("Could not find response for command: ", command)
+		return "", errors.New("Not reachable")
 	}
-	return replies[command], nil
+	return fsc.expectations[command], nil
 }
 
 func (fsc FakeVncClient) Close() {
@@ -66,6 +59,10 @@ func (sc FakeVncClient) OpenSSHTunnel(
 		"rem_addr:123",
 		"123",
 	)
+}
+
+func (sc FakeVncClient) Dial(protocol, endpoint string) (net.Conn, error) {
+	return nil, nil
 }
 
 func (fsc *FakeVncClient) Start(command string) (io.ReadCloser, io.ReadCloser, error) {

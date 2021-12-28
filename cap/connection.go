@@ -3,7 +3,9 @@ package cap
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"strconv"
 	"strings"
 
@@ -24,6 +26,7 @@ type Client interface {
 		remote_port int,
 	) sshtunnel.SSHTunnel
 	CheckPasswordExpired(string, func(Client), chan string) error
+	Dial(protocol, endpoint string) (net.Conn, error)
 }
 
 // A Connection represents a successful SSH connection after the port knock
@@ -33,7 +36,7 @@ type Connection struct {
 	username     string
 	password     string
 	uid          string
-	loginName    string
+	hostName     string
 	loginAddr    string
 	webLocalPort int
 	sshLocalPort int
@@ -53,6 +56,10 @@ func (c *Connection) GetAddress() string {
 
 func (c *Connection) GetUid() string {
 	return c.uid
+}
+
+func (c *Connection) GetHostname() string {
+	return c.hostName
 }
 
 func (c *Connection) GetClient() Client {
@@ -174,7 +181,6 @@ func (c *Connection) startVncSession(sizeX string, sizeY string) (string, string
 
 	for _, line := range strings.Split(output, "\n") {
 		tline := strings.TrimSpace(line)
-		log.Println(tline)
 		//     # TurboVNC 1.1
 		if strings.HasPrefix(tline, "New \x27X\x27 desktop is") {
 			display = strings.Split(tline, " ")[4]
@@ -212,8 +218,7 @@ type Session struct {
 	DisplayNumber string
 	Geometry      string
 	DateCreated   string
-	HostAddress   string
-	HostPort      string
+	HostPort      int
 }
 
 func (s *Session) Label() string {
@@ -234,13 +239,16 @@ func (s Session) RemoveListener(listener binding.DataListener) {
 func parseVncLine(line string) (Session, error) {
 	fields := strings.Fields(line)
 	username := fields[15][1 : len(fields[15])-1]
+	port, err := strconv.Atoi(get_field(fields, "-rfbport"))
+	if err != nil {
+		return Session{}, err
+	}
 	session := Session{
 		Username:      username,
 		DisplayNumber: fields[11],
 		Geometry:      get_field(fields, "-geometry"),
 		DateCreated:   fields[8],
-		HostAddress:   "localhost",
-		HostPort:      get_field(fields, "-rfbport"),
+		HostPort:      port,
 	}
 	return session, nil
 }
@@ -252,4 +260,79 @@ func get_field(fields []string, fieldname string) string {
 		}
 	}
 	return ""
+}
+
+type Tunnel struct {
+	client       Client
+	endpoint     string
+	listener     net.Listener
+	closeChannel chan interface{}
+}
+
+func (t Tunnel) Close() {
+	t.closeChannel <- 1
+}
+
+func acceptConnection(listener net.Listener, c chan net.Conn) {
+	conn, err := listener.Accept()
+	if err != nil {
+		return
+	}
+	c <- conn
+}
+
+func (capcon *Connection) NewTunnel(local_p int, remote_h string, remote_p int) (*Tunnel, error) {
+	endpoint := fmt.Sprintf("localhost:%d", local_p)
+	listener, err := net.Listen("tcp", endpoint)
+	if err != nil {
+		return nil, err
+	}
+	remote_endpoint := fmt.Sprintf("%s:%d", remote_h, remote_p)
+	tunnel := &Tunnel{
+		capcon.client,
+		remote_endpoint,
+		listener,
+		make(chan interface{}),
+	}
+	go tunnel.Start()
+	return tunnel, nil
+}
+
+func (t Tunnel) Start() {
+	defer t.listener.Close()
+	for {
+		c := make(chan net.Conn)
+		go acceptConnection(t.listener, c)
+		log.Println("listening for new connections...")
+		select {
+
+		case _ = <-t.closeChannel:
+			return
+
+		case localConn := <-c:
+			log.Println("accepted connection")
+			go func() {
+				remoteConn, err := t.client.Dial("tcp", t.endpoint)
+				if err != nil {
+					log.Printf("server dial error: %s", err)
+					return
+				}
+				copyConn := func(writer, reader net.Conn) {
+					_, err := io.Copy(writer, reader)
+					if err != nil {
+						log.Printf(
+							"Error: could not copy %s -> %s because: %s",
+							reader,
+							writer,
+							err,
+						)
+					}
+				}
+				go copyConn(localConn, remoteConn)
+				go copyConn(remoteConn, localConn)
+			}()
+
+		}
+	}
+
 }

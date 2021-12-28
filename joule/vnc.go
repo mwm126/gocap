@@ -9,22 +9,21 @@ import (
 	"strings"
 
 	"aeolustec.com/capclient/cap"
+	"aeolustec.com/capclient/cap/sshtunnel"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 )
 
-const VNC_LOCAL_PORT = 10055
-
 type VncRunner interface {
-	Run(conn *cap.Connection, otp, display string)
+	RunVnc(conn *cap.Connection, otp, display string, port int)
 }
 
 type ExeRunner struct{}
 
-func (r *ExeRunner) Run(conn *cap.Connection, otp, display string) {
-	RunVnc(conn, otp, display)
+func (r *ExeRunner) RunVnc(conn *cap.Connection, otp, display string, port int) {
+	RunVnc(conn, otp, display, port)
 }
 
 type ItemButton struct {
@@ -49,13 +48,23 @@ func (i *ItemList) RemoveListener(listener binding.DataListener) {
 func (i *ItemList) GetItem(index int) (binding.DataItem, error) {
 	var s cap.Session
 	if index > i.Length()-1 {
-		return &s, errors.New(fmt.Sprintf("ugh %d", index))
+		return &s, errors.New(fmt.Sprintf("Invalid index %d > max index %d", index, i.Length()-1))
 	}
 	return i.items[index], nil
 }
 
 func (i *ItemList) Length() int {
 	return len(i.items)
+}
+
+type PortFinder interface {
+	FindPort() (int, error)
+}
+
+type FreePortFinder struct{}
+
+func (fpf FreePortFinder) FindPort() (int, error) {
+	return sshtunnel.GetFreePort()
 }
 
 type VncTab struct {
@@ -68,6 +77,7 @@ type VncTab struct {
 	refresh_btn *widget.Button
 	new_btn     *widget.Button
 	sessions    *ItemList
+	PortFinder  PortFinder
 }
 
 func (vt *VncTab) refresh() error {
@@ -84,13 +94,14 @@ func (vt *VncTab) refresh() error {
 	return err
 }
 
-func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner) *VncTab {
+func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFinder) *VncTab {
 	t := VncTab{
 		list_items: make(map[cap.Session]*fyne.Container, 0),
 		VncRunner:  vnc_runner,
 		app:        a,
 		connection: conn,
 		sessions:   &ItemList{},
+		PortFinder: pf,
 	}
 
 	t.List = widget.NewListWithData(t.sessions,
@@ -101,13 +112,36 @@ func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner) *VncTab {
 			connect_btn.ExtendBaseWidget(connect_btn)
 			connect_btn.Text = "Connect"
 			connect_btn.OnTapped = func() {
-				owner_uid := connect_btn.session.Username
-				display := connect_btn.session.DisplayNumber
+				display := fmt.Sprintf(
+					"%s%s",
+					conn.GetAddress(),
+					connect_btn.session.DisplayNumber,
+				)
 
-				otp := get_otp(conn, owner_uid, display)
-				connect_btn.SetText(otp)
+				local_p, err := t.PortFinder.FindPort()
+				if err != nil {
+					log.Println("Could not find free port for VNC session: ", err)
+					return
+				}
 
-				t.VncRunner.Run(conn, otp, display)
+				remote_h := conn.GetAddress()
+				remote_p := connect_btn.session.HostPort
+
+				tunnel, err := conn.NewTunnel(local_p, remote_h, remote_p)
+				if err != nil {
+					log.Println("Could not forward VNC port: ", err)
+					return
+				}
+
+				otp := get_otp(conn, conn.GetUid(), display)
+				if otp == nil {
+					log.Println("WARNING: OTP is missing, cannot connect.")
+					return
+				}
+				connect_btn.SetText(*otp)
+
+				t.VncRunner.RunVnc(conn, *otp, display, local_p)
+				tunnel.Close()
 			}
 			delete_btn := widget.NewButton("Kill", func() {
 				KillSession(conn, connect_btn.session.Username, connect_btn.session.DisplayNumber)
@@ -167,15 +201,22 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 			{Text: "Y-resolution", Widget: yres_entry},
 		},
 		OnSubmit: func() {
+			defer win.Close()
+			local_p, err := t.PortFinder.FindPort()
+			if err != nil {
+				log.Println("Could not find free port for vnc client: ", err)
+				return
+			}
 			otp, displayNumber, err := t.connection.CreateVncSession(
 				xres_entry.Text,
 				yres_entry.Text,
 			)
-			if err == nil {
-				t.refresh()
-				go RunVnc(t.connection, otp, displayNumber)
+			if err != nil {
+				log.Println("Could not create VNC session: ", err)
+				return
 			}
-			win.Close()
+			t.refresh()
+			go RunVnc(t.connection, otp, displayNumber, local_p)
 		},
 		OnCancel:   func() { win.Close() },
 		SubmitText: "Create Session",
@@ -190,27 +231,31 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 	return vsf
 }
 
-func get_otp(conn *cap.Connection, owner_uid, display string) string {
+func get_otp(conn *cap.Connection, owner_uid, display string) *string {
 	// Use vncpasswd to generate OTP for sessions we own
 	// log.Println("Checking %s ? %s", owner_uid, ssh.uid)
 	if owner_uid == conn.GetUid() {
-		return *get_owner_otp(conn, display)
+		log.Println("owner is uid", owner_uid)
+		return get_owner_otp(conn, display)
 	}
 
+	log.Println("owner NOT uid", owner_uid, conn.GetUid())
 	return get_shared_otp(display)
 }
 
 func get_owner_otp(conn *cap.Connection, display string) *string {
 	client := conn.GetClient()
-	// loginName := conn.GetUsername()
-	// if !display.startswith(loginName) {
-	// panic("BAD DISPLAY")
-	// }
+	address := conn.GetAddress()
+	if !strings.HasPrefix(display, address) {
+		log.Println("Display does not match loginName:", display, address)
+		return nil
+	}
 	command := fmt.Sprintf("vncpasswd -o -display %s", display)
 	log.Println("VNCPASSWD: ", command)
 	output, err := client.CleanExec(command)
 	if err != nil {
-		log.Println("Error executing: ", command)
+		log.Println("Error: ", err)
+		log.Println("Output: ", output)
 		return nil
 	}
 	for _, line := range strings.Split(output, "\n") {
@@ -225,14 +270,13 @@ func get_owner_otp(conn *cap.Connection, display string) *string {
 	return nil
 }
 
-func get_shared_otp(display string) string {
+func get_shared_otp(display string) *string {
 	// Use session manager to make OTP for shared sessions
 	response := []string{"abc", "123"}
 	// response := ssh.sessionMessage("OTP", display).split()
 
 	nonce := strings.TrimSpace(response[0])
 	encOTP := strings.TrimSpace(response[1])
-	return "test_get_shared_otp"
 	return decryptOTP([]byte(nonce), []byte(encOTP))
 }
 
@@ -240,12 +284,12 @@ func MAC(message []byte) string {
 	digest := cap.MakeSHADigest(
 		// self._session_manager_secret[0:32],
 		message,
-	// self._session_manager_secret[33:64],
+		// self._session_manager_secret[33:64],
 	)
 	return hex.EncodeToString(digest[:])
 }
 
-func decryptOTP(nonce, encOTP []byte) string {
+func decryptOTP(nonce, encOTP []byte) *string {
 	key := MAC(nonce)
 	decOTP := ""
 	for ii, key_char := range key {
@@ -255,7 +299,7 @@ func decryptOTP(nonce, encOTP []byte) string {
 		o := (e - k) % 16
 		decOTP += fmt.Sprint(o)
 	}
-	return decOTP
+	return &decOTP
 }
 
 func KillSession(conn *cap.Connection, otp, displayNumber string) {

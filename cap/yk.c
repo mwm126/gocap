@@ -78,7 +78,7 @@ int get_yk_serial() {
   YK_KEY *yk = 0;
 
   if (!yk_init()) {
-    printf("Could not initialize yubikey\n");
+    /* printf("Could not initialize yubikey\n"); */
     return -1;
   }
 
