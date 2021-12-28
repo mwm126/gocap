@@ -17,13 +17,15 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name:  Install Dependencies
         shell: bash
         run:   |
               if [ "$RUNNER_OS" == "Linux" ]; then
                 sudo apt update
-                sudo apt-get -qq -y install --no-install-recommends && sudo apt install -y libgl1-mesa-dev xorg-dev libusb-1.0-0-dev libyubikey-dev libykpers-1-dev libturbojpeg0-dev libpam0g-dev
+                sudo apt-get -qq -y install --no-install-recommends && sudo apt install -y libgl1-mesa-dev xorg-dev libusb-1.0-0-dev libyubikey-dev libykpers-1-dev libturbojpeg0-dev libpam0g-dev cmake ninja
               fi
               go get github.com/ladydascalie/gorgeous
 
