@@ -3,10 +3,6 @@ package joule
 import (
 	"embed"
 	"fmt"
-	"io/fs"
-	"io/ioutil"
-	"log"
-	"os"
 	"os/exec"
 )
 
