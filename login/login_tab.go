@@ -14,7 +14,6 @@ type LoginTab struct {
 	connection         *cap.Connection
 	LoginForm          *LoginForm
 	LoginCard          *LoginCard
-	connecting         *fyne.Container
 }
 
 func NewLoginTab(tabname,

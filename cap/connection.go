@@ -306,7 +306,7 @@ func (t Tunnel) Start() {
 		log.Println("listening for new connections...")
 		select {
 
-		case _ = <-t.closeChannel:
+		case <-t.closeChannel:
 			return
 
 		case localConn := <-c:

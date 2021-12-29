@@ -2,10 +2,12 @@ package joule
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
@@ -48,7 +50,7 @@ func (i *ItemList) RemoveListener(listener binding.DataListener) {
 func (i *ItemList) GetItem(index int) (binding.DataItem, error) {
 	var s cap.Session
 	if index > i.Length()-1 {
-		return &s, errors.New(fmt.Sprintf("Invalid index %d > max index %d", index, i.Length()-1))
+		return &s, fmt.Errorf("Invalid index %d > max index %d", index, i.Length()-1)
 	}
 	return i.items[index], nil
 }
@@ -95,18 +97,14 @@ func (vt *VncTab) refresh() error {
 	if err != nil {
 		log.Println("Warning - unable to refresh: ", err)
 	}
-	items := make([]cap.Session, 0)
-	for _, session := range sessions {
-		items = append(items, session)
-	}
-	vt.sessions.Set(items)
+	vt.sessions.Set(sessions)
 	vt.List.Refresh()
 	return err
 }
 
 func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFinder) *VncTab {
 	t := VncTab{
-		list_items: make(map[cap.Session]*fyne.Container, 0),
+		list_items: make(map[cap.Session]*fyne.Container),
 		VncRunner:  vnc_runner,
 		app:        a,
 		connection: conn,
@@ -163,7 +161,12 @@ func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFi
 			t.list_items[session] = box
 		})
 
-	t.refresh_btn = widget.NewButton("Refresh", func() { t.refresh() })
+	t.refresh_btn = widget.NewButton("Refresh", func() {
+		err := t.refresh()
+		if err != nil {
+			log.Println("Unable to refresh: ", err)
+		}
+	})
 	t.new_btn = widget.NewButton("New VNC Session", t.showNewVncSessionDialog)
 	vcard := widget.NewCard("GUI", "List of VNC Sessions", t.new_btn)
 	box := container.NewBorder(vcard, t.refresh_btn, nil, nil, t.List)
@@ -213,7 +216,10 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 				log.Println("Could not create VNC session: ", err)
 				return
 			}
-			t.refresh()
+			err = t.refresh()
+			if err != nil {
+				log.Println("Could not refresh VNC sessions: ", err)
+			}
 		},
 		OnCancel:   func() { win.Close() },
 		SubmitText: "Create Session",
@@ -300,4 +306,53 @@ func decryptOTP(nonce, encOTP []byte) *string {
 }
 
 func KillSession(conn *cap.Connection, otp, displayNumber string) {
+}
+
+func doRunVnc(vncviewer_p, otp, displayNumber string, localPort int) {
+	vnchome, err := ioutil.TempDir("", "capclient")
+	if err != nil {
+		log.Fatal("could not open tempfile", err)
+	}
+	defer os.RemoveAll(vnchome)
+
+	err = fs.WalkDir(content, ".", func(path string, d fs.DirEntry, earlier_err error) error {
+		if d.IsDir() {
+			dirname := vnchome + "/" + path
+			err := os.Mkdir(dirname, 0755)
+			if err != nil {
+				log.Println("Unable to create directory: ", err)
+			}
+			return nil
+		}
+		src := path
+		input, err := content.ReadFile(src)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		dest := vnchome + "/" + path
+		err = ioutil.WriteFile(dest, input, 0644)
+		if err != nil {
+			fmt.Println("Error creating", dest)
+			fmt.Println(err)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		log.Println("Unable to traverse embedded fs: ", err)
+	}
+
+	vnc_cmd := vnchome + vncviewer_p
+	err = os.Chmod(vnc_cmd, 0755)
+	if err != nil {
+		log.Fatal("could not make ", vnc_cmd, " executable because ", err)
+	}
+
+	cmd := VncCmd(vnc_cmd, otp, localPort)
+	log.Println("\n\n\nRunVnc: ", cmd)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log.Println("vncviewer output: ", string(output))
+		log.Println("vncviewer error: ", err)
+	}
 }
