@@ -18,6 +18,6 @@ func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
 	)
 }
 
-func RunVnc(vncviewer_p, otp, displayNumber string, localPort int) {
+func RunVnc(otp, displayNumber string, localPort int) {
 	doRunVnc("/turbovnc/bin/vncviewer", otp, displayNumber, localPort)
 }
