@@ -13,12 +13,11 @@ import (
 //go:embed TurboVNC-2.2.7/app
 var content embed.FS
 
-func VncCmd(vncviewer_path, otp string, localPort int) string {
-	return fmt.Sprintf(
-		"env -u LD_LIBRARY_PATH %s 127.0.0.1::%d -Password='%s'",
+func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
+	return exec.Command(
 		vncviewer_path,
-		localPort,
-		otp,
+		fmt.Sprintf("127.0.0.1::%d", localPort),
+		fmt.Sprintf("-Password='%s'", otp),
 	)
 }
 
@@ -57,8 +56,7 @@ func RunVnc(otp, displayNumber string, localPort int) {
 		log.Fatal("could not make ", vnc_cmd, " executable because ", err)
 	}
 
-	cmd_string := VncCmd(vnc_cmd, otp, localPort)
-	cmd := exec.Command("sh", "-c", cmd_string)
+	cmd := VncCmd(vnc_cmd, otp, localPort)
 	log.Println("\n\n\nRunVnc: ", cmd)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		log.Println("vncviewer output: ", string(output))
