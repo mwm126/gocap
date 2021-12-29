@@ -6,7 +6,5 @@ package main
 //go:generate curl --insecure "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe" --output ssh/embeds/putty.exe
 
 // For fyne-cross on Linux to build the Linux distribution (or for development)
-//go:generate cmake -S subprojects/libjpeg-turbo/ -Bbuild-jpeg -GNinja -DCMAKE_INSTALL_PREFIX=joule/turbovnc -DCMAKE_C_FLAGS="-fPIC"
-//go:generate cmake --build build-jpeg --target install
-//go:generate cmake -S subprojects/turbovnc/ -B build-turbo -DTJPEG_INCLUDE_DIR=$PWD/install-libjpeg/include -DTJPEG_LIBRARY=$PWD/install-libjpeg/lib/libturbojpeg.a -DCMAKE_INSTALL_PREFIX=joule/turbovnc/ -GNinja -DTVNC_BUILDSERVER=0
+//go:generate cmake -S subprojects/turbovnc/ -B build-turbo -DCMAKE_INSTALL_PREFIX=joule/turbovnc/ -GNinja -DTVNC_BUILDSERVER=0
 //go:generate cmake --build build-turbo --target install
