@@ -17,7 +17,6 @@ import (
 )
 
 func main() {
-	joule.RunVnc("otp", "disp", 123)
 	cfg := config.GetConfig()
 	cfg.Enable_joule = true
 	cfg.Enable_watt = true
