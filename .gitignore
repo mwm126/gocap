@@ -2,7 +2,8 @@
 /.cap-credentials
 /coverage.html
 /fyne-cross/
-build/
 capclient
 cover.out
 turbovnc
+build-*
+install-*
