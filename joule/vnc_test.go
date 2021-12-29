@@ -38,7 +38,7 @@ func TestVncTab(t *testing.T) {
 			t.Error("Initially # of sessions should be 0 but was: ", vncTab.sessions.Length())
 		}
 
-		test.Tap(vncTab.refresh_btn)
+		vncTab.refresh()
 
 		want = 1
 		got = vncTab.sessions.Length()
