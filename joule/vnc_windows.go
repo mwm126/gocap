@@ -10,8 +10,7 @@ import (
 	"os/exec"
 )
 
-//go:embed turbovnc/bin/*
-//go:embed turbovnc/share/*
+//go:embed joule/TurboVNC-2.2.7/app/
 var content embed.FS
 
 func VncCmd(vncviewer_path, otp string, localPort int) string {
@@ -52,7 +51,7 @@ func RunVnc(otp, displayNumber string, localPort int) {
 		return nil
 	})
 
-	vnc_cmd := vnchome + "/turbovnc/bin/vncviewer"
+	vnc_cmd := vnchome + "/vncviewer.exe"
 	err = os.Chmod(vnc_cmd, 0755)
 	if err != nil {
 		log.Fatal("could not make ", vnc_cmd, " executable because ", err)

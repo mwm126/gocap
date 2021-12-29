@@ -16,11 +16,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-//go:generate cmake -S subprojects/libjpeg-turbo/ -Bbuild-jpeg -GNinja -DCMAKE_INSTALL_PREFIX=install-libjpeg -DCMAKE_C_FLAGS="-fPIC"
-//go:generate cmake --build build-jpeg --target install
-//go:generate cmake -S subprojects/turbovnc/ -B build-turbo -DTJPEG_INCLUDE_DIR=$PWD/install-libjpeg/include -DTJPEG_LIBRARY=$PWD/install-libjpeg/lib/libturbojpeg.a -DCMAKE_INSTALL_PREFIX=joule/turbovnc/ -GNinja -DTVNC_BUILDSERVER=0
-//go:generate cmake --build build-turbo --target install
-
 func main() {
 	joule.RunVnc("otp", "disp", 123)
 	cfg := config.GetConfig()
