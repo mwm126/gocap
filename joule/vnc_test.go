@@ -1,6 +1,7 @@
 package joule
 
 import (
+	"os/exec"
 	"testing"
 
 	"aeolustec.com/capclient/cap"
@@ -9,11 +10,7 @@ import (
 )
 
 type SpyRunner struct {
-	calls []string
-}
-
-func (r *SpyRunner) RunVnc(otp, display string, port int) {
-	r.calls = append(r.calls, VncCmd(otp, display, port))
+	calls []exec.Cmd
 }
 
 type TestPortFinder struct{}
@@ -157,16 +154,6 @@ func TestNewSessionDialog(t *testing.T) {
 	})
 }
 
-func TestVncCmd(t *testing.T) {
-	cmd := VncCmd("abc", "xyz", 123)
-
-	want := "echo abc | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::123"
-	got := cmd
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Errorf("Mismatch: %s", diff)
-	}
-}
-
 func TestVncConnect(t *testing.T) {
 	conn := NewFakeVncConnection(t, map[string]string{
 		"hostname": "the_hostname",
@@ -192,10 +179,24 @@ func TestVncConnect(t *testing.T) {
 
 	test.Tap(connect_btn)
 
-	want := "echo 17760704 | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::54321"
+	want := "/path/to/vncviewer 127.0.0.1::54321 -Password='17760704'"
 
-	got := vncTab.VncRunner.(*SpyRunner).calls[0]
+	got := vncTab.VncRunner.(*SpyRunner).calls[0].String()
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Mismatch: %s", diff)
 	}
+}
+
+func TestVncCmd(t *testing.T) {
+	cmd := VncCmd("/path/to/vncviewer", "xyz", 123)
+
+	want := "/path/to/vncviewer 127.0.0.1::123 -Password='xyz'"
+	got := cmd.String()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("Mismatch: %s", diff)
+	}
+}
+
+func (r *SpyRunner) RunVnc(otp, display string, port int) {
+	r.calls = append(r.calls, *VncCmd("/path/to/vncviewer", otp, port))
 }

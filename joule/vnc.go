@@ -205,12 +205,7 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 		},
 		OnSubmit: func() {
 			defer win.Close()
-			local_p, err := t.PortFinder.FindPort()
-			if err != nil {
-				log.Println("Could not find free port for vnc client: ", err)
-				return
-			}
-			otp, displayNumber, err := t.connection.CreateVncSession(
+			_, _, err := t.connection.CreateVncSession(
 				xres_entry.Text,
 				yres_entry.Text,
 			)
@@ -219,7 +214,6 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 				return
 			}
 			t.refresh()
-			go RunVnc(otp, displayNumber, local_p)
 		},
 		OnCancel:   func() { win.Close() },
 		SubmitText: "Create Session",
