@@ -122,14 +122,14 @@ func (sk Knocker) makePacket(
 	}
 
 	var initVec [16]byte
-	digest := makeSHADigest(sk.Entropy[:], OTP[:])
+	digest := MakeSHADigest(sk.Entropy[:], OTP[:])
 	copy(initVec[:], digest[:16])
 	challenge, response, err := getChallengeResponse(sk.Yubikey, OTP, sk.Entropy[:])
 	if err != nil {
 		log.Println("could not get challenge response", err)
 		return nil, err
 	}
-	aeskey := makeSHADigest(response[:], challenge[:])
+	aeskey := MakeSHADigest(response[:], challenge[:])
 
 	var user [32]byte
 	var auth [16]byte
@@ -187,7 +187,7 @@ func (sk Knocker) makePacket(
 	footer, _ := hex.DecodeString(
 		"50266198ce6bae2069546cbcae0f80ba847598f674f5d7343f90e6c6e56dfa8a",
 	)
-	digest = makeSHADigest(header, macBlock, footer)
+	digest = MakeSHADigest(header, macBlock, footer)
 
 	buf = new(bytes.Buffer)
 	for _, field := range []interface{}{macBlock, digest} {
@@ -202,7 +202,7 @@ func (sk Knocker) makePacket(
 
 func getOTP(yk Yubikey, entropy []byte) (OneTimePassword, error) {
 	// Get Yubico OTP response from client.connection.yubikey
-	digest := makeSHADigest([]byte("yubicoChal"), entropy)
+	digest := MakeSHADigest([]byte("yubicoChal"), entropy)
 	var yubicoChal [6]byte
 	copy(yubicoChal[:], digest[:16])
 	time.Sleep(1 * time.Second)
@@ -220,7 +220,7 @@ func getChallengeResponse(
 	entropy []byte,
 ) (SHADigest, [20]byte, error) {
 	// Build challenge using entropy and OTP so it is unique
-	challenge := makeSHADigest([]byte("SHA1-HMACChallenge"), OTP[:], entropy)
+	challenge := MakeSHADigest([]byte("SHA1-HMACChallenge"), OTP[:], entropy)
 	// Get HMAC-SHA1 response from client.connection.yubikey
 	time.Sleep(1 * time.Second)
 	response, err := yk.ChallengeResponseHMAC(challenge)
@@ -233,7 +233,7 @@ func getChallengeResponse(
 
 func plainBlockWithChecksum(plainBlock []byte) []byte {
 	var buf bytes.Buffer
-	chksum := makeSHADigest(plainBlock)
+	chksum := MakeSHADigest(plainBlock)
 	buf.Write(plainBlock)
 	buf.Write(chksum[:])
 
@@ -241,7 +241,7 @@ func plainBlockWithChecksum(plainBlock []byte) []byte {
 
 }
 
-func makeSHADigest(args ...[]byte) SHADigest {
+func MakeSHADigest(args ...[]byte) SHADigest {
 	var buf bytes.Buffer
 
 	for _, arg := range args {

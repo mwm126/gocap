@@ -69,16 +69,15 @@ func (cm *ConnectionManager) Connect(
 const webLocalPort = 10080
 
 func NewCapConnection(client Client, user, pass string) (*Connection, error) {
-	log.Println("Getting connection info...")
-	loginName, err := client.CleanExec("hostname")
+	hostName, err := client.CleanExec("hostname")
 	if err != nil {
 		log.Println("Failed hostname")
 		return nil, err
 	}
-	loginName = strings.TrimSpace(loginName)
-	log.Println("Got login hostname:", loginName)
+	hostName = strings.TrimSpace(hostName)
+	log.Println("Got login hostname:", hostName)
 
-	loginAddr, err := getLoginIP(client, loginName)
+	loginAddr, err := getLoginIP(client, hostName)
 	if err != nil {
 		log.Println("Failed to lookup login IP")
 		return nil, err
@@ -101,17 +100,16 @@ func NewCapConnection(client Client, user, pass string) (*Connection, error) {
 		user,
 		pass,
 		uid,
-		loginName,
+		hostName,
 		loginAddr,
 		webLocalPort,
 		sshLocalPort.Local.Port,
 	}, nil
 }
 
-func getLoginIP(client Client, loginName string) (string, error) {
+func getLoginIP(client Client, hostName string) (string, error) {
 	command := ("ping -c 1 " +
-		loginName + "| grep PING|awk \x27{print $3}\x27" + "| sed \x22s/(//\x22|sed \x22s/)//\x22")
-	log.Println("Command for getting address of login server: ", command)
+		hostName + "| grep PING|awk \x27{print $3}\x27" + "| sed \x22s/(//\x22|sed \x22s/)//\x22")
 	addr, err := client.CleanExec(command)
 	if err != nil {
 		return addr, err
@@ -122,7 +120,6 @@ func getLoginIP(client Client, loginName string) (string, error) {
 func getUID(client Client) (string, error) {
 	//  id|sed "s/uid=//"|sed "s/(/ /"|awk '{print $1}'
 	command := "id|sed \x22s/uid=//\x22|sed \x22s/(/ /\x22" + "|awk \x27{print $1}\x27"
-	log.Println("Command to get UID: ", command)
 	uid, err := client.CleanExec(command)
 	if err != nil {
 		return uid, err

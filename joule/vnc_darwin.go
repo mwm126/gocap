@@ -1,24 +1,23 @@
 package joule
 
 import (
+	"embed"
 	"fmt"
-	"log"
 	"os/exec"
-	"strconv"
-
-	"aeolustec.com/capclient/cap"
 )
 
-func RunVnc(conn *cap.Connection, otp, displayNumber string) {
-	cmd := exec.Command(
-		fmt.Sprintf(
-			"echo %s | env -u LD_LIBRARY_PATH vncviewer_HPCEE -highqual -autopass 127.0.0.1::%s &",
-			otp,
-			strconv.Itoa(VNC_LOCAL_PORT),
-		),
+// Must install TurboVNC under /Applications
+//go:embed TurboVNC-Mac
+var content embed.FS
+
+func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
+	return exec.Command(
+		vncviewer_path,
+		fmt.Sprintf("127.0.0.1::%d", localPort),
+		fmt.Sprintf("-Password='%s'", otp),
 	)
-	err := cmd.Run()
-	if err != nil {
-		log.Println("gnome-terminal FAIL: ", err)
-	}
+}
+
+func RunVnc(otp, displayNumber string, localPort int) {
+	doRunVnc("/TurboVNC-Mac/Contents/MacOS/TurboVNC Viewer", otp, displayNumber, localPort)
 }

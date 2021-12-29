@@ -41,7 +41,7 @@ func NewJouleConnected(
 func (t *JouleTab) Connect(conn *cap.Connection) {
 	homeTab := newJouleHome(t.CapTab.CloseConnection)
 	sshTab := ssh.NewSsh(conn)
-	vncTab := newVncTab(t.app, conn)
+	vncTab := newVncTab(t.app, conn, &ExeRunner{}, FreePortFinder{})
 	vncTabItem := vncTab.TabItem
 
 	cfg := config.GetConfig()

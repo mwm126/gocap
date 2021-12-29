@@ -20,15 +20,6 @@ func NewConnectForm(
 	login_info LoginInfo,
 	connect_cb func(LoginInfo)) *ConnectForm {
 
-	network_ips := make(map[string]string)
-	external_ips := make(map[string]string)
-	networkNames := make([]string, 0, len(service.Networks))
-	for name, val := range service.Networks {
-		network_ips[name] = val.CapServerAddress
-		external_ips[name] = val.ClientExternalAddress
-		networkNames = append(networkNames, name)
-	}
-
 	connect := widget.NewButton("Connect", func() {
 		go connect_cb(login_info)
 	})

@@ -1,24 +1,23 @@
 package joule
 
 import (
-	"log"
+	"embed"
+	"fmt"
 	"os/exec"
-	"strconv"
-
-	"aeolustec.com/capclient/cap"
 )
 
-func RunVnc(conn *cap.Connection, otp, displayNumber string) {
-	cmd := exec.Command(
-		"x-terminal-emulator",
-		"--",
-		"vnc",
-		"localhost",
-		"-p",
-		strconv.Itoa(VNC_LOCAL_PORT),
+//go:embed TurboVNC-2.2.7/app
+var content embed.FS
+
+func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
+	return exec.Command(
+		vncviewer_path,
+		fmt.Sprintf("127.0.0.1:%d", localPort),
+		"/password",
+		otp,
 	)
-	err := cmd.Run()
-	if err != nil {
-		log.Println("gnome-terminal FAIL: ", err)
-	}
+}
+
+func RunVnc(otp, displayNumber string, localPort int) {
+	doRunVnc("/TurboVNC-2.2.7/app/vncviewer.exe", otp, displayNumber, localPort)
 }

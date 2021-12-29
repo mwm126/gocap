@@ -1,6 +1,9 @@
 *~
-/fyne-cross/
-capclient
 /.cap-credentials
 /coverage.html
-/cover.out
+/fyne-cross/
+capclient
+cover.out
+turbovnc
+build-*
+install-*
