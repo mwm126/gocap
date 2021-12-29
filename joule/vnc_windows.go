@@ -10,7 +10,7 @@ import (
 	"os/exec"
 )
 
-//go:embed joule/TurboVNC-2.2.7/app/
+//go:embed TurboVNC-2.2.7/app
 var content embed.FS
 
 func VncCmd(vncviewer_path, otp string, localPort int) string {
