@@ -16,8 +16,9 @@ var content embed.FS
 func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
 	return exec.Command(
 		vncviewer_path,
-		fmt.Sprintf("127.0.0.1::%d", localPort),
-		fmt.Sprintf("-Password='%s'", otp),
+		fmt.Sprintf("127.0.0.1:%d", localPort),
+		"/password",
+		otp,
 	)
 }
 
@@ -50,7 +51,7 @@ func RunVnc(otp, displayNumber string, localPort int) {
 		return nil
 	})
 
-	vnc_cmd := vnchome + "/vncviewer.exe"
+	vnc_cmd := vnchome + "/TurboVNC-2.2.7/app/vncviewer.exe"
 	err = os.Chmod(vnc_cmd, 0755)
 	if err != nil {
 		log.Fatal("could not make ", vnc_cmd, " executable because ", err)
