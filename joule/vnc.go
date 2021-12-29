@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"strconv"
 	"strings"
 
 	"aeolustec.com/capclient/cap"
-	"aeolustec.com/capclient/cap/sshtunnel"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -64,7 +64,17 @@ type PortFinder interface {
 type FreePortFinder struct{}
 
 func (fpf FreePortFinder) FindPort() (int, error) {
-	return sshtunnel.GetFreePort()
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
 type VncTab struct {
