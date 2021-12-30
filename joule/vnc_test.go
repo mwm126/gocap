@@ -179,7 +179,7 @@ func TestVncConnect(t *testing.T) {
 
 	test.Tap(connect_btn)
 
-	want := "/path/to/vncviewer 127.0.0.1::54321 -Password='17760704'"
+	want := "/path/to/vncviewer 127.0.0.1::54321 -Password=17760704"
 
 	got := vncTab.VncRunner.(*SpyRunner).calls[0].String()
 	if diff := cmp.Diff(want, got); diff != "" {
