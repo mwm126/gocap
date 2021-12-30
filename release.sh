@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TAG=v21.11.8
+TAG=v21.12.29
 TITLE="CAP Client Release ${TAG}"
 NOTES="Password change dialog"
 
