@@ -9,6 +9,7 @@ import (
 	"aeolustec.com/capclient/cap"
 	"aeolustec.com/capclient/cap/sshtunnel"
 	"aeolustec.com/capclient/login"
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/crypto/ssh"
@@ -65,6 +66,8 @@ func (fsc *FakeClient) Wait() error {
 
 func TestJouleLoginButton(t *testing.T) {
 	a := test.NewApp()
+	var co fyne.CanvasObject
+	w := test.NewWindow(co)
 
 	knk := cap.NewKnocker(&StubYubikey{}, 0)
 	conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
@@ -83,6 +86,7 @@ func TestJouleLoginButton(t *testing.T) {
 
 	jouleTab := NewJouleConnected(
 		a,
+		w,
 		joule_service,
 		conn_man,
 		login.LoginInfo{Network: "alb_admin", Username: "the_user", Password: "the_pass"},

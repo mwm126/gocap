@@ -103,6 +103,7 @@ func (client *Client) setupServices(login_info login.LoginInfo, services []login
 		if service.Name == "joule" {
 			joule := joule.NewJouleConnected(
 				client.app,
+				client.window,
 				service,
 				client.connectionManager,
 				login_info,

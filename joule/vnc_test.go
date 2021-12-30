@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"aeolustec.com/capclient/cap"
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 	"github.com/google/go-cmp/cmp"
 )
@@ -21,6 +22,8 @@ func (tpf TestPortFinder) FindPort() (int, error) {
 
 func TestVncTab(t *testing.T) {
 	a := test.NewApp()
+	var co fyne.CanvasObject
+	w := test.NewWindow(co)
 
 	t.Run("Vnc Refresh Sessions", func(t *testing.T) {
 		conn := NewFakeVncConnection(t, map[string]string{
@@ -30,7 +33,7 @@ func TestVncTab(t *testing.T) {
 			"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
 		})
 
-		vncTab := newVncTab(a, conn, &SpyRunner{}, &TestPortFinder{})
+		vncTab := newVncTab(a, w, conn, &SpyRunner{}, &TestPortFinder{})
 
 		want := 0
 		got := vncTab.sessions.Length()
@@ -50,7 +53,7 @@ func TestVncTab(t *testing.T) {
 	t.Run("Vnc New Session", func(t *testing.T) {
 		var conn cap.Connection
 		// conn.sessions = []cap.Session{init_session}
-		vncTab := newVncTab(a, &conn, &SpyRunner{}, &TestPortFinder{})
+		vncTab := newVncTab(a, w, &conn, &SpyRunner{}, &TestPortFinder{})
 
 		want := 0
 		got := vncTab.sessions.Length()
@@ -64,6 +67,8 @@ func TestVncTab(t *testing.T) {
 
 func TestNewSessionDialog(t *testing.T) {
 	a := test.NewApp()
+	var co fyne.CanvasObject
+	w := test.NewWindow(co)
 
 	default_rezs := []string{
 		"800x600",
@@ -88,7 +93,7 @@ func TestNewSessionDialog(t *testing.T) {
 			Starting applications specified in /nfs/home/3/mmeredith/.vnc/xstartup.turbovnc
 			Log file is /nfs/home/3/mmeredith/.vnc/login03.super:22.log`,
 		})
-		vncTab := newVncTab(a, conn, &SpyRunner{}, &TestPortFinder{})
+		vncTab := newVncTab(a, w, conn, &SpyRunner{}, &TestPortFinder{})
 		vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), default_rezs)
 		last_index := len(vsf.preset_select.Options) - 1
 		vsf.preset_select.SetSelectedIndex(last_index)
@@ -129,7 +134,7 @@ func TestNewSessionDialog(t *testing.T) {
 			Log file is /nfs/home/3/mmeredith/.vnc/login03.super:22.log`,
 		})
 
-		vncTab := newVncTab(a, conn, &SpyRunner{}, &TestPortFinder{})
+		vncTab := newVncTab(a, w, conn, &SpyRunner{}, &TestPortFinder{})
 		vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), default_rezs)
 		vsf.xres_entry.SetText("999")
 		vsf.yres_entry.SetText("555")
@@ -155,6 +160,9 @@ func TestNewSessionDialog(t *testing.T) {
 }
 
 func TestVncConnect(t *testing.T) {
+	var co fyne.CanvasObject
+	w := test.NewWindow(co)
+
 	conn := NewFakeVncConnection(t, map[string]string{
 		"hostname": "the_hostname",
 		`ping -c 1 the_hostname| grep PING|awk '{print $3}'| sed "s/(//"|sed "s/)//"`: "1.2.3.4",
@@ -162,7 +170,7 @@ func TestVncConnect(t *testing.T) {
 		"ps auxnww|grep Xvnc|grep -v grep":                                            `8227 27248  0.0  0.0  92620 70572 ?        S    Aug03   0:234 /nfs/apps/TurboVNC/2.0.2/bin/Xvnc :123 -desktop TurboVNC: login03:5 (the_user) -auth /nfs/home/3/mmeredith/.Xauthority -dontdisconnect -geometry 3840x2160 -depth 24 -rfbwait 120000 -otpauth -pamauth -rfbport 5905 -fp catalogue:/etc/X11/fontpath.d -deferupdate 1`,
 		"vncpasswd -o -display 1.2.3.4:123":                                           "Full control one-time password: 17760704",
 	})
-	vncTab := newVncTab(test.NewApp(), conn, &SpyRunner{}, &TestPortFinder{})
+	vncTab := newVncTab(test.NewApp(), w, conn, &SpyRunner{}, &TestPortFinder{})
 	vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), make([]string, 0))
 
 	vncTab.refresh()
