@@ -165,10 +165,7 @@ func TestVncConnect(t *testing.T) {
 	vncTab := newVncTab(test.NewApp(), conn, &SpyRunner{}, &TestPortFinder{})
 	vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), make([]string, 0))
 
-	err := vncTab.refresh()
-	if err != nil {
-		t.Fatal(err)
-	}
+	vncTab.refresh()
 
 	last_index := len(vsf.preset_select.Options) - 1
 	vsf.preset_select.SetSelectedIndex(last_index)

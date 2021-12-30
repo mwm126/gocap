@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
@@ -96,17 +97,14 @@ func (vt *VncTab) Close() {
 	vt.closed = true
 }
 
-func (vt *VncTab) refresh() error {
-	for !vt.closed {
-		sessions, err := vt.connection.FindSessions()
-		if err != nil {
-			log.Println("Warning - unable to refresh: ", err)
-		}
-		vt.sessions.Set(sessions)
-		vt.List.Refresh()
-		return err
+func (vt *VncTab) refresh() {
+	time.Sleep(1 * time.Second)
+	sessions, err := vt.connection.FindSessions()
+	if err != nil {
+		log.Println("Warning - unable to refresh: ", err)
 	}
-	return nil
+	vt.sessions.Set(sessions)
+	vt.List.Refresh()
 }
 
 func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFinder) *VncTab {
@@ -169,6 +167,10 @@ func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFi
 			t.list_items[session] = box
 		})
 
+	go func() {
+		t.refresh()
+	}()
+
 	t.new_btn = widget.NewButton("New VNC Session", t.showNewVncSessionDialog)
 	vcard := widget.NewCard("GUI", "List of VNC Sessions", t.new_btn)
 	box := container.NewBorder(vcard, nil, nil, nil, t.List)
@@ -218,10 +220,7 @@ func (t *VncTab) NewVncSessionForm(win fyne.Window, rezs []string) *VncSessionFo
 				log.Println("Could not create VNC session: ", err)
 				return
 			}
-			err = t.refresh()
-			if err != nil {
-				log.Println("Could not refresh VNC sessions: ", err)
-			}
+			t.refresh()
 		},
 		OnCancel:   func() { win.Close() },
 		SubmitText: "Create Session",
