@@ -188,9 +188,8 @@ func (c *Connection) KillVncSession(display string) error {
 	text, err := c.client.CleanExec(fmt.Sprintf("vncserver -kill %s", display))
 	if err != nil {
 		log.Println("Error killing vncserver; response: ", text)
-		return err
 	}
-	return nil
+	return err
 }
 
 func parseSessions(username, text string) []Session {
