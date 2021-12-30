@@ -168,7 +168,9 @@ func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFi
 		})
 
 	go func() {
-		t.refresh()
+		for !t.closed {
+			t.refresh()
+		}
 	}()
 
 	t.new_btn = widget.NewButton("New VNC Session", t.showNewVncSessionDialog)
