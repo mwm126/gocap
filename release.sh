@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TAG=v21.12.29
+TAG=v21.12.30
 TITLE="CAP Client Release ${TAG}"
 NOTES="VNC functionality"
 
