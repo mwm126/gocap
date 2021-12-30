@@ -190,7 +190,7 @@ func TestVncConnect(t *testing.T) {
 func TestVncCmd(t *testing.T) {
 	cmd := VncCmd("/path/to/vncviewer", "xyz", 123)
 
-	want := "/path/to/vncviewer 127.0.0.1::123 -Password='xyz'"
+	want := "/path/to/vncviewer 127.0.0.1::123 -Password=xyz"
 	got := cmd.String()
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Mismatch: %s", diff)
