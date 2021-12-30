@@ -1,6 +1,8 @@
 package ssh
 
 import (
+	"fmt"
+
 	"aeolustec.com/capclient/cap"
 
 	"log"
@@ -13,7 +15,7 @@ func run_ssh(conn *cap.Connection) {
 		"x-terminal-emulator",
 		"--",
 		"ssh",
-		"localhost",
+		fmt.Sprintf("%s@%s", conn.GetUsername(), "localhost"),
 		"-p",
 		strconv.Itoa(cap.SSH_LOCAL_PORT),
 	)
