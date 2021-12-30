@@ -38,7 +38,7 @@ func TestVncTab(t *testing.T) {
 			t.Error("Initially # of sessions should be 0 but was: ", vncTab.sessions.Length())
 		}
 
-		test.Tap(vncTab.refresh_btn)
+		vncTab.refresh()
 
 		want = 1
 		got = vncTab.sessions.Length()
@@ -165,10 +165,7 @@ func TestVncConnect(t *testing.T) {
 	vncTab := newVncTab(test.NewApp(), conn, &SpyRunner{}, &TestPortFinder{})
 	vsf := vncTab.NewVncSessionForm(test.NewWindow(nil), make([]string, 0))
 
-	err := vncTab.refresh()
-	if err != nil {
-		t.Fatal(err)
-	}
+	vncTab.refresh()
 
 	last_index := len(vsf.preset_select.Options) - 1
 	vsf.preset_select.SetSelectedIndex(last_index)
@@ -182,7 +179,7 @@ func TestVncConnect(t *testing.T) {
 
 	test.Tap(connect_btn)
 
-	want := "/path/to/vncviewer 127.0.0.1::54321 -Password='17760704'"
+	want := "/path/to/vncviewer 127.0.0.1::54321 -Password=17760704"
 
 	got := vncTab.VncRunner.(*SpyRunner).calls[0].String()
 	if diff := cmp.Diff(want, got); diff != "" {

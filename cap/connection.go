@@ -114,26 +114,11 @@ func (c Connection) Close() {
 	c.client.Close()
 }
 
-// func readSessionManagerSecret(client Client) string {
-//	command := "chmod 0400 ~/.sessionManager;cat ~/.sessionManager"
-//	out, err := CleanExec(client, command)
-
-//	if err == nil {
-//		log.Println("Reading .sessionManager secret")
-//		return out
-//	}
-
-//	log.Println("Error:  ", err)
-//	log.Println("Creating new .sessionManager secret")
-//	command = `dd if=/dev/urandom bs=1 count=1024|sha256sum|
-//                awk \x27{print $1}\x27> ~/.sessionManager;
-//                cat ~/.sessionManager;chmod 0400 ~/.sessionManager`
-//	out, err = CleanExec(client, command)
-//	return out
-// }
-
 func (c *Connection) FindSessions() ([]Session, error) {
 	sessions := make([]Session, 0, 10)
+	if c.client == nil {
+		return sessions, errors.New("Client missing")
+	}
 	text, err := c.client.CleanExec("ps auxnww|grep Xvnc|grep -v grep")
 	if err != nil {
 		return sessions, errors.New("Unable to find sessions")
@@ -237,13 +222,17 @@ func (s Session) RemoveListener(listener binding.DataListener) {
 }
 
 func parseVncLine(line string) (Session, error) {
+	var session Session
 	fields := strings.Fields(line)
+	if len(fields) < 15 {
+		return session, errors.New("Parse error")
+	}
 	username := fields[15][1 : len(fields[15])-1]
 	port, err := strconv.Atoi(get_field(fields, "-rfbport"))
 	if err != nil {
 		return Session{}, err
 	}
-	session := Session{
+	session = Session{
 		Username:      username,
 		DisplayNumber: fields[11],
 		Geometry:      get_field(fields, "-geometry"),

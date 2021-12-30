@@ -16,6 +16,7 @@ type JouleTab struct {
 	app    fyne.App
 	Tabs   *container.AppTabs
 	CapTab *login.CapTab
+	vncTab *VncTab
 }
 
 func NewJouleConnected(
@@ -34,15 +35,20 @@ func NewJouleConnected(
 			func(conn *cap.Connection) {
 				joule_tab.Connect(conn)
 			}, cont, login_info),
+		nil,
 	}
 	return joule_tab
 }
 
 func (t *JouleTab) Connect(conn *cap.Connection) {
-	homeTab := newJouleHome(t.CapTab.CloseConnection)
+	homeTab := newJouleHome(
+		func() {
+			t.vncTab.Close()
+			t.CapTab.CloseConnection()
+		})
 	sshTab := ssh.NewSsh(conn)
-	vncTab := newVncTab(t.app, conn, &ExeRunner{}, FreePortFinder{})
-	vncTabItem := vncTab.TabItem
+	t.vncTab = newVncTab(t.app, conn, &ExeRunner{}, FreePortFinder{})
+	vncTabItem := t.vncTab.TabItem
 
 	cfg := config.GetConfig()
 	fwdTab := forwards.NewPortForwardTab(t.app, cfg.Joule_Forwards, func(fwds []string) {
