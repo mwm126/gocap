@@ -3,7 +3,7 @@ set -euo pipefail
 
 TAG=v21.12.29
 TITLE="CAP Client Release ${TAG}"
-NOTES="Password change dialog"
+NOTES="VNC functionality"
 
 function build_linux {
     docker build .fyne-cross/linux/ -t capclient-linux
