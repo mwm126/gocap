@@ -16,6 +16,7 @@ import (
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -86,6 +87,7 @@ type VncTab struct {
 	VncRunner  VncRunner
 	list_items map[cap.Session]*fyne.Container
 	app        fyne.App
+	window     fyne.Window
 	connection *cap.Connection
 	new_btn    *widget.Button
 	sessions   *ItemList
@@ -107,11 +109,12 @@ func (vt *VncTab) refresh() {
 	vt.List.Refresh()
 }
 
-func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFinder) *VncTab {
+func newVncTab(a fyne.App, w fyne.Window, conn *cap.Connection, vnc_runner VncRunner, pf PortFinder) *VncTab {
 	t := VncTab{
 		list_items: make(map[cap.Session]*fyne.Container),
 		VncRunner:  vnc_runner,
 		app:        a,
+		window:     w,
 		connection: conn,
 		sessions:   &ItemList{},
 		PortFinder: pf,
@@ -151,7 +154,7 @@ func newVncTab(a fyne.App, conn *cap.Connection, vnc_runner VncRunner, pf PortFi
 				connect_btn.Enable()
 			}
 			delete_btn := widget.NewButton("Kill", func() {
-				KillSession(conn, connect_btn.session.Username, connect_btn.session.DisplayNumber)
+				t.KillSession(conn, connect_btn.session.DisplayNumber)
 			})
 			return container.NewHBox(connect_btn, label, delete_btn)
 		},
@@ -308,7 +311,19 @@ func decryptOTP(nonce, encOTP []byte) *string {
 	return &decOTP
 }
 
-func KillSession(conn *cap.Connection, otp, displayNumber string) {
+func (t VncTab) KillSession(conn *cap.Connection, displayNumber string) {
+	msg := fmt.Sprintf("Are you sure you want to delete session %s? All unsaved data will be lost", displayNumber)
+	confirm_kill := dialog.NewConfirm("Kill Session?", msg, func(confirmed bool) {
+		if confirmed {
+			err := conn.KillVncSession(displayNumber)
+			if err != nil {
+				log.Println("Error killing session: ", err)
+			}
+		}
+	},
+		t.window,
+	)
+	confirm_kill.Show()
 }
 
 func doRunVnc(vncviewer_p, otp, displayNumber string, localPort int) {

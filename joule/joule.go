@@ -14,6 +14,7 @@ import (
 
 type JouleTab struct {
 	app    fyne.App
+	window fyne.Window
 	Tabs   *container.AppTabs
 	CapTab *login.CapTab
 	vncTab *VncTab
@@ -21,6 +22,7 @@ type JouleTab struct {
 
 func NewJouleConnected(
 	app fyne.App,
+	w fyne.Window,
 	service login.Service,
 	conn_man *cap.ConnectionManager,
 	login_info login.LoginInfo) JouleTab {
@@ -30,6 +32,7 @@ func NewJouleConnected(
 
 	joule_tab = JouleTab{
 		app,
+		w,
 		tabs,
 		login.NewCapTab("Joule", "NETL SuperComputer", service, conn_man,
 			func(conn *cap.Connection) {
@@ -47,7 +50,7 @@ func (t *JouleTab) Connect(conn *cap.Connection) {
 			t.CapTab.CloseConnection()
 		})
 	sshTab := ssh.NewSsh(conn)
-	t.vncTab = newVncTab(t.app, conn, &ExeRunner{}, FreePortFinder{})
+	t.vncTab = newVncTab(t.app, t.window, conn, &ExeRunner{}, FreePortFinder{})
 	vncTabItem := t.vncTab.TabItem
 
 	cfg := config.GetConfig()

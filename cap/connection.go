@@ -184,6 +184,15 @@ func (c *Connection) startVncSession(sizeX string, sizeY string) (string, string
 	return otp, displayNumber, nil
 }
 
+func (c *Connection) KillVncSession(display string) error {
+	text, err := c.client.CleanExec(fmt.Sprintf("vncserver -kill %s", display))
+	if err != nil {
+		log.Println("Error killing vncserver; response: ", text)
+		return err
+	}
+	return nil
+}
+
 func parseSessions(username, text string) []Session {
 	sessions := make([]Session, 0, 10)
 	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
