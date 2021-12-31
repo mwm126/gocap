@@ -55,13 +55,6 @@ func NewClient(
 ) *Client {
 	var client Client
 
-	about_tab := container.NewTabItemWithIcon(
-		"About",
-		theme.HomeIcon(),
-		widget.NewLabel(
-			"The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.",
-		),
-	)
 	service := login.Service{ // TODO: placeholder for real ServiceList service
 		Name:    "ServiceList",
 		CapPort: 62201,
@@ -74,7 +67,6 @@ func NewClient(
 	}
 
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
-	tabs := container.NewAppTabs(about_tab)
 
 	uname, pword, _ := login.GetSavedLogin()
 	login_tab := login.NewLoginTab(
@@ -88,42 +80,58 @@ func NewClient(
 		pword,
 	)
 
-	tabs.Append(login_tab.Tab)
-
-	tabs.SetTabLocation(container.TabLocationLeading)
-
-	w.SetContent(tabs)
-
-	client = Client{conn_man, tabs, w, a, login_tab}
+	client = Client{conn_man, nil, w, a, login_tab}
+	client.setupServices(nil, make([]login.Service, 0))
 	return &client
 }
 
-func (client *Client) setupServices(login_info login.LoginInfo, services []login.Service) {
-	for _, service := range services {
-		if service.Name == "joule" {
-			joule := joule.NewJouleConnected(
-				client.app,
-				client.window,
-				service,
-				client.connectionManager,
-				login_info,
-			)
-			client.Tabs.Append(joule.CapTab.Tab)
-		}
-		if service.Name == "watt" {
-			watt := watt.NewWattConnected(client.app, service, client.connectionManager, login_info)
-			client.Tabs.Append(watt.CapTab.Tab)
-		}
-		if service.Name == "fe261" {
-			fe261 := fe261.NewFe261Connected(
-				client.app,
-				service,
-				client.connectionManager,
-				login_info,
-			)
-			client.Tabs.Append(fe261.CapTab.Tab)
+func (client *Client) setupServices(login_info *login.LoginInfo, services []login.Service) {
+	about_tab := container.NewTabItemWithIcon(
+		"About",
+		theme.HomeIcon(),
+		widget.NewLabel(
+			"The CAP client is used for connecting to Joule, Watt, and other systems using the CAP protocol.",
+		),
+	)
+
+	tabs := container.NewAppTabs(about_tab)
+	tabs.SetTabLocation(container.TabLocationLeading)
+
+	if login_info == nil {
+		tabs.Append(client.LoginTab.Tab)
+	} else {
+		for _, service := range services {
+			if service.Name == "joule" {
+				joule := joule.NewJouleConnected(
+					client.app,
+					client.window,
+					service,
+					client.connectionManager,
+					*login_info,
+				)
+				tabs.Append(joule.CapTab.Tab)
+			}
+			if service.Name == "watt" {
+				watt := watt.NewWattConnected(
+					client.app,
+					service,
+					client.connectionManager,
+					*login_info,
+				)
+				tabs.Append(watt.CapTab.Tab)
+			}
+			if service.Name == "fe261" {
+				fe261 := fe261.NewFe261Connected(
+					client.app,
+					service,
+					client.connectionManager,
+					*login_info,
+				)
+				tabs.Append(fe261.CapTab.Tab)
+			}
 		}
 	}
+	client.Tabs = tabs
 	client.window.SetContent(client.Tabs)
 }
 

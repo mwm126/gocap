@@ -20,7 +20,7 @@ func NewLoginTab(tabname,
 	desc string,
 	service Service,
 	conn_man *cap.ConnectionManager,
-	login_cb func(LoginInfo, []Service),
+	login_cb func(*LoginInfo, []Service),
 	connected *fyne.Container,
 	username, password string) *LoginTab {
 
@@ -38,7 +38,7 @@ func NewLoginTab(tabname,
 		if err != nil {
 			log.Println("Could not find services: ", err)
 		}
-		login_cb(linfo, services)
+		login_cb(&linfo, services)
 
 	}, username, password)
 	tab.connection_manager.AddYubikeyCallback(tab.LoginForm.setEnabled)

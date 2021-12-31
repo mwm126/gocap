@@ -61,14 +61,14 @@ func TestClient(t *testing.T) {
 		watt  bool
 		ntabs int
 	}{
-		{"none", false, false, false, 2},
-		{"w", false, false, true, 3},
-		{"j", false, true, false, 3},
-		{"f", true, false, false, 3},
-		{"fj", true, true, false, 4},
-		{"fw", true, false, true, 4},
-		{"jw", false, true, true, 4},
-		{"fjw", true, true, true, 5},
+		{"none", false, false, false, 1},
+		{"w", false, false, true, 2},
+		{"j", false, true, false, 2},
+		{"f", true, false, false, 2},
+		{"fj", true, true, false, 3},
+		{"fw", true, false, true, 3},
+		{"jw", false, true, true, 3},
+		{"fjw", true, true, true, 4},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
@@ -93,7 +93,10 @@ func TestClient(t *testing.T) {
 			client := NewClient(a, w, cfg, conn_man)
 
 			test.Tap(client.LoginTab.LoginForm.LoginButton)
-			client.setupServices(login.LoginInfo{Network: "", Username: "", Password: ""}, services)
+			client.setupServices(
+				&login.LoginInfo{Network: "", Username: "", Password: ""},
+				services,
+			)
 
 			if got := len(client.Tabs.Items); got != tc.ntabs {
 				t.Errorf("Got %d; want %d", got, tc.ntabs)

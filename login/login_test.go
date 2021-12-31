@@ -104,10 +104,10 @@ func TestLoginTab(t *testing.T) {
 	conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
 	tabs := container.NewAppTabs()
 	login_tab := NewLoginTab("Login", "NETL SuperComputer", service, conn_man,
-		func(login_info LoginInfo, services []Service) {
+		func(login_info *LoginInfo, services []Service) {
 			ct := NewCapTab("test tab", "for testing", Service{},
 				conn_man, func(cap *cap.Connection) {},
-				connctd, login_info)
+				connctd, *login_info)
 			tabs.Append(ct.Tab)
 			w.SetContent(tabs)
 		}, connctd, "", "")

@@ -109,7 +109,13 @@ func (vt *VncTab) refresh() {
 	vt.List.Refresh()
 }
 
-func newVncTab(a fyne.App, w fyne.Window, conn *cap.Connection, vnc_runner VncRunner, pf PortFinder) *VncTab {
+func newVncTab(
+	a fyne.App,
+	w fyne.Window,
+	conn *cap.Connection,
+	vnc_runner VncRunner,
+	pf PortFinder,
+) *VncTab {
 	t := VncTab{
 		list_items: make(map[cap.Session]*fyne.Container),
 		VncRunner:  vnc_runner,
@@ -312,7 +318,10 @@ func decryptOTP(nonce, encOTP []byte) *string {
 }
 
 func (t VncTab) KillSession(conn *cap.Connection, displayNumber string) {
-	msg := fmt.Sprintf("Are you sure you want to delete session %s? All unsaved data will be lost", displayNumber)
+	msg := fmt.Sprintf(
+		"Are you sure you want to delete session %s? All unsaved data will be lost",
+		displayNumber,
+	)
 	confirm_kill := dialog.NewConfirm("Kill Session?", msg, func(confirmed bool) {
 		if confirmed {
 			err := conn.KillVncSession(displayNumber)
