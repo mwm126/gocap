@@ -17,6 +17,14 @@ brew install go gh
 sudo apt install golang gcc libgl1-mesa-dev xorg-dev
 ```
 
+### Windows
+
+TODO
+
+Run development build in MSYS2 environment
+
+## Generate
+
 Run `go generate` to download embedded dependencies (Yubikey Personalization, Putty.exe, etc.)
 
 ```
@@ -30,8 +38,23 @@ This only needs to be done once (unless the files in `cap/embeds` are deleted)
 To build and run for development:
 
 ```
-go run client.go
+go run .
 ```
+
+
+## Run (demo)
+
+You can also run a demo version of the client, which runs a local SSH server for
+testing with dummy data (Lorem Ipsum Etcetera) in order to demonstrate the
+interface. This does not require a Yubikey.
+
+To build and run the interface demo:
+
+```
+go run demo/main.go
+```
+
+
 
 ## Release
 

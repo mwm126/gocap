@@ -8,7 +8,7 @@ import (
 	"aeolustec.com/capclient/cap/sshtunnel"
 )
 
-type ClientFactory func(server net.IP, user, pass string) (Client, error)
+type ClientFactory func(server net.IP, user, pass, port string) (Client, error)
 
 type ConnectionManager struct {
 	clientFactory      ClientFactory
@@ -33,19 +33,20 @@ func (cm *ConnectionManager) Connect(
 	user, pass string,
 	ext_addr,
 	server net.IP,
-	port uint,
+	cap_port uint,
+	ssh_port string,
 	request_password func(Client),
 	ch chan string) (*Connection, error) {
 
 	log.Println("Opening SSH Connection...", cm.knocker.Yubikey)
-	err := cm.knocker.Knock(user, ext_addr, server, port)
+	err := cm.knocker.Knock(user, ext_addr, server, cap_port)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Println("Going to SSHClient.connect() to ", server, " with ", user)
 
-	client, err := cm.clientFactory(server, user, pass)
+	client, err := cm.clientFactory(server, user, pass, ssh_port)
 	if err != nil {
 		log.Println("Could not connect to", server, err)
 		return nil, err

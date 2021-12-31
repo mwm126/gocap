@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func NewFakeClient(server net.IP, user, pass string) (Client, error) {
+func NewFakeClient(server net.IP, user, pass, port string) (Client, error) {
 	client := FakeClient{}
 	return &client, nil
 }
@@ -86,6 +86,7 @@ func _TestCapConnection(t *testing.T) {
 		ext_ip,
 		server,
 		123,
+		"22",
 		func(pwc Client) {},
 		ch,
 	)
