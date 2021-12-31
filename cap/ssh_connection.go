@@ -36,7 +36,7 @@ func (sc sshClient) CleanExec(cmd string) (string, error) {
 	return string(b), err
 }
 
-func NewSshClient(server net.IP, user, pass string) (Client, error) {
+func NewSshClient(server net.IP, user, pass, port string) (Client, error) {
 
 	// var hostKey ssh.PublicKey
 	config := &ssh.ClientConfig{
@@ -47,7 +47,7 @@ func NewSshClient(server net.IP, user, pass string) (Client, error) {
 		// HostKeyCallback: ssh.FixedHostKey(hostKey),
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	host := fmt.Sprintf("%s:%s", server, "22")
+	host := fmt.Sprintf("%s:%s", server, port)
 	client, err := ssh.Dial("tcp", host, config)
 	if err != nil {
 		return nil, err

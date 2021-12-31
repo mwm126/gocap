@@ -5,6 +5,7 @@ go 1.16
 require (
 	fyne.io/fyne/v2 v2.1.1
 	github.com/beevik/ntp v0.3.0
+	github.com/folbricht/sshtest v0.1.0 // indirect
 	github.com/glendc/go-external-ip v0.0.0-20200601212049-c872357d968e
 	github.com/google/go-cmp v0.5.6
 	github.com/pelletier/go-toml v1.9.3

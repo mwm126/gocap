@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func NewFakeClient(server net.IP, user, pass string) (cap.Client, error) {
+func NewFakeClient(server net.IP, user, pass, port string) (cap.Client, error) {
 	client := FakeClient{}
 	return &client, nil
 }

@@ -66,6 +66,7 @@ func (c *LoginCard) handle_login(
 		ext_ip,
 		srv_ip,
 		service.CapPort,
+		service.SshPort,
 		func(client cap.Client) { c.Card.SetContent(c.change_password) },
 		c.connectionManager.NewPasswordChannel,
 	)
