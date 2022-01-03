@@ -40,17 +40,30 @@ func main() {
 	testserver, sshport := startSshServer()
 	capport := sshport // doesn't matter; ignored anyway
 
-	services := []login.Service{{
-		Name:    "joule",
-		CapPort: uint(capport),
-		SshPort: strconv.Itoa(sshport),
-		Networks: map[string]login.Network{
-			"external": {
-				ClientExternalAddress: "127.0.0.1",
-				CapServerAddress:      "127.0.0.1",
+	services := []login.Service{
+		{
+			Name:    "joule",
+			CapPort: uint(capport),
+			SshPort: strconv.Itoa(sshport),
+			Networks: map[string]login.Network{
+				"external": {
+					ClientExternalAddress: "127.0.0.1",
+					CapServerAddress:      "127.0.0.1",
+				},
 			},
 		},
-	}}
+		{
+			Name:    "watt",
+			CapPort: uint(capport),
+			SshPort: strconv.Itoa(sshport),
+			Networks: map[string]login.Network{
+				"external": {
+					ClientExternalAddress: "127.0.0.1",
+					CapServerAddress:      "127.0.0.1",
+				},
+			},
+		},
+	}
 	err := login.InitServices(&services)
 	if err != nil {
 		log.Println("Could not contact Service List server:", err)

@@ -59,7 +59,7 @@ func (t *JouleTab) Connect(conn *cap.Connection) {
 		config.SaveForwards(fwds)
 	})
 
-	t.Tabs.SetItems([]*container.TabItem{homeTab, sshTab, vncTabItem, fwdTab.TabItem})
+	t.Tabs.SetItems([]*container.TabItem{homeTab, vncTabItem, sshTab, fwdTab.TabItem})
 }
 
 func newJouleHome(close_cb func()) *container.TabItem {
