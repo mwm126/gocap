@@ -31,7 +31,7 @@ Run `go generate` to download embedded dependencies (Yubikey Personalization, Pu
 go generate ./...
 ```
 
-This only needs to be done once (unless the files in `cap/embeds` are deleted)
+This only needs to be done once (unless the files are deleted, such as with `git clean`)
 
 ## Run
 
