@@ -7,6 +7,7 @@ NOTES="VNC functionality"
 UNAME_S=$(uname -s)
 ASSETS=""
 
+
 function main {
     build_linux
     build_mac
@@ -73,5 +74,6 @@ function build_windows {
     mv fyne-cross/dist/windows-amd64/capclient.exe.zip ${ASSET_WINDOWS}
     ASSETS="${ASSETS} ${ASSET_WINDOWS}"
 }
+
 
 main
