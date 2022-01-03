@@ -43,7 +43,7 @@ func (t *WattTab) Connect(conn *cap.Connection) {
 	homeTab := newWattHome(t.CapTab.CloseConnection)
 	sshTab := ssh.NewSsh(conn)
 
-	instanceTab := NewInstanceTab()
+	instanceTab := NewInstanceTab(conn.GetClient())
 
 	cfg := config.GetConfig()
 	fwdTab := forwards.NewPortForwardTab(t.app, cfg.Watt_Forwards, func(fwds []string) {

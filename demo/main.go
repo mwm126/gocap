@@ -90,18 +90,14 @@ func startSshServer() (*sshtest.Server, int) {
 	server.Config.AddHostKey(hostKey)
 	server.Handler = func(ch ssh.Channel, in <-chan *ssh.Request) {
 		defer ch.Close()
-
-		// Read a request from the client
 		req, ok := <-in
 		if !ok {
 			return
 		}
 		fmt.Printf("Received '%s' request from client", req.Type)
+		response := demoReplies()[string(req.Payload)]
 
-		// Reply with a string
-		req.Reply(true, []byte("Hello client"))
-
-		// Let the client know the command completed successfuly (status=0)
+		req.Reply(true, []byte(response))
 		sshtest.SendStatus(ch, 0)
 	}
 
@@ -115,6 +111,12 @@ func startSshServer() (*sshtest.Server, int) {
 		panic(err)
 	}
 	return server, portnum
+}
+
+func demoReplies() map[string]string {
+	return map[string]string{
+		"env OS_PROJECT_NAME=%s openstack server list -f csv": "STUFFFFFF",
+	}
 }
 
 // Client represents the Main window of CAP client
