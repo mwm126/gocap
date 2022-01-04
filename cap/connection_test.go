@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func NewFakeClient(server net.IP, user, pass, port string) (Client, error) {
+func NewFakeClient(server net.IP, user, pass string, port uint) (Client, error) {
 	client := FakeClient{}
 	return &client, nil
 }
