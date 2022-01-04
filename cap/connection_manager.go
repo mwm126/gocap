@@ -8,7 +8,7 @@ import (
 	"aeolustec.com/capclient/cap/sshtunnel"
 )
 
-type ClientFactory func(server net.IP, user, pass, port string) (Client, error)
+type ClientFactory func(server net.IP, user, pass string, port uint) (Client, error)
 
 type ConnectionManager struct {
 	clientFactory      ClientFactory
@@ -34,7 +34,7 @@ func (cm *ConnectionManager) Connect(
 	ext_addr,
 	server net.IP,
 	cap_port uint,
-	ssh_port string,
+	ssh_port uint,
 	request_password func(Client),
 	ch chan string) (*Connection, error) {
 

@@ -4,7 +4,7 @@
             "name": "joule",
             "forwards": [],
             "capport": 62201,
-            "sshport": "22",
+            "sshport": 22,
             "networks": {
                 "alb_admin": {
                     "client_external_address": "198.99.249.252",
@@ -70,8 +70,8 @@
                 "6082:192.168.101.200:6082",
                 "10080:192.168.101.200:80"
             ],
-            "port": 62201,
-            "sshport": "22",
+            "capport": 62201,
+            "sshport": 22,
             "networks": {
                 "alb_admin": {
                     "client_external_address": "198.99.249.252",

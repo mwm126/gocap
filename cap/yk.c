@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 #include <unistd.h>
 
 #include <ykcore.h>
@@ -104,133 +105,6 @@ static void report_yk_error(void) {
 
 extern int optind;
 
-static int parse_args(int argc, char **argv, int *slot, bool *verbose,
-                      unsigned char **challenge, unsigned int *challenge_len,
-                      bool *hmac, bool *may_block, bool *totp, int *digits,
-                      int *exit_code, int *key_index) {
-  int c;
-  bool hex_encoded = false;
-  FILE *input = NULL;
-
-  while ((c = getopt(argc, argv, optstring)) != -1) {
-    switch (c) {
-    case '1':
-      *slot = 1;
-      break;
-    case '2':
-      *slot = 2;
-      break;
-    case 'H':
-      *hmac = true;
-      break;
-    case 'N':
-      *may_block = false;
-      break;
-    case 't':
-      *totp = true;
-      *hmac = true;
-      break;
-    case '6':
-      *digits = 6;
-      break;
-    case '8':
-      *digits = 8;
-      break;
-    case 'Y':
-      *hmac = false;
-      *totp = false;
-      break;
-    case 'x':
-      hex_encoded = true;
-      break;
-    case 'v':
-      *verbose = true;
-      break;
-    case 'i':
-      if (strcmp(optarg, "-") != 0) {
-        input = fopen(optarg, "r");
-      } else {
-        input = stdin;
-      }
-      break;
-    case 'n':
-      *key_index = atoi(optarg);
-      break;
-    case 'V':
-      fputs(YKPERS_VERSION_STRING "\n", stderr);
-      *exit_code = 0;
-      return 0;
-    case 'h':
-    default:
-      fputs(usage, stderr);
-      *exit_code = 0;
-      return 0;
-    }
-  }
-
-  if ((optind >= argc && !*totp && !input) ||
-      (optind < argc && *totp && input)) {
-    fprintf(stderr, "No challenge.\n");
-    fputs(usage, stderr);
-    return 0;
-  }
-  if (*totp && *hmac) {
-    unsigned int t_counter;
-    static unsigned char t_buf[8];
-    t_counter = (int)time(NULL);
-    t_counter = t_counter / 30;
-    memset(t_buf, 0, sizeof(t_buf));
-    t_buf[7] = t_counter & 0x000000ff;
-    t_buf[6] = (t_counter & 0x0000ff00) >> 8;
-    t_buf[5] = (t_counter & 0x00ff0000) >> 16;
-    t_buf[4] = (t_counter & 0xff000000) >> 24;
-    *challenge = (unsigned char *)&t_buf;
-    *challenge_len = 8;
-  } else if (input) {
-    static unsigned char buf[65] = {0};
-    size_t len = fread(buf, 1, 64, input);
-    if (input != stdin) {
-      fclose(input);
-    }
-    if (len == 0) {
-      fprintf(stderr, "Failed to read any data from file.\n");
-      return 0;
-    }
-    *challenge = buf;
-    *challenge_len = len;
-  } else {
-    *challenge = (unsigned char *)argv[optind];
-    *challenge_len = strlen(argv[optind]);
-  }
-
-  if (hex_encoded) {
-    static unsigned char decoded[SHA1_MAX_BLOCK_SIZE];
-
-    if (*challenge_len > sizeof(decoded) * 2) {
-      fprintf(stderr, "Hex-encoded challenge too long (max %zu chars)\n",
-              sizeof(decoded) * 2);
-      return 0;
-    }
-
-    if (*challenge_len % 2 != 0) {
-      fprintf(stderr, "Odd number of characters in hex-encoded challenge\n");
-      return 0;
-    }
-
-    memset(decoded, 0, sizeof(decoded));
-
-    if (yubikey_hex_p((char *)*challenge)) {
-      yubikey_hex_decode((char *)decoded, (char *)*challenge, sizeof(decoded));
-    } else {
-      fprintf(stderr, "Bad hex-encoded string '%s'\n", (char *)*challenge);
-      return 0;
-    }
-    *challenge = (unsigned char *)&decoded;
-    *challenge_len /= 2;
-  }
-
-  return 1;
-}
 
 static int check_firmware(YK_KEY *yk, bool verbose) {
   YK_STATUS *st = ykds_alloc();
@@ -322,7 +196,7 @@ static int challenge_response(YK_KEY *yk, int slot, unsigned char *challenge,
   return 1;
 }
 
-int the_main(int argc, char **argv, char result[1000]) {
+int the_main(char result[1000], int slot, char hmac, unsigned int challenge_len, unsigned char *challenge) {
   _buffer = result;
   YK_KEY *yk = 0;
   bool error = true;
@@ -330,22 +204,13 @@ int the_main(int argc, char **argv, char result[1000]) {
 
   /* Options */
   bool verbose = false;
-  bool hmac = true;
   bool may_block = true;
-  bool totp = false;
   int digits = 0;
-  unsigned char *challenge;
-  unsigned int challenge_len;
-  int slot = 1;
   int key_index = 0;
 
   yk_errno = 0;
 
   optind = 0;
-  if (!parse_args(argc, argv, &slot, &verbose, &challenge, &challenge_len,
-                  &hmac, &may_block, &totp, &digits, &exit_code, &key_index)) {
-    return exit_code;
-  }
 
   if (!yk_init()) {
     exit_code = 1;
