@@ -9,7 +9,6 @@ import "C"
 import (
 	"encoding/hex"
 	"errors"
-	"log"
 	"strings"
 )
 
@@ -21,25 +20,17 @@ func run_yk_info() (int32, error) {
 	return int32(serial), nil
 }
 
-func run_yk_chalresp(chal string) ([16]byte, error) {
-	log.Println("chalGostring: ", chal)
+func run_yk_chalresp(chall [6]byte) ([16]byte, error) {
 	var otp [16]byte
 	var buffer [1000]C.char
 
-	argv := [5](*C.char){
-		C.CString(""),
-		C.CString("-1"),
-		C.CString("-Y"),
-		C.CString("-x"),
-		C.CString(chal)}
-	mwm_slot := C.int(1)
-	mwm_challenge := C.CString(chal)
-	mwm_challenge_len := C.uint(6)
-	mwm_hmac := C.char(0)
+	slot := C.int(1)
+	challenge_len := C.uint(6)
+	is_hmac := C.char(0)
 
-	log.Printf("%s  !!!!  %s\n\n", argv[4], mwm_challenge)
-
-	code := C.the_main(5, &argv[0], &buffer[0], mwm_slot, mwm_challenge, mwm_challenge_len, mwm_hmac)
+	challenge := C.CBytes(chall[:])
+	defer C.free(challenge)
+	code := C.the_main(&buffer[0], slot, is_hmac, challenge_len, (*C.uchar)(challenge))
 	if code != 0 {
 		err := errors.New("Error from get_otp")
 		return otp, err
@@ -52,24 +43,17 @@ func run_yk_chalresp(chal string) ([16]byte, error) {
 	return otp, err
 }
 
-func run_yk_hmac(chal string) ([20]byte, error) {
-	log.Println("hmacGostring: ", chal)
+func run_yk_hmac(chall [32]byte) ([20]byte, error) {
 	var hmac [20]byte
 	var buffer [1000]C.char
-	argv := [5](*C.char){
-		C.CString(""),
-		C.CString("-2"),
-		C.CString("-H"),
-		C.CString("-x"),
-		C.CString(chal),
-	}
 
-	mwm_slot := C.int(1)
-	mwm_challenge := C.CString(chal)
-	mwm_challenge_len := C.uint(32)
-	mwm_hmac := C.char(1)
-	log.Printf("%s  !!!!  %s\n\n", argv[4], mwm_challenge)
-	code := C.the_main(5, &argv[0], &buffer[0], mwm_slot, mwm_challenge, mwm_challenge_len, mwm_hmac)
+	slot := C.int(2)
+	challenge_len := C.uint(32)
+	is_hmac := C.char(1)
+
+	challenge := C.CBytes(chall[:])
+	defer C.free(challenge)
+	code := C.the_main(&buffer[0], slot, is_hmac, challenge_len, (*C.uchar)(challenge))
 
 	if code != 0 {
 		err := errors.New("Error from get_otp")
