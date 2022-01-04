@@ -86,7 +86,7 @@ func _TestCapConnection(t *testing.T) {
 		ext_ip,
 		server,
 		123,
-		"22",
+		22,
 		func(pwc Client) {},
 		ch,
 	)
