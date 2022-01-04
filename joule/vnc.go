@@ -341,31 +341,26 @@ func extractVncToTempDir(otp, displayNumber string, localPort int) string {
 		log.Fatal("could not open tempfile", err)
 	}
 
-	err = fs.WalkDir(vnc_content, ".", func(path string, d fs.DirEntry, earlier_err error) error {
+	if err = fs.WalkDir(vnc_content, ".", func(src string, d fs.DirEntry, earlier_err error) error {
 		if d.IsDir() {
-			dirname := vnchome + "/" + path
-			err := os.Mkdir(dirname, 0755)
-			if err != nil {
+			dirname := vnchome + "/" + src
+			if err := os.Mkdir(dirname, 0755); err != nil {
 				log.Println("Unable to create directory: ", err)
 			}
 			return nil
 		}
-		src := path
 		input, err := vnc_content.ReadFile(src)
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
-		dest := vnchome + "/" + path
-		err = ioutil.WriteFile(dest, input, 0644)
-		if err != nil {
-			fmt.Println("Error creating", dest)
-			fmt.Println(err)
+		dest := vnchome + "/" + src
+		if err = ioutil.WriteFile(dest, input, 0644); err != nil {
+			fmt.Println("Error creating", dest, " because: ", err)
 			return err
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		log.Println("Unable to traverse embedded fs: ", err)
 	}
 	return vnchome
