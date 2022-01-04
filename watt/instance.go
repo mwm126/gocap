@@ -12,37 +12,40 @@ import (
 )
 
 type InstanceTab struct {
-	TabItem   *container.TabItem
-	table     *widget.Table
-	instances map[string][]inst
-	client    cap.Client
+	TabItem    *container.TabItem
+	table      *widget.Table
+	instances  map[string][]Instance
+	connection *cap.Connection
 }
 
-type inst struct {
+type Instance struct {
 	UUID  string
 	Name  string
 	State string
 }
 
-func NewInstanceTab(client cap.Client) *InstanceTab {
+func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 	t := InstanceTab{}
-	t.client = client
+	t.connection = conn
 	t.table = widget.NewTable(
 		func() (int, int) {
-			return len(t.instances), 4
+			num_rows := 0
+			for _, insts := range t.instances {
+				num_rows += len(insts)
+			}
+			return num_rows, 4
 		},
 		func() fyne.CanvasObject {
 			return widget.NewLabel("lorem ipsum")
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
-			insts := make([][]string, 0)
-			for proj, instss := range t.instances {
-				for _, instt := range instss {
-
-					insts = append(insts, []string{proj, instt.UUID, instt.Name, instt.State})
+			inst_table := make([][]string, 0)
+			for proj, insts := range t.instances {
+				for _, inst := range insts {
+					inst_table = append(inst_table, []string{proj, inst.UUID, inst.Name, inst.State})
 				}
 			}
-			o.(*widget.Label).SetText(insts[i.Row][i.Col])
+			o.(*widget.Label).SetText(inst_table[i.Row][i.Col])
 		})
 	refresh := widget.NewButton("Refresh", t.refresh)
 	box := container.NewVBox(refresh, t.table)
@@ -51,25 +54,29 @@ func NewInstanceTab(client cap.Client) *InstanceTab {
 }
 
 func (t *InstanceTab) refresh() {
-	projects, err := get_projects(t.client)
+	projects, err := t.get_projects()
 	if err != nil {
 		log.Println("Could not get projects:", err)
 		return
 	}
-	t.instances = make(map[string][]inst)
+	t.instances = make(map[string][]Instance)
 	for _, project := range projects {
-		instances, err := get_instances(t.client, project)
+		instances, err := t.get_instances(project)
 		if err != nil {
 			log.Println("Could not refresh instances:", err)
 			return
 		}
 		t.instances[project] = instances
 	}
+	for name, val := range t.instances {
+		log.Println("...............", name, val)
+	}
+	t.table.Refresh()
 }
 
-func get_projects(client cap.Client) ([]string, error) {
-	cmd := "openstack project list -f csv"
-	output, err := client.CleanExec(cmd)
+func (t *InstanceTab) get_projects() ([]string, error) {
+	cmd := t.env("openstack project list -f csv", "")
+	output, err := t.connection.GetClient().CleanExec(cmd)
 	if err != nil {
 		log.Println("Command ", cmd, " had error ", err)
 		return make([]string, 0), err
@@ -79,7 +86,8 @@ func get_projects(client cap.Client) ([]string, error) {
 
 func parseProjects(text string) []string {
 	items := []string{}
-	for _, line := range strings.Split(text, "\n") {
+	// skip first (header) line:  "Name     Status"
+	for _, line := range strings.Split(text, "\n")[1:] {
 		fields := strings.Split(line, ",")
 		if len(fields) < 2 {
 			continue
@@ -89,28 +97,51 @@ func parseProjects(text string) []string {
 	return items
 }
 
-func get_instances(client cap.Client, project_name string) ([]inst, error) {
-	cmd := fmt.Sprintf("env OS_PROJECT_NAME=%s openstack server list -f csv", project_name)
-	log.Println("cmd:", cmd)
-	output, err := client.CleanExec(cmd)
-	log.Println("output: ", output)
+const AD_HOSTNAME = "ad.science"
+
+func (t *InstanceTab) env(cmd string, project_name string) string {
+	envvars := map[string]string{
+		"OS_AUTH_URL":             "http://192.168.101.182:5000/v3",
+		"OS_IDENTITY_API_VERSION": "3",
+		"OS_PASSWORD":             t.connection.GetPassword(),
+		"OS_PROJECT_DOMAIN_NAME":  AD_HOSTNAME,
+		"OS_PROJECT_NAME":         project_name,
+		"OS_USERNAME":             t.connection.GetUsername(),
+		"OS_USER_DOMAIN_NAME":     AD_HOSTNAME,
+	}
+	for name, value := range envvars {
+		cmd = fmt.Sprintf("%s='%s' %s", name, value, cmd)
+	}
+	return cmd
+}
+
+func (t *InstanceTab) get_instances(project_name string) ([]Instance, error) {
+	cmd := fmt.Sprintf("openstack server list -f csv")
+	cmd = t.env(cmd, project_name)
+	output, err := t.connection.GetClient().CleanExec(cmd)
 	if err != nil {
 		log.Println("Command ", cmd, " had error ", err)
-		return make([]inst, 0), err
+		return make([]Instance, 0), err
 	}
 	return parseInstances(output), nil
 }
 
-func parseInstances(text string) []inst {
-	var instances []inst
+func parseInstances(text string) []Instance {
+	var instances []Instance
 	// skip first (header) line:  "Name     Status"
 	for _, line := range strings.Split(text, "\n")[1:] {
+		if strings.TrimSpace(text) == "" {
+			continue
+		}
 		fields := strings.Split(strings.TrimSpace(line), ",")
+		if len(fields) < 3 {
+			log.Println("Skipping instance line:", line)
+			continue
+		}
 		uuid := strings.Trim(fields[0], "\"")
 		name := strings.Trim(fields[1], "\"")
 		state := strings.Trim(fields[2], "\"")
-		instances = append(instances, inst{uuid, name, state})
+		instances = append(instances, Instance{uuid, name, state})
 	}
-	log.Println("GOT:", instances)
 	return instances
 }

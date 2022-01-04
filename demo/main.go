@@ -55,7 +55,7 @@ func main() {
 		{
 			Name:    "watt",
 			CapPort: uint(capport),
-			SshPort: strconv.Itoa(sshport),
+			SshPort: sshport,
 			Networks: map[string]login.Network{
 				"external": {
 					ClientExternalAddress: "127.0.0.1",
