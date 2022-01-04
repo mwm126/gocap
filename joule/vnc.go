@@ -335,14 +335,13 @@ func (t VncTab) KillSession(conn *cap.Connection, displayNumber string) {
 	confirm_kill.Show()
 }
 
-func doRunVnc(vncviewer_p, otp, displayNumber string, localPort int) {
+func extractVncToTempDir(otp, displayNumber string, localPort int) string {
 	vnchome, err := ioutil.TempDir("", "capclient")
 	if err != nil {
 		log.Fatal("could not open tempfile", err)
 	}
-	defer os.RemoveAll(vnchome)
 
-	err = fs.WalkDir(content, ".", func(path string, d fs.DirEntry, earlier_err error) error {
+	err = fs.WalkDir(vnc_content, ".", func(path string, d fs.DirEntry, earlier_err error) error {
 		if d.IsDir() {
 			dirname := vnchome + "/" + path
 			err := os.Mkdir(dirname, 0755)
@@ -352,7 +351,7 @@ func doRunVnc(vncviewer_p, otp, displayNumber string, localPort int) {
 			return nil
 		}
 		src := path
-		input, err := content.ReadFile(src)
+		input, err := vnc_content.ReadFile(src)
 		if err != nil {
 			fmt.Println(err)
 			return err
@@ -369,17 +368,5 @@ func doRunVnc(vncviewer_p, otp, displayNumber string, localPort int) {
 	if err != nil {
 		log.Println("Unable to traverse embedded fs: ", err)
 	}
-
-	vnc_cmd := vnchome + vncviewer_p
-	err = os.Chmod(vnc_cmd, 0755)
-	if err != nil {
-		log.Fatal("could not make ", vnc_cmd, " executable because ", err)
-	}
-
-	cmd := VncCmd(vnc_cmd, otp, localPort)
-	log.Println("\n\n\nRunVnc: ", cmd)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		log.Println("vncviewer output: ", string(output))
-		log.Println("vncviewer error: ", err)
-	}
+	return vnchome
 }
