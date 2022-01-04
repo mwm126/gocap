@@ -43,7 +43,7 @@ func main() {
 	services := []login.Service{{
 		Name:    "joule",
 		CapPort: uint(capport),
-		SshPort: strconv.Itoa(sshport),
+		SshPort: sshport,
 		Networks: map[string]login.Network{
 			"external": {
 				ClientExternalAddress: "127.0.0.1",
@@ -56,12 +56,12 @@ func main() {
 		log.Println("Could not contact Service List server:", err)
 		return
 	}
-	client := NewClient(a, w, cfg, conn_man, strconv.Itoa(sshport))
+	client := NewClient(a, w, cfg, conn_man, sshport)
 	client.Run()
 	defer testserver.Close()
 }
 
-func startSshServer() (*sshtest.Server, int) {
+func startSshServer() (*sshtest.Server, uint) {
 	test_host_key := "test-host-key"
 	if err := os.RemoveAll(test_host_key); err != nil {
 		panic(err)
@@ -101,7 +101,7 @@ func startSshServer() (*sshtest.Server, int) {
 	if err != nil {
 		panic(err)
 	}
-	return server, portnum
+	return server, uint(portnum)
 }
 
 // Client represents the Main window of CAP client
@@ -118,7 +118,7 @@ func NewClient(
 	w fyne.Window,
 	cfg config.Config,
 	conn_man *cap.ConnectionManager,
-	sshPort string,
+	sshPort uint,
 ) *Client {
 	var client Client
 
