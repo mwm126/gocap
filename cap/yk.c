@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 #include <unistd.h>
 
 #include <ykcore.h>
@@ -322,7 +323,7 @@ static int challenge_response(YK_KEY *yk, int slot, unsigned char *challenge,
   return 1;
 }
 
-int the_main(int argc, char **argv, char result[1000]) {
+int the_main(int argc, char **argv, char result[1000], int mwm_slot, char *challenge, unsigned int mwm_challenge_len, char mwm_hmac) {
   _buffer = result;
   YK_KEY *yk = 0;
   bool error = true;
@@ -334,7 +335,7 @@ int the_main(int argc, char **argv, char result[1000]) {
   bool may_block = true;
   bool totp = false;
   int digits = 0;
-  unsigned char *challenge;
+  unsigned char *_challenge;
   unsigned int challenge_len;
   int slot = 1;
   int key_index = 0;
@@ -342,10 +343,15 @@ int the_main(int argc, char **argv, char result[1000]) {
   yk_errno = 0;
 
   optind = 0;
-  if (!parse_args(argc, argv, &slot, &verbose, &challenge, &challenge_len,
+  if (!parse_args(argc, argv, &slot, &verbose, &_challenge, &challenge_len,
                   &hmac, &may_block, &totp, &digits, &exit_code, &key_index)) {
     return exit_code;
   }
+  assert(hmac == mwm_hmac);
+  printf("%s ??? %s\n\n", _challenge, challenge);
+  /* assert(challenge == (unsigned char*)challenge); */
+  printf("%d ??? %d\n\n", mwm_challenge_len, challenge_len);
+  assert(challenge_len == mwm_challenge_len);
 
   if (!yk_init()) {
     exit_code = 1;
@@ -362,7 +368,7 @@ int the_main(int argc, char **argv, char result[1000]) {
     goto err;
   }
 
-  if (!challenge_response(yk, slot, challenge, challenge_len, hmac, may_block,
+  if (!challenge_response(yk, slot, (unsigned char *)challenge, challenge_len, hmac, may_block,
                           verbose, digits)) {
     exit_code = 1;
     goto err;

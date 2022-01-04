@@ -9,6 +9,7 @@ import "C"
 import (
 	"encoding/hex"
 	"errors"
+	"log"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ func run_yk_info() (int32, error) {
 }
 
 func run_yk_chalresp(chal string) ([16]byte, error) {
+	log.Println("chalGostring: ", chal)
 	var otp [16]byte
 	var buffer [1000]C.char
 
@@ -30,7 +32,14 @@ func run_yk_chalresp(chal string) ([16]byte, error) {
 		C.CString("-Y"),
 		C.CString("-x"),
 		C.CString(chal)}
-	code := C.the_main(5, &argv[0], &buffer[0])
+	mwm_slot := C.int(1)
+	mwm_challenge := C.CString(chal)
+	mwm_challenge_len := C.uint(6)
+	mwm_hmac := C.char(0)
+
+	log.Printf("%s  !!!!  %s\n\n", argv[4], mwm_challenge)
+
+	code := C.the_main(5, &argv[0], &buffer[0], mwm_slot, mwm_challenge, mwm_challenge_len, mwm_hmac)
 	if code != 0 {
 		err := errors.New("Error from get_otp")
 		return otp, err
@@ -44,6 +53,7 @@ func run_yk_chalresp(chal string) ([16]byte, error) {
 }
 
 func run_yk_hmac(chal string) ([20]byte, error) {
+	log.Println("hmacGostring: ", chal)
 	var hmac [20]byte
 	var buffer [1000]C.char
 	argv := [5](*C.char){
@@ -53,7 +63,14 @@ func run_yk_hmac(chal string) ([20]byte, error) {
 		C.CString("-x"),
 		C.CString(chal),
 	}
-	code := C.the_main(5, &argv[0], &buffer[0])
+
+	mwm_slot := C.int(1)
+	mwm_challenge := C.CString(chal)
+	mwm_challenge_len := C.uint(32)
+	mwm_hmac := C.char(1)
+	log.Printf("%s  !!!!  %s\n\n", argv[4], mwm_challenge)
+	code := C.the_main(5, &argv[0], &buffer[0], mwm_slot, mwm_challenge, mwm_challenge_len, mwm_hmac)
+
 	if code != 0 {
 		err := errors.New("Error from get_otp")
 		return hmac, err
