@@ -7,7 +7,7 @@ import (
 )
 
 // Must install TurboVNC under /Applications
-//go:embed TurboVNC-Mac
+//go:embed embeds/TurboVNC-Mac
 var content embed.FS
 
 func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {

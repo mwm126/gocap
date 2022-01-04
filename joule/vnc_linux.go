@@ -6,8 +6,8 @@ import (
 	"os/exec"
 )
 
-//go:embed turbovnc/bin/*
-//go:embed turbovnc/share/*
+//go:embed embeds/turbovnc/bin/*
+//go:embed embeds/turbovnc/share/*
 var content embed.FS
 
 func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {

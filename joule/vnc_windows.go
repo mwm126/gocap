@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-//go:embed TurboVNC-2.2.7/app
+//go:embed embeds/TurboVNC-2.2.7/app
 var content embed.FS
 
 func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
