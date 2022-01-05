@@ -35,18 +35,10 @@ func TestVncTab(t *testing.T) {
 
 		vncTab := newVncTab(a, w, conn, &SpyRunner{}, &TestPortFinder{})
 
-		want := 0
+		want := 1
 		got := vncTab.sessions.Length()
 		if want != got {
-			t.Error("Initially # of sessions should be 0 but was: ", vncTab.sessions.Length())
-		}
-
-		vncTab.refresh()
-
-		want = 1
-		got = vncTab.sessions.Length()
-		if want != got {
-			t.Error("After refresh # of sessions should be 1 but was: ", vncTab.sessions.Length())
+			t.Error("# sessions should be 1 but was: ", vncTab.sessions.Length())
 		}
 	})
 

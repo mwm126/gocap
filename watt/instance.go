@@ -16,12 +16,13 @@ import (
 )
 
 type InstanceTab struct {
-	TabItem    *container.TabItem
-	table      *widget.Table
-	instances  map[string][]Instance
-	inst_table [][]string
-	connection *cap.Connection
-	closed     bool
+	TabItem     *container.TabItem
+	filterEntry *widget.Entry
+	table       *widget.Table
+	instances   map[string][]Instance
+	inst_table  [][]string
+	connection  *cap.Connection
+	closed      bool
 }
 
 type Instance struct {
@@ -44,10 +45,7 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 	}
 	t.table = widget.NewTable(
 		func() (int, int) {
-			num_rows := 1 // for header
-			for _, insts := range t.instances {
-				num_rows += len(insts)
-			}
+			num_rows := len(t.inst_table) + 1 // add one for header
 			return num_rows, 4
 		},
 		func() fyne.CanvasObject {
@@ -68,9 +66,11 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 				o.(*canvas.Text).Color = theme.PrimaryColorNamed("gray")
 				return
 			}
-			o.(*canvas.Text).Color = color.White
-			o.(*canvas.Text).TextStyle.Italic = false
-			o.(*canvas.Text).Text = t.inst_table[i.Row-1][i.Col]
+			if i.Row-1 < len(t.inst_table) {
+				o.(*canvas.Text).Color = color.White
+				o.(*canvas.Text).TextStyle.Italic = false
+				o.(*canvas.Text).Text = t.inst_table[i.Row-1][i.Col]
+			}
 		})
 	t.table.SetColumnWidth(0, 200)
 	t.table.SetColumnWidth(1, 500)
@@ -80,16 +80,21 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 
 	go func() {
 		for !t.closed {
-			t.refresh()
+			t.refresh(t.filterEntry.Text)
 		}
 	}()
 
 	scroll := container.NewScroll(t.table)
-	t.TabItem = container.NewTabItem("Instances", scroll)
+	filter_label := widget.NewLabel("Filter:")
+	t.filterEntry = widget.NewEntry()
+	t.filterEntry.SetPlaceHolder("<case insensitive search>")
+	filter := container.NewBorder(nil, nil, filter_label, nil, t.filterEntry)
+	box := container.NewBorder(filter, nil, nil, nil, scroll)
+	t.TabItem = container.NewTabItem("Instances", box)
 	return &t
 }
 
-func (t *InstanceTab) refresh() {
+func (t *InstanceTab) refresh(txt string) {
 	projects, err := t.get_projects()
 	if err != nil {
 		log.Println("Could not get projects: ", err)
@@ -108,7 +113,14 @@ func (t *InstanceTab) refresh() {
 	insttab := make([][]string, 0)
 	for proj, insts := range t.instances {
 		for _, inst := range insts {
-			insttab = append(insttab, []string{proj, inst.UUID, inst.Name, inst.State})
+			txt = strings.ToLower(txt)
+			pp := strings.Contains(strings.ToLower(proj), txt)
+			uu := strings.Contains(strings.ToLower(inst.UUID), txt)
+			nn := strings.Contains(strings.ToLower(inst.Name), txt)
+			ss := strings.Contains(strings.ToLower(inst.State), txt)
+			if pp || uu || nn || ss {
+				insttab = append(insttab, []string{proj, inst.UUID, inst.Name, inst.State})
+			}
 		}
 	}
 	t.instances = instmap
