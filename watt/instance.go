@@ -114,7 +114,7 @@ func (t *InstanceTab) refresh() {
 	t.instances = instmap
 	t.inst_table = insttab
 	t.table.Refresh()
-	time.Sleep(123 * time.Second) // TODO: configure refresh interval
+	time.Sleep(1 * time.Second) // TODO: configure refresh interval
 }
 
 func (t *InstanceTab) get_projects() ([]string, error) {

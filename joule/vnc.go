@@ -106,7 +106,7 @@ func (vt *VncTab) refresh() {
 	}
 	vt.sessions.Set(sessions)
 	vt.List.Refresh()
-	time.Sleep(123 * time.Second) // TODO: configure refresh interval
+	time.Sleep(1 * time.Second) // TODO: configure refresh interval
 }
 
 func newVncTab(
