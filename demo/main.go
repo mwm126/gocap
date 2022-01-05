@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -24,6 +23,7 @@ import (
 )
 
 func main() {
+	os.Setenv("GOCAP_DEMO", "yes")
 	cfg := config.GetConfig()
 	cfg.Enable_joule = true
 	cfg.Enable_watt = true
@@ -94,10 +94,7 @@ func startSshServer() (*sshtest.Server, uint) {
 		if !ok {
 			return
 		}
-		fmt.Printf("Received '%s' request from client", req.Type)
-		response := demoReplies()[string(req.Payload)]
-
-		req.Reply(true, []byte(response))
+		req.Reply(true, []byte("Ignoring request..."))
 		sshtest.SendStatus(ch, 0)
 	}
 
@@ -111,12 +108,6 @@ func startSshServer() (*sshtest.Server, uint) {
 		panic(err)
 	}
 	return server, uint(portnum)
-}
-
-func demoReplies() map[string]string {
-	return map[string]string{
-		"env OS_PROJECT_NAME=%s openstack server list -f csv": "STUFFFFFF",
-	}
 }
 
 // Client represents the Main window of CAP client
@@ -151,7 +142,6 @@ func NewClient(
 
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
 
-	uname, pword, _ := login.GetSavedLogin()
 	login_tab := login.NewLoginTab(
 		"Login",
 		"NETL SuperComputer",
@@ -159,8 +149,8 @@ func NewClient(
 		conn_man,
 		client.setupServices,
 		connctd,
-		uname,
-		pword,
+		"demo_username",
+		"demo_password",
 	)
 
 	client = Client{conn_man, nil, w, a, login_tab}
