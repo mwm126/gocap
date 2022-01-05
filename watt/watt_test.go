@@ -140,7 +140,12 @@ func TestWattLoginButton(t *testing.T) {
 	// })
 
 	t.Run("Test Login", func(t *testing.T) {
-		var fake_conn cap.Connection
-		wattTab.Connect(&fake_conn)
+		var client FakeClient
+		fake_conn, err := cap.NewCapConnection(client, "", "")
+		if err != nil {
+			t.Error(err)
+		}
+
+		wattTab.Connect(fake_conn)
 	})
 }

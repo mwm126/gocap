@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -24,6 +23,7 @@ import (
 )
 
 func main() {
+	os.Setenv("GOCAP_DEMO", "yes")
 	cfg := config.GetConfig()
 	cfg.Enable_joule = true
 	cfg.Enable_watt = true
@@ -40,17 +40,30 @@ func main() {
 	testserver, sshport := startSshServer()
 	capport := sshport // doesn't matter; ignored anyway
 
-	services := []login.Service{{
-		Name:    "joule",
-		CapPort: uint(capport),
-		SshPort: sshport,
-		Networks: map[string]login.Network{
-			"external": {
-				ClientExternalAddress: "127.0.0.1",
-				CapServerAddress:      "127.0.0.1",
+	services := []login.Service{
+		{
+			Name:    "joule",
+			CapPort: uint(capport),
+			SshPort: sshport,
+			Networks: map[string]login.Network{
+				"external": {
+					ClientExternalAddress: "127.0.0.1",
+					CapServerAddress:      "127.0.0.1",
+				},
 			},
 		},
-	}}
+		{
+			Name:    "watt",
+			CapPort: uint(capport),
+			SshPort: sshport,
+			Networks: map[string]login.Network{
+				"external": {
+					ClientExternalAddress: "127.0.0.1",
+					CapServerAddress:      "127.0.0.1",
+				},
+			},
+		},
+	}
 	err := login.InitServices(&services)
 	if err != nil {
 		log.Println("Could not contact Service List server:", err)
@@ -77,18 +90,11 @@ func startSshServer() (*sshtest.Server, uint) {
 	server.Config.AddHostKey(hostKey)
 	server.Handler = func(ch ssh.Channel, in <-chan *ssh.Request) {
 		defer ch.Close()
-
-		// Read a request from the client
 		req, ok := <-in
 		if !ok {
 			return
 		}
-		fmt.Printf("Received '%s' request from client", req.Type)
-
-		// Reply with a string
-		req.Reply(true, []byte("Hello client"))
-
-		// Let the client know the command completed successfuly (status=0)
+		req.Reply(true, []byte("Ignoring request..."))
 		sshtest.SendStatus(ch, 0)
 	}
 
@@ -136,7 +142,6 @@ func NewClient(
 
 	connctd := container.NewVBox(widget.NewLabel("Connected!"))
 
-	uname, pword, _ := login.GetSavedLogin()
 	login_tab := login.NewLoginTab(
 		"Login",
 		"NETL SuperComputer",
@@ -144,8 +149,8 @@ func NewClient(
 		conn_man,
 		client.setupServices,
 		connctd,
-		uname,
-		pword,
+		"demo_username",
+		"demo_password",
 	)
 
 	client = Client{conn_man, nil, w, a, login_tab}

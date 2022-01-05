@@ -3,6 +3,7 @@ package login
 import (
 	_ "embed"
 	"encoding/json"
+	"log"
 	"net"
 )
 
@@ -57,8 +58,12 @@ func InitServices(init *[]Service) error {
 
 	var services Services
 	err := json.Unmarshal(jsonFile, &services)
+	if err != nil {
+		log.Println("Unable to parse services.json: ", err)
+		return err
+	}
 	globalServices = services.Services
-	return err
+	return nil
 }
 
 func FindServices() ([]Service, error) {

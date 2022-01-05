@@ -100,13 +100,13 @@ func (vt *VncTab) Close() {
 }
 
 func (vt *VncTab) refresh() {
-	time.Sleep(1 * time.Second)
 	sessions, err := vt.connection.FindSessions()
 	if err != nil {
 		log.Println("Warning - unable to refresh: ", err)
 	}
 	vt.sessions.Set(sessions)
 	vt.List.Refresh()
+	time.Sleep(1 * time.Second) // TODO: configure refresh interval
 }
 
 func newVncTab(
@@ -335,51 +335,33 @@ func (t VncTab) KillSession(conn *cap.Connection, displayNumber string) {
 	confirm_kill.Show()
 }
 
-func doRunVnc(vncviewer_p, otp, displayNumber string, localPort int) {
+func extractVncToTempDir(otp, displayNumber string, localPort int) string {
 	vnchome, err := ioutil.TempDir("", "capclient")
 	if err != nil {
 		log.Fatal("could not open tempfile", err)
 	}
-	defer os.RemoveAll(vnchome)
 
-	err = fs.WalkDir(content, ".", func(path string, d fs.DirEntry, earlier_err error) error {
+	if err = fs.WalkDir(vnc_content, ".", func(src string, d fs.DirEntry, earlier_err error) error {
 		if d.IsDir() {
-			dirname := vnchome + "/" + path
-			err := os.Mkdir(dirname, 0755)
-			if err != nil {
+			dirname := vnchome + "/" + src
+			if err := os.Mkdir(dirname, 0755); err != nil {
 				log.Println("Unable to create directory: ", err)
 			}
 			return nil
 		}
-		src := path
-		input, err := content.ReadFile(src)
+		input, err := vnc_content.ReadFile(src)
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
-		dest := vnchome + "/" + path
-		err = ioutil.WriteFile(dest, input, 0644)
-		if err != nil {
-			fmt.Println("Error creating", dest)
-			fmt.Println(err)
+		dest := vnchome + "/" + src
+		if err = ioutil.WriteFile(dest, input, 0644); err != nil {
+			fmt.Println("Error creating", dest, " because: ", err)
 			return err
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		log.Println("Unable to traverse embedded fs: ", err)
 	}
-
-	vnc_cmd := vnchome + vncviewer_p
-	err = os.Chmod(vnc_cmd, 0755)
-	if err != nil {
-		log.Fatal("could not make ", vnc_cmd, " executable because ", err)
-	}
-
-	cmd := VncCmd(vnc_cmd, otp, localPort)
-	log.Println("\n\n\nRunVnc: ", cmd)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		log.Println("vncviewer output: ", string(output))
-		log.Println("vncviewer error: ", err)
-	}
+	return vnchome
 }

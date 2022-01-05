@@ -3,11 +3,13 @@ package joule
 import (
 	"embed"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 )
 
-//go:embed TurboVNC-2.2.7/app
-var content embed.FS
+//go:embed embeds/TurboVNC-2.2.7/app
+var vnc_content embed.FS
 
 func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
 	return exec.Command(
@@ -19,5 +21,20 @@ func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
 }
 
 func RunVnc(otp, displayNumber string, localPort int) {
-	doRunVnc("/TurboVNC-2.2.7/app/vncviewer.exe", otp, displayNumber, localPort)
+	vnchome := extractVncToTempDir(otp, displayNumber, localPort)
+	defer os.RemoveAll(vnchome)
+
+	vnc_cmd := vnchome + "/TurboVNC-2.2.7/app/vncviewer.exe"
+	err := os.Chmod(vnc_cmd, 0755)
+	if err != nil {
+		log.Fatal("could not make ", vnc_cmd, " executable because ", err)
+	}
+
+	cmd := VncCmd(vnc_cmd, otp, localPort)
+	log.Println("\n\n\nRunVnc: ", cmd)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log.Println("vncviewer output: ", string(output))
+		log.Println("vncviewer error: ", err)
+	}
+
 }

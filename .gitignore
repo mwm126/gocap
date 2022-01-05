@@ -1,5 +1,4 @@
 *~
-/.cap-credentials
 /coverage.html
 /fyne-cross/
 capclient
@@ -8,3 +7,4 @@ turbovnc
 build-*
 install-*
 test-host-key*
+*.syso

@@ -24,6 +24,9 @@ func (sc sshClient) Close() {
 }
 
 func (sc sshClient) CleanExec(cmd string) (string, error) {
+	if os.Getenv("GOCAP_DEMO") != "" {
+		return demoReplies(cmd), nil
+	}
 	// Each ClientConn can support multiple interactive sessions,
 	// represented by a Session.
 	session, err := sc.client.NewSession()
