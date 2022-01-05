@@ -18,7 +18,9 @@ type InstanceTab struct {
 	TabItem    *container.TabItem
 	table      *widget.Table
 	instances  map[string][]Instance
+	inst_table [][]string
 	connection *cap.Connection
+	closed     bool
 }
 
 type Instance struct {
@@ -27,9 +29,18 @@ type Instance struct {
 	State string
 }
 
+func (t *InstanceTab) Close() {
+	t.closed = true
+}
+
 func NewInstanceTab(conn *cap.Connection) *InstanceTab {
-	t := InstanceTab{}
-	t.connection = conn
+	t := InstanceTab{
+		TabItem:    nil,
+		table:      nil,
+		instances:  make(map[string][]Instance),
+		connection: conn,
+		closed:     false,
+	}
 	t.table = widget.NewTable(
 		func() (int, int) {
 			num_rows := 1 // for header
@@ -58,23 +69,21 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 			}
 			o.(*canvas.Text).Color = color.White
 			o.(*canvas.Text).TextStyle.Italic = false
-			inst_table := make([][]string, 0)
-			for proj, insts := range t.instances {
-				for _, inst := range insts {
-					inst_table = append(inst_table, []string{proj, inst.UUID, inst.Name, inst.State})
-				}
-			}
-			o.(*canvas.Text).Text = inst_table[i.Row-1][i.Col]
+			o.(*canvas.Text).Text = t.inst_table[i.Row-1][i.Col]
 		})
 	t.table.SetColumnWidth(0, 200)
 	t.table.SetColumnWidth(1, 500)
 	t.table.SetColumnWidth(2, 200)
 	t.table.SetColumnWidth(3, 200)
 	t.table.Resize(fyne.NewSize(1000, 1000))
-	t.refresh()
-	refresh := widget.NewButton("Refresh", t.refresh)
-	box := container.NewBorder(refresh, nil, nil, nil, t.table)
-	t.TabItem = container.NewTabItem("Instances", box)
+
+	go func() {
+		for !t.closed {
+			t.refresh()
+		}
+	}()
+
+	t.TabItem = container.NewTabItem("Instances", t.table)
 	return &t
 }
 
@@ -93,8 +102,12 @@ func (t *InstanceTab) refresh() {
 		}
 		t.instances[project] = instances
 	}
-	for name, val := range t.instances {
-		log.Println("...............", name, val)
+
+	t.inst_table = make([][]string, 0)
+	for proj, insts := range t.instances {
+		for _, inst := range insts {
+			t.inst_table = append(t.inst_table, []string{proj, inst.UUID, inst.Name, inst.State})
+		}
 	}
 	t.table.Refresh()
 }

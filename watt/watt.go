@@ -13,9 +13,10 @@ import (
 )
 
 type WattTab struct {
-	app    fyne.App
-	Tabs   *container.AppTabs
-	CapTab *login.CapTab
+	app         fyne.App
+	Tabs        *container.AppTabs
+	CapTab      *login.CapTab
+	instanceTab *InstanceTab
 }
 
 func NewWattConnected(
@@ -35,15 +36,19 @@ func NewWattConnected(
 			func(conn *cap.Connection) {
 				watt_tab.Connect(conn)
 			}, cont, login_info),
+		nil,
 	}
 	return watt_tab
 }
 
 func (t *WattTab) Connect(conn *cap.Connection) {
-	homeTab := newWattHome(t.CapTab.CloseConnection)
+	homeTab := newWattHome(func() {
+		t.instanceTab.Close()
+		t.CapTab.CloseConnection()
+	})
 	sshTab := ssh.NewSsh(conn)
 
-	instanceTab := NewInstanceTab(conn)
+	t.instanceTab = NewInstanceTab(conn)
 
 	cfg := config.GetConfig()
 	fwdTab := forwards.NewPortForwardTab(t.app, cfg.Watt_Forwards, func(fwds []string) {
@@ -51,7 +56,7 @@ func (t *WattTab) Connect(conn *cap.Connection) {
 		config.SaveForwards(fwds)
 	})
 
-	t.Tabs.SetItems([]*container.TabItem{homeTab, instanceTab.TabItem, sshTab, fwdTab.TabItem})
+	t.Tabs.SetItems([]*container.TabItem{homeTab, t.instanceTab.TabItem, sshTab, fwdTab.TabItem})
 }
 
 func newWattHome(close_cb func()) *container.TabItem {
