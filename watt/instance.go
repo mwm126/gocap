@@ -2,12 +2,15 @@ package watt
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 	"strings"
 
 	"aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -29,26 +32,48 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 	t.connection = conn
 	t.table = widget.NewTable(
 		func() (int, int) {
-			num_rows := 0
+			num_rows := 1 // for header
 			for _, insts := range t.instances {
 				num_rows += len(insts)
 			}
 			return num_rows, 4
 		},
 		func() fyne.CanvasObject {
-			return widget.NewLabel("lorem ipsum")
+			obj := canvas.NewText("lorem ipsum", theme.PrimaryColorNamed("yellow"))
+			return obj
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
+			if i.Row == 0 {
+				// give me some header
+				txt := map[int]string{
+					0: "Project",
+					1: "UUID",
+					2: "Name",
+					3: "State",
+				}[i.Col]
+				o.(*canvas.Text).Text = txt
+				o.(*canvas.Text).TextStyle.Italic = true
+				o.(*canvas.Text).Color = theme.PrimaryColorNamed("gray")
+				return
+			}
+			o.(*canvas.Text).Color = color.White
+			o.(*canvas.Text).TextStyle.Italic = false
 			inst_table := make([][]string, 0)
 			for proj, insts := range t.instances {
 				for _, inst := range insts {
 					inst_table = append(inst_table, []string{proj, inst.UUID, inst.Name, inst.State})
 				}
 			}
-			o.(*widget.Label).SetText(inst_table[i.Row][i.Col])
+			o.(*canvas.Text).Text = inst_table[i.Row-1][i.Col]
 		})
+	t.table.SetColumnWidth(0, 200)
+	t.table.SetColumnWidth(1, 500)
+	t.table.SetColumnWidth(2, 200)
+	t.table.SetColumnWidth(3, 200)
+	t.table.Resize(fyne.NewSize(1000, 1000))
+	t.refresh()
 	refresh := widget.NewButton("Refresh", t.refresh)
-	box := container.NewVBox(refresh, t.table)
+	box := container.NewBorder(refresh, nil, nil, nil, t.table)
 	t.TabItem = container.NewTabItem("Instances", box)
 	return &t
 }
