@@ -100,13 +100,13 @@ func (vt *VncTab) Close() {
 }
 
 func (vt *VncTab) refresh() {
-	time.Sleep(1 * time.Second)
 	sessions, err := vt.connection.FindSessions()
 	if err != nil {
 		log.Println("Warning - unable to refresh: ", err)
 	}
 	vt.sessions.Set(sessions)
 	vt.List.Refresh()
+	time.Sleep(123 * time.Second) // TODO: configure refresh interval
 }
 
 func newVncTab(

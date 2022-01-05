@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"strings"
+	"time"
 
 	"aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
@@ -83,33 +84,37 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 		}
 	}()
 
-	t.TabItem = container.NewTabItem("Instances", t.table)
+	scroll := container.NewScroll(t.table)
+	t.TabItem = container.NewTabItem("Instances", scroll)
 	return &t
 }
 
 func (t *InstanceTab) refresh() {
 	projects, err := t.get_projects()
 	if err != nil {
-		log.Println("Could not get projects:", err)
+		log.Println("Could not get projects: ", err)
 		return
 	}
-	t.instances = make(map[string][]Instance)
+	instmap := make(map[string][]Instance)
 	for _, project := range projects {
 		instances, err := t.get_instances(project)
 		if err != nil {
-			log.Println("Could not refresh instances:", err)
-			return
+			log.Printf("Could not refresh instances for project %s: %s", project, err)
+			continue
 		}
-		t.instances[project] = instances
+		instmap[project] = instances
 	}
 
-	t.inst_table = make([][]string, 0)
+	insttab := make([][]string, 0)
 	for proj, insts := range t.instances {
 		for _, inst := range insts {
-			t.inst_table = append(t.inst_table, []string{proj, inst.UUID, inst.Name, inst.State})
+			insttab = append(insttab, []string{proj, inst.UUID, inst.Name, inst.State})
 		}
 	}
+	t.instances = instmap
+	t.inst_table = insttab
 	t.table.Refresh()
+	time.Sleep(123 * time.Second) // TODO: configure refresh interval
 }
 
 func (t *InstanceTab) get_projects() ([]string, error) {
