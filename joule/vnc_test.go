@@ -16,7 +16,7 @@ type SpyRunner struct {
 
 type TestPortFinder struct{}
 
-func (tpf TestPortFinder) FindPort() (int, error) {
+func (tpf TestPortFinder) FindPort() (uint, error) {
 	return 54321, nil
 }
 
@@ -197,6 +197,6 @@ func TestVncCmd(t *testing.T) {
 	}
 }
 
-func (r *SpyRunner) RunVnc(otp, display string, port int) {
+func (r *SpyRunner) RunVnc(otp, display string, port uint) {
 	r.calls = append(r.calls, *VncCmd("/path/to/vncviewer", otp, port))
 }

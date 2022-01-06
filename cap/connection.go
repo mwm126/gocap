@@ -278,7 +278,7 @@ func acceptConnection(listener net.Listener, c chan net.Conn) {
 	c <- conn
 }
 
-func (capcon *Connection) NewTunnel(local_p int, remote_h string, remote_p int) (*Tunnel, error) {
+func (capcon *Connection) NewTunnel(local_p uint, remote_h string, remote_p int) (*Tunnel, error) {
 	endpoint := fmt.Sprintf("localhost:%d", local_p)
 	listener, err := net.Listen("tcp", endpoint)
 	if err != nil {
