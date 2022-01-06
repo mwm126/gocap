@@ -24,7 +24,7 @@ func RunVnc(otp, displayNumber string, localPort int) {
 	vnchome := extractVncToTempDir(otp, displayNumber, localPort)
 	defer os.RemoveAll(vnchome)
 
-	vnc_cmd := vnchome + "/TurboVNC-2.2.7/app/vncviewer.exe"
+	vnc_cmd := vnchome + "/embeds/TurboVNC-2.2.7/app/vncviewer.exe"
 	err := os.Chmod(vnc_cmd, 0755)
 	if err != nil {
 		log.Fatal("could not make ", vnc_cmd, " executable because ", err)
