@@ -8,6 +8,7 @@ require (
 	github.com/folbricht/sshtest v0.1.0
 	github.com/glendc/go-external-ip v0.1.0
 	github.com/google/go-cmp v0.5.6
+	github.com/gorilla/sessions v1.2.1
 	github.com/pelletier/go-toml v1.9.4
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
@@ -21,6 +22,7 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20211213063430-748e38ca8aec // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/goki/freetype v0.0.0-20181231101311-fa8a33aabaff // indirect
+	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20211120171407-1837d6608d8c // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect

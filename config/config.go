@@ -28,13 +28,8 @@ func NewConfig() Config {
 		Enable_fe261:   false,
 		Enable_joule:   true,
 		Enable_watt:    true,
-		Joule_Forwards: []string{
-			// "???:127.0.0.1:???", // VNC port
-		},
-		Watt_Forwards: []string{
-			"6082:192.168.101.200:6082", // Spice port
-			"10080:192.168.101.200:80",  // Web port
-		},
+		Joule_Forwards: []string{},
+		Watt_Forwards:  []string{},
 		Fe261_Forwards: []string{
 			"13389:172.16.1.11:3389",  // RDP 1 port
 			"23389:172.16.1.12:3389",  // RDP 2 port

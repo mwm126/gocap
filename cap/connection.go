@@ -211,7 +211,7 @@ type Session struct {
 	DisplayNumber string
 	Geometry      string
 	DateCreated   string
-	HostPort      int
+	HostPort      uint
 }
 
 func (s *Session) Label() string {
@@ -245,7 +245,7 @@ func parseVncLine(line string) (Session, error) {
 		DisplayNumber: fields[11],
 		Geometry:      get_field(fields, "-geometry"),
 		DateCreated:   fields[8],
-		HostPort:      port,
+		HostPort:      uint(port),
 	}
 	return session, nil
 }
@@ -260,10 +260,15 @@ func get_field(fields []string, fieldname string) string {
 }
 
 type Tunnel struct {
+	local_port   uint
 	client       Client
 	endpoint     string
 	listener     net.Listener
 	closeChannel chan interface{}
+}
+
+func (t Tunnel) LocalPort() uint {
+	return t.local_port
 }
 
 func (t Tunnel) Close() {
@@ -278,7 +283,7 @@ func acceptConnection(listener net.Listener, c chan net.Conn) {
 	c <- conn
 }
 
-func (capcon *Connection) NewTunnel(local_p uint, remote_h string, remote_p int) (*Tunnel, error) {
+func (capcon *Connection) NewTunnel(local_p uint, remote_h string, remote_p uint) (*Tunnel, error) {
 	endpoint := fmt.Sprintf("localhost:%d", local_p)
 	listener, err := net.Listen("tcp", endpoint)
 	if err != nil {
@@ -286,6 +291,7 @@ func (capcon *Connection) NewTunnel(local_p uint, remote_h string, remote_p int)
 	}
 	remote_endpoint := fmt.Sprintf("%s:%d", remote_h, remote_p)
 	tunnel := &Tunnel{
+		local_p,
 		capcon.client,
 		remote_endpoint,
 		listener,
