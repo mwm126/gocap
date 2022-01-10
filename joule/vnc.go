@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -21,12 +20,12 @@ import (
 )
 
 type VncRunner interface {
-	RunVnc(otp, display string, port int)
+	RunVnc(otp, display string, port uint)
 }
 
 type ExeRunner struct{}
 
-func (r *ExeRunner) RunVnc(otp, display string, port int) {
+func (r *ExeRunner) RunVnc(otp, display string, port uint) {
 	RunVnc(otp, display, port)
 }
 
@@ -62,23 +61,7 @@ func (i *ItemList) Length() int {
 }
 
 type PortFinder interface {
-	FindPort() (int, error)
-}
-
-type FreePortFinder struct{}
-
-func (fpf FreePortFinder) FindPort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
-	}
-
-	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return 0, err
-	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port, nil
+	FindPort() (uint, error)
 }
 
 type VncTab struct {
@@ -335,7 +318,7 @@ func (t VncTab) KillSession(conn *cap.Connection, displayNumber string) {
 	confirm_kill.Show()
 }
 
-func extractVncToTempDir(otp, displayNumber string, localPort int) string {
+func extractVncToTempDir(otp, displayNumber string, localPort uint) string {
 	vnchome, err := ioutil.TempDir("", "capclient")
 	if err != nil {
 		log.Fatal("could not open tempfile", err)

@@ -11,7 +11,7 @@ import (
 //go:embed embeds/TurboVNC-2.2.7/app
 var vnc_content embed.FS
 
-func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
+func VncCmd(vncviewer_path, otp string, localPort uint) *exec.Cmd {
 	return exec.Command(
 		vncviewer_path,
 		fmt.Sprintf("127.0.0.1:%d", localPort),

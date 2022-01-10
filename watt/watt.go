@@ -6,7 +6,6 @@ import (
 	"aeolustec.com/capclient/forwards"
 	"aeolustec.com/capclient/login"
 	"aeolustec.com/capclient/ssh"
-
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -17,6 +16,7 @@ type WattTab struct {
 	Tabs        *container.AppTabs
 	CapTab      *login.CapTab
 	instanceTab *InstanceTab
+	webTab      *WebTab
 }
 
 func NewWattConnected(
@@ -37,6 +37,7 @@ func NewWattConnected(
 				watt_tab.Connect(conn)
 			}, cont, login_info),
 		nil,
+		nil,
 	}
 	return watt_tab
 }
@@ -49,6 +50,7 @@ func (t *WattTab) Connect(conn *cap.Connection) {
 	sshTab := ssh.NewSsh(conn)
 
 	t.instanceTab = NewInstanceTab(conn)
+	t.webTab = NewWebTab(conn)
 
 	cfg := config.GetConfig()
 	fwdTab := forwards.NewPortForwardTab(t.app, cfg.Watt_Forwards, func(fwds []string) {
@@ -56,7 +58,8 @@ func (t *WattTab) Connect(conn *cap.Connection) {
 		config.SaveForwards(fwds)
 	})
 
-	t.Tabs.SetItems([]*container.TabItem{homeTab, t.instanceTab.TabItem, sshTab, fwdTab.TabItem})
+	t.Tabs.SetItems([]*container.TabItem{homeTab, t.instanceTab.TabItem, t.webTab.TabItem, sshTab, fwdTab.TabItem})
+	t.Tabs.SelectTabIndex(1)
 }
 
 func newWattHome(close_cb func()) *container.TabItem {

@@ -12,7 +12,7 @@ import (
 //go:embed embeds/turbovnc/share/*
 var vnc_content embed.FS
 
-func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
+func VncCmd(vncviewer_path, otp string, localPort uint) *exec.Cmd {
 	return exec.Command(
 		vncviewer_path,
 		fmt.Sprintf("127.0.0.1::%d", localPort),
@@ -20,7 +20,7 @@ func VncCmd(vncviewer_path, otp string, localPort int) *exec.Cmd {
 	)
 }
 
-func RunVnc(otp, displayNumber string, localPort int) {
+func RunVnc(otp, displayNumber string, localPort uint) {
 	vnchome := extractVncToTempDir(otp, displayNumber, localPort)
 	defer os.RemoveAll(vnchome)
 
