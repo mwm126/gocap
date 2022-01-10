@@ -94,8 +94,14 @@ func startSshServer() (*sshtest.Server, uint) {
 		if !ok {
 			return
 		}
-		req.Reply(true, []byte("Ignoring request..."))
-		sshtest.SendStatus(ch, 0)
+		err := req.Reply(true, []byte("Ignoring request..."))
+		if err != nil {
+			panic(err)
+		}
+		err = sshtest.SendStatus(ch, 0)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	server.Start()

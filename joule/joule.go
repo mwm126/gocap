@@ -60,7 +60,7 @@ func (t *JouleTab) Connect(conn *cap.Connection) {
 	})
 
 	t.Tabs.SetItems([]*container.TabItem{homeTab, vncTabItem, sshTab, fwdTab.TabItem})
-	t.Tabs.SelectTabIndex(1)
+	t.Tabs.SelectIndex(1)
 }
 
 func newJouleHome(close_cb func()) *container.TabItem {

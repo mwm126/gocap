@@ -171,7 +171,7 @@ func (t *InstanceTab) env(cmd string, project_name string) string {
 }
 
 func (t *InstanceTab) get_instances(project_name string) ([]Instance, error) {
-	cmd := fmt.Sprintf("openstack server list -f csv")
+	cmd := "openstack server list -f csv"
 	cmd = t.env(cmd, project_name)
 	output, err := t.connection.GetClient().CleanExec(cmd)
 	if err != nil {
