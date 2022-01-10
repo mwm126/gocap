@@ -2,13 +2,16 @@ package watt
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
+	"time"
 
 	"aeolustec.com/capclient/cap"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/gorilla/sessions"
 )
 
 type WebTab struct {
@@ -98,27 +101,8 @@ func (t *WebTab) handle_ml_open_webui() {
 	go start_redirect_httpd(cookie, redirect_httpd_port, local_port_web)
 
 	url := fmt.Sprintf("http://localhost:%d/", redirect_httpd_port)
+	url = fmt.Sprintf("http://localhost:%d/dashboard/project/instances/", local_port_web)
 	go open_url(url)
-}
-
-var (
-	// key must be 16, 24 or 32 bytes long (AES-128, AES-192 or AES-256)
-	key   = []byte("super-secret-key")
-	store = sessions.NewCookieStore(key)
-)
-
-func get_sessionid_cookie(username, passwd string, port uint) *http.Cookie {
-	url := fmt.Sprintf("http://localhost:%d/dashboard/auth/login/", port)
-	headers := map[string]string{"referer": url}
-	// logindata := map[string]string{"username": username, "password": passwd}
-	sess := sessions.NewSession(store, "watt-session")
-	log.Println("Getting csrftoken from: ", url)
-	req := sess.Options.Path
-	headers["x-csrftoken"] = req
-	// sess.post(url, logindata, headers)
-	cookie := sessions.NewCookie("cookiename", "cookievalue", store.Options)
-	// cookie["sessionid"] = sess.cookies["sessionid"]
-	return cookie
 }
 
 func start_redirect_httpd(cookie *http.Cookie, httpd_port uint, local_port_web uint) {
@@ -136,3 +120,75 @@ func start_redirect_httpd(cookie *http.Cookie, httpd_port uint, local_port_web u
 		log.Printf("could not listen on Spice httpd port %d: %s", httpd_port, err)
 	}
 }
+
+func get_sessionid_cookie(username, passwd string, port uint) *http.Cookie {
+	req_url := fmt.Sprintf("http://localhost:%d/dashboard/auth/login/", port)
+	logindata := url.Values{"username": {username}, "password": {passwd}}
+	log.Println("Getting csrftoken from: ", req_url)
+
+	resp, err := http.Get(req_url)
+	log.Println("GET header:   ", resp.Header)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("GET Cookies:", resp.Cookies())
+	if len(resp.Cookies()) != 1 {
+		log.Println("Expected one cookie in response: ", req_url)
+		return nil
+	}
+	if resp.Cookies()[0].Name != "csrftoken" {
+		log.Println("Expected csrftoken cookie in response: ", req_url)
+		return nil
+	}
+	csrftoken := resp.Cookies()[0].Value
+
+	req, err := http.NewRequest("POST", req_url, strings.NewReader(logindata.Encode()))
+	if err != nil {
+		log.Fatal("Error reading request. ", err)
+	}
+	req.Header.Set("referer", req_url)
+	req.Header.Set("x-csrftoken", csrftoken)
+
+	// Create and Add cookie to request
+	cookie := http.Cookie{Name: "cookie_name", Value: "cookie_value"}
+	req.AddCookie(&cookie)
+
+	// Set client timeout
+	client := &http.Client{Timeout: time.Second * 10}
+
+	// Validate cookie and headers are attached
+	fmt.Println(req.Cookies())
+	fmt.Println(req.Header)
+
+	// Send request
+	resp, err = client.Do(req)
+	log.Println("Body: ", resp.Body)
+
+	// Read body from response
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal("Error reading response. ", err)
+	}
+	fmt.Printf("%s\n", body)
+	defer resp.Body.Close()
+	var sessionid string
+
+	for _, cookie := range resp.Cookies() {
+		log.Println("cookie: ", cookie.Name, "     ---     ", cookie.Value)
+		if cookie.Name == "sessionid" {
+			sessionid = cookie.Value
+		}
+	}
+	fmt.Println("sessionid:", sessionid)
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+
+	cooookie := resp.Cookies()[0]
+	log.Printf("Dashboard login to: %s   Returned session cookie: %s", req_url, cooookie)
+	log.Println("===================COOKIE+++++++++++++++++++")
+	return cooookie
+}
+
+// here is your cookie [header], pinhead.  sessionid=cta2otqcb6va50xvlbspny9z64977t0u
+// 127.0.0.1 - - [09/Jan/2022 08:39:02] "GET / HTTP/1.1" 200 -
+//	Sending HTML:  b'<html><head><meta http-equiv="Refresh" content="0; url=\'http://localhost:50789/dashboard/project/instances/\'" /></head></html>'
