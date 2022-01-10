@@ -16,10 +16,8 @@ import (
 
 type WebTab struct {
 	TabItem      *container.TabItem
-	filterEntry  *widget.Entry
 	table        *widget.Table
 	instances    map[string][]Web
-	inst_table   [][]string
 	connection   *cap.Connection
 	tunnel_spice *cap.Tunnel
 	tunnel_web   *cap.Tunnel
@@ -100,8 +98,8 @@ func (t *WebTab) handle_ml_open_webui() {
 
 	go start_redirect_httpd(cookie, redirect_httpd_port, local_port_web)
 
-	url := fmt.Sprintf("http://localhost:%d/", redirect_httpd_port)
-	url = fmt.Sprintf("http://localhost:%d/dashboard/project/instances/", local_port_web)
+	// url := fmt.Sprintf("http://localhost:%d/", redirect_httpd_port)
+	url := fmt.Sprintf("http://localhost:%d/dashboard/project/instances/", local_port_web)
 	go open_url(url)
 }
 
@@ -113,7 +111,7 @@ func start_redirect_httpd(cookie *http.Cookie, httpd_port uint, local_port_web u
 		http.SetCookie(w, cookie)
 		w.WriteHeader(200)
 		log.Println("Sending HTML: ", html)
-		fmt.Fprintf(w, html)
+		fmt.Fprint(w, html)
 	})
 	log.Println("Going to listen and serve on port:  ", httpd_port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", httpd_port), nil); err != nil {
@@ -162,6 +160,9 @@ func get_sessionid_cookie(username, passwd string, port uint) *http.Cookie {
 
 	// Send request
 	resp, err = client.Do(req)
+	if err != nil {
+		log.Println("Error with request: ", err)
+	}
 	log.Println("Body: ", resp.Body)
 
 	// Read body from response

@@ -59,7 +59,7 @@ func (t *WattTab) Connect(conn *cap.Connection) {
 	})
 
 	t.Tabs.SetItems([]*container.TabItem{homeTab, t.instanceTab.TabItem, t.webTab.TabItem, sshTab, fwdTab.TabItem})
-	t.Tabs.SelectTabIndex(1)
+	t.Tabs.SelectIndex(1)
 }
 
 func newWattHome(close_cb func()) *container.TabItem {

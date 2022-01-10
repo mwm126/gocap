@@ -71,7 +71,7 @@ func (yk *StubYubikey) ChallengeResponseHMAC(chal SHADigest) ([20]byte, error) {
 	return [20]byte{}, nil
 }
 
-func _TestCapConnection(t *testing.T) {
+func TestCapConnection(t *testing.T) {
 	username := "testusername"
 	password := "testpassword"
 	ext_ip := net.IPv4(11, 22, 33, 44)
@@ -95,14 +95,14 @@ func _TestCapConnection(t *testing.T) {
 	}
 
 	t.Run("Test connection username", func(t *testing.T) {
-		want := "0estusername"
+		want := "testusername"
 		got := conn.username
 		if want != got {
 			t.Errorf("Did not set connection username: want %s but got %s", want, got)
 		}
 	})
 	t.Run("Test connection password", func(t *testing.T) {
-		want := "0estpassword"
+		want := "testpassword"
 		got := conn.password
 		if want != got {
 			t.Errorf("Did not set connection password: want %s but got %s", want, got)
