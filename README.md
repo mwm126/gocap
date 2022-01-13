@@ -19,9 +19,24 @@ sudo apt install golang gcc libgl1-mesa-dev xorg-dev
 
 ### Windows
 
-TODO
+[Scoop](https://scoop.sh) is the recommended way to install windows dependencies.
 
-Run development build in MSYS2 environment
+```
+scoop install curl
+scoop install gcc
+scoop install go
+scoop install innoextract
+scoop install innounp
+scoop install yubikey-personalization
+```
+
+You need to set environment variables for the location of the Yubikey library when building:
+
+```
+notepad $PROFILE    # to set env variables permanently; or run the following everytime you open the terminal
+$env:CGO_CFLAGS="-I$(scoop prefix yubikey-personalization)/include -I$(scoop prefix yubikey-personalization)/include/ykpers-1"
+$env:CGO_LDFLAGS="-L$(scoop prefix yubikey-personalization)/lib"
+```
 
 ## Generate
 
