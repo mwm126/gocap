@@ -20,7 +20,7 @@ func VncCmd(vncviewer_path, otp string, localPort uint) *exec.Cmd {
 	)
 }
 
-func RunVnc(otp, displayNumber string, localPort int) {
+func RunVnc(otp, displayNumber string, localPort uint) {
 	vnchome := extractVncToTempDir(otp, displayNumber, localPort)
 	defer os.RemoveAll(vnchome)
 
