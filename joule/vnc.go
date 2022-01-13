@@ -137,10 +137,12 @@ func newVncTab(
 					log.Println("WARNING: OTP is missing, cannot connect.")
 					return
 				}
-				connect_btn.Disable()
-				t.VncRunner.RunVnc(*otp, display, local_p)
-				tunnel.Close()
-				connect_btn.Enable()
+				go func() {
+					connect_btn.Disable()
+					t.VncRunner.RunVnc(*otp, display, local_p)
+					tunnel.Close()
+					connect_btn.Enable()
+				}()
 			}
 			delete_btn := widget.NewButton("Kill", func() {
 				t.KillSession(conn, connect_btn.session.DisplayNumber)

@@ -3,6 +3,7 @@ package joule
 import (
 	"os/exec"
 	"testing"
+	"time"
 
 	"aeolustec.com/capclient/cap"
 	"fyne.io/fyne/v2"
@@ -178,6 +179,7 @@ func TestVncConnect(t *testing.T) {
 	connect_btn := obj.(*ItemButton)
 
 	test.Tap(connect_btn)
+	time.Sleep(1 * time.Second) // wait for goroutine to update vncTab
 
 	want := "/path/to/vncviewer 127.0.0.1::54321 -Password=17760704"
 
