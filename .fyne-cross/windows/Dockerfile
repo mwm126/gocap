@@ -1,4 +1,4 @@
-FROM fyneio/fyne-cross:1.1-windows-21.10.05
+FROM fyneio/fyne-cross:1.1-windows-22.01.10
 LABEL maintainer="Mark Meredith <mark.meredith@pm.me>"
 
 ENV DEBIAN_FRONTEND noninteractive

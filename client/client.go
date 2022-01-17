@@ -1,8 +1,6 @@
-package main
+package client
 
 import (
-	"log"
-
 	"aeolustec.com/capclient/cap"
 	"aeolustec.com/capclient/config"
 	"aeolustec.com/capclient/fe261"
@@ -10,33 +8,10 @@ import (
 	"aeolustec.com/capclient/login"
 	"aeolustec.com/capclient/watt"
 	fyne "fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
-
-func main() {
-	cfg := config.GetConfig()
-	cfg.Enable_joule = true
-	cfg.Enable_watt = true
-	config.WriteConfig(cfg)
-
-	yk := new(cap.UsbYubikey)
-	knk := cap.NewKnocker(yk, cfg.YubikeyTimeout)
-	knk.StartMonitor()
-	conn_man := cap.NewCapConnectionManager(cap.NewSshClient, knk)
-	a := app.New()
-	w := a.NewWindow("CAP Client")
-
-	err := login.InitServices(nil)
-	if err != nil {
-		log.Println("Could not contact Service List server:", err)
-		return
-	}
-	client := NewClient(a, w, cfg, conn_man)
-	client.Run()
-}
 
 // Client represents the Main window of CAP client
 type Client struct {

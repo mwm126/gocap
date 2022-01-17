@@ -54,9 +54,8 @@ function build_mac {
     echo
     echo "Note:  This script will run sudo to DELETE your ${TURBO_HOME} directory, and then (re)install TurboVNC-2.2.7 to ${TURBO_HOME}."
     echo
-    echo "If you don't want this, Ctrl-C to cancel.  Otherwise, Enter to continue."
+    read -p "If you don't want this, Ctrl-C to cancel.  Otherwise, Enter to continue." -r
     echo
-    read
 
     if [ "$UNAME_S" != "Darwin" ]; then
         echo
@@ -84,4 +83,4 @@ function build_windows {
 }
 
 
-main
+main "$@"
