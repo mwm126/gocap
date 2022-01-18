@@ -18,6 +18,8 @@ type PortForwardTab struct {
 	app       fyne.App
 	save      SaveCallback
 	forwards  binding.StringList
+	list      *widget.List
+	remove    *widget.Button
 }
 
 func NewPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *PortForwardTab {
@@ -37,33 +39,32 @@ func NewPortForwardTab(app fyne.App, fwds []string, cb SaveCallback) *PortForwar
 
 	t.AddButton = widget.NewButton("Add", t.showNewPortForwardDialog)
 
-	var remove *widget.Button
 	var to_be_removed widget.ListItemID
-	remove = widget.NewButton("Remove", func() {
+	t.remove = widget.NewButton("Remove", func() {
 		t.removeForward(to_be_removed)
-		remove.Disable()
+		t.remove.Disable()
 	})
-	remove.Disable()
+	t.remove.Disable()
 
-	list := widget.NewListWithData(t.forwards,
+	t.list = widget.NewListWithData(t.forwards,
 		func() fyne.CanvasObject {
 			return widget.NewLabel("template")
 		},
 		func(fwd binding.DataItem, obj fyne.CanvasObject) {
 			obj.(*widget.Label).Bind(fwd.(binding.String))
 		})
-	list.OnUnselected = func(id widget.ListItemID) { remove.Disable() }
-	list.OnSelected = func(id widget.ListItemID) {
+	t.list.OnUnselected = func(id widget.ListItemID) { t.remove.Disable() }
+	t.list.OnSelected = func(id widget.ListItemID) {
 		if id < 2 {
-			remove.Disable()
+			t.remove.Disable()
 			log.Println("Cannot remove fixed forward #", id)
 		} else {
-			remove.Enable()
+			t.remove.Enable()
 			to_be_removed = id
 		}
 	}
 
-	box := container.NewBorder(t.AddButton, remove, nil, nil, list)
+	box := container.NewBorder(t.AddButton, t.remove, nil, nil, t.list)
 	t.TabItem = container.NewTabItem("Port Forwards", box)
 	return &t
 }
