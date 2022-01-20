@@ -3,12 +3,13 @@ package login
 import (
 	_ "embed"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 )
 
-//go:embed services.json
-var jsonFile []byte
+var services_url = "https://hpc.netl.doe.gov/cap/services.json"
 
 type Network struct {
 	ClientExternalAddress string `json:"client_external_address"`
@@ -57,7 +58,21 @@ func InitServices(init *[]Service) error {
 	}
 
 	var services Services
-	err := json.Unmarshal(jsonFile, &services)
+
+	response, err := http.Get(services_url)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	err = json.Unmarshal(body, &services)
 	if err != nil {
 		log.Println("Unable to parse services.json: ", err)
 		return err
