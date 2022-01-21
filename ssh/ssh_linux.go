@@ -36,6 +36,6 @@ func run_ssh(conn *cap.Connection) {
 	)
 	err := cmd.Run()
 	if err != nil {
-		log.Println("Error: could not start SSH session in termanal: ", err)
+		log.Println("Error: could not start SSH session in terminal: ", err)
 	}
 }
