@@ -58,7 +58,15 @@ func (t *WattTab) Connect(conn *cap.Connection) {
 		config.SaveForwards(fwds)
 	})
 
-	t.Tabs.SetItems([]*container.TabItem{homeTab, t.instanceTab.TabItem, t.webTab.TabItem, sshTab, fwdTab.TabItem})
+	t.Tabs.SetItems(
+		[]*container.TabItem{
+			homeTab,
+			t.instanceTab.TabItem,
+			t.webTab.TabItem,
+			sshTab,
+			fwdTab.TabItem,
+		},
+	)
 	t.Tabs.SelectIndex(1)
 }
 

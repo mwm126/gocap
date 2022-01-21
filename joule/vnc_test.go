@@ -202,3 +202,7 @@ func TestVncCmd(t *testing.T) {
 func (r *SpyRunner) RunVnc(otp, display string, port uint) {
 	r.calls = append(r.calls, *VncCmd("/path/to/vncviewer", otp, port))
 }
+
+func TestExtractVnc(t *testing.T) {
+	extractVncToTempDir("onetime_pwd", "1234", 8088)
+}
