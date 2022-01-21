@@ -89,10 +89,6 @@ func TestWattLoginButton(t *testing.T) {
 
 	knk := cap.NewKnocker(&FakeYubikey{}, 0)
 	conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
-	err := login.InitServices(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 	var watt_service login.Service
 	services, _ := login.FindServices()
 	for _, service := range services {

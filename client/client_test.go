@@ -84,9 +84,7 @@ func TestClient(t *testing.T) {
 			if tc.watt {
 				services = append(services, login.Service{Name: "watt"})
 			}
-			if err := login.InitServices(&services); err != nil {
-				t.Fatal(err)
-			}
+			login.SetDemoServices(services)
 			a := test.NewApp()
 			w := test.NewWindow(nil)
 			var cfg config.Config

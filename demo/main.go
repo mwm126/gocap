@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -38,40 +37,11 @@ func main() {
 	w := a.NewWindow("CAP Client <DEMO; Lorem Ipsum>")
 
 	testserver, sshport := startSshServer()
-	capport := sshport // doesn't matter; ignored anyway
+	defer testserver.Close()
+	login.SetDemoPort(sshport)
 
-	services := []login.Service{
-		{
-			Name:    "joule",
-			CapPort: uint(capport),
-			SshPort: sshport,
-			Networks: map[string]login.Network{
-				"external": {
-					ClientExternalAddress: "127.0.0.1",
-					CapServerAddress:      "127.0.0.1",
-				},
-			},
-		},
-		{
-			Name:    "watt",
-			CapPort: uint(capport),
-			SshPort: sshport,
-			Networks: map[string]login.Network{
-				"external": {
-					ClientExternalAddress: "127.0.0.1",
-					CapServerAddress:      "127.0.0.1",
-				},
-			},
-		},
-	}
-	err := login.InitServices(&services)
-	if err != nil {
-		log.Println("Could not contact Service List server:", err)
-		return
-	}
 	client := NewClient(a, w, cfg, conn_man, sshport)
 	client.Run()
-	defer testserver.Close()
 }
 
 func startSshServer() (*sshtest.Server, uint) {

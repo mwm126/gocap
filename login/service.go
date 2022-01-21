@@ -7,6 +7,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+
+	externalip "github.com/glendc/go-external-ip"
 )
 
 var services_url = "https://hpc.netl.doe.gov/cap/services.json"
@@ -49,12 +52,51 @@ type Services struct {
 }
 
 var globalServices []Service
+var demoPort uint
 
-func InitServices(init *[]Service) error {
-	if init != nil {
-		// override for testing
-		globalServices = *init
-		return nil
+func SetDemoServices(services []Service) {
+	globalServices = services
+}
+
+func SetDemoPort(port uint) {
+	demoPort = port
+}
+
+func defaultDemoServices() []Service {
+	sshport := demoPort
+	capport := sshport // doesn't matter; ignored anyway
+	return []Service{{
+		Name:    "joule",
+		CapPort: uint(capport),
+		SshPort: sshport,
+		Networks: map[string]Network{
+			"external": {
+				ClientExternalAddress: "127.0.0.1",
+				CapServerAddress:      "127.0.0.1",
+			},
+		},
+	},
+		{
+			Name:    "watt",
+			CapPort: uint(capport),
+			SshPort: sshport,
+			Networks: map[string]Network{
+				"external": {
+					ClientExternalAddress: "127.0.0.1",
+					CapServerAddress:      "127.0.0.1",
+				},
+			},
+		},
+	}
+}
+
+func FindServices() ([]Service, error) {
+	if os.Getenv("GOCAP_DEMO") != "" && globalServices == nil {
+		globalServices = defaultDemoServices()
+	}
+
+	if globalServices != nil {
+		return globalServices, nil
 	}
 
 	var services Services
@@ -62,25 +104,30 @@ func InitServices(init *[]Service) error {
 	response, err := http.Get(services_url)
 	if err != nil {
 		log.Println(err)
-		return err
+		return globalServices, err
 	}
 	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Println(err)
-		return err
+		return globalServices, err
 	}
 
 	err = json.Unmarshal(body, &services)
 	if err != nil {
 		log.Println("Unable to parse services.json: ", err)
-		return err
+		return globalServices, err
 	}
 	globalServices = services.Services
-	return nil
+	return globalServices, nil
 }
 
-func FindServices() ([]Service, error) {
-	return globalServices, nil
+func GetExternalIp() net.IP {
+	consensus := externalip.DefaultConsensus(nil, nil)
+	ip, err := consensus.ExternalIP()
+	if err != nil {
+		log.Println("Warning: Could not find external IP, ", err)
+	}
+	return ip
 }
