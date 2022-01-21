@@ -33,7 +33,7 @@ scoop install yubikey-personalization
 You need to set environment variables for the location of the Yubikey library when building:
 
 ```
-notepad $PROFILE    # to set env variables permanently; or run the following everytime you open the terminal
+notepad $PROFILE    # to set env variables permanently; or run the following each time opening the terminal
 $env:CGO_CFLAGS="-I$(scoop prefix yubikey-personalization)/include -I$(scoop prefix yubikey-personalization)/include/ykpers-1"
 $env:CGO_LDFLAGS="-L$(scoop prefix yubikey-personalization)/lib"
 ```
