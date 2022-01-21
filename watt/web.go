@@ -55,7 +55,13 @@ func NewWebTab(conn *cap.Connection) *WebTab {
 func fwd_spice(conn *cap.Connection) *cap.Tunnel {
 	tunnel, err := conn.NewTunnel(WATT_SPICE_PORT, WATT_SPICE_HOST, WATT_SPICE_PORT)
 	if err != nil {
-		log.Printf("Could not forward %d:%s:%d because %s", WATT_SPICE_PORT, WATT_SPICE_HOST, WATT_SPICE_PORT, err)
+		log.Printf(
+			"Could not forward %d:%s:%d because %s",
+			WATT_SPICE_PORT,
+			WATT_SPICE_HOST,
+			WATT_SPICE_PORT,
+			err,
+		)
 		return nil
 	}
 	return tunnel
@@ -70,7 +76,13 @@ func fwd_web(conn *cap.Connection) *cap.Tunnel {
 
 	tunnel, err := conn.NewTunnel(local_web_port, WATT_WEB_HOST, WATT_WEB_PORT)
 	if err != nil {
-		log.Printf("Could not forward %d:%s:%d because %s", local_web_port, WATT_WEB_HOST, WATT_WEB_PORT, err)
+		log.Printf(
+			"Could not forward %d:%s:%d because %s",
+			local_web_port,
+			WATT_WEB_HOST,
+			WATT_WEB_PORT,
+			err,
+		)
 		return nil
 	}
 	return tunnel
@@ -94,7 +106,11 @@ func (t *WebTab) handle_ml_open_webui() {
 		return
 	}
 
-	cookie := get_sessionid_cookie(t.connection.GetUsername(), t.connection.GetPassword(), local_port_web)
+	cookie := get_sessionid_cookie(
+		t.connection.GetUsername(),
+		t.connection.GetPassword(),
+		local_port_web,
+	)
 
 	go start_redirect_httpd(cookie, redirect_httpd_port, local_port_web)
 
@@ -105,7 +121,10 @@ func (t *WebTab) handle_ml_open_webui() {
 
 func start_redirect_httpd(cookie *http.Cookie, httpd_port uint, local_port_web uint) {
 	url := fmt.Sprintf("http://localhost:%d/dashboard/project/instances/", local_port_web)
-	html := fmt.Sprintf(`<html><head><meta http-equiv="Refresh" content="0; url=\'%s\'" /></head></html>`, url)
+	html := fmt.Sprintf(
+		`<html><head><meta http-equiv="Refresh" content="0; url=\'%s\'" /></head></html>`,
+		url,
+	)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Setting Cookie: ", *cookie)
 		http.SetCookie(w, cookie)
