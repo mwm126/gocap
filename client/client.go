@@ -30,11 +30,11 @@ func NewClient(
 ) *Client {
 	var client Client
 
-	service := login.Service{ // TODO: placeholder for real ServiceList service
+	service := cap.Service{ // TODO: placeholder for real ServiceList service
 		Name:    "ServiceList",
 		CapPort: 62201,
 		SshPort: 22,
-		Networks: map[string]login.Network{
+		Networks: map[string]cap.Network{
 			"external": {
 				ClientExternalAddress: "0.0.0.0",
 				CapServerAddress:      "204.154.139.11",
@@ -57,11 +57,11 @@ func NewClient(
 	)
 
 	client = Client{conn_man, nil, w, a, login_tab}
-	client.setupServices(nil, make([]login.Service, 0))
+	client.setupServices(nil, make([]cap.Service, 0))
 	return &client
 }
 
-func (client *Client) setupServices(login_info *login.LoginInfo, services []login.Service) {
+func (client *Client) setupServices(login_info *login.LoginInfo, services []cap.Service) {
 	about_tab := container.NewTabItemWithIcon(
 		"About",
 		theme.HomeIcon(),

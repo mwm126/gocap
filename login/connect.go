@@ -25,7 +25,7 @@ type CapTab struct {
 
 func NewCapTab(tabname,
 	desc string,
-	service Service,
+	service cap.Service,
 	conn_man *cap.ConnectionManager,
 	connected_cb func(cap *cap.Connection),
 	connected *fyne.Container, login_info LoginInfo) *CapTab {

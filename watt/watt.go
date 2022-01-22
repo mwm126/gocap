@@ -21,7 +21,7 @@ type WattTab struct {
 
 func NewWattConnected(
 	app fyne.App,
-	service login.Service,
+	service cap.Service,
 	conn_man *cap.ConnectionManager,
 	login_info login.LoginInfo,
 ) WattTab {

@@ -18,9 +18,9 @@ type LoginTab struct {
 
 func NewLoginTab(tabname,
 	desc string,
-	service Service,
+	service cap.Service,
 	conn_man *cap.ConnectionManager,
-	login_cb func(*LoginInfo, []Service),
+	login_cb func(*LoginInfo, []cap.Service),
 	connected *fyne.Container,
 	username, password string) *LoginTab {
 
@@ -34,7 +34,7 @@ func NewLoginTab(tabname,
 			log.Println("Could not login to lookup services: ", err)
 		}
 		tab.connection = conn
-		services, err := FindServices()
+		services, err := conn_man.FindServices(linfo.Username)
 		if err != nil {
 			log.Println("Could not find services: ", err)
 		}

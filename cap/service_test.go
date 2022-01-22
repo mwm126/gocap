@@ -1,11 +1,14 @@
-package login
+package cap
 
 import (
 	"testing"
 )
 
 func TestParseServicesJson(t *testing.T) {
-	services, err := FindServices()
+	knk := NewKnocker(&StubYubikey{}, 0)
+	cm := NewCapConnectionManager(NewFakeClient, knk)
+
+	services, err := cm.FindServices("my_username")
 	if err != nil {
 		t.Fatal("failed to find services:", err)
 	}

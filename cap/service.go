@@ -1,6 +1,7 @@
-package login
+package cap
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	externalip "github.com/glendc/go-external-ip"
 )
@@ -90,7 +92,7 @@ func defaultDemoServices() []Service {
 	}
 }
 
-func FindServices() ([]Service, error) {
+func (cm *ConnectionManager) FindServices(uname string) ([]Service, error) {
 	if os.Getenv("GOCAP_DEMO") != "" && globalServices == nil {
 		globalServices = defaultDemoServices()
 	}
@@ -101,7 +103,22 @@ func FindServices() ([]Service, error) {
 
 	var services Services
 
-	response, err := http.Get(services_url)
+	timestamp, err := getNtpTime()
+	if err != nil {
+		log.Printf("Unable to get NTP time:  %v", err)
+		log.Printf("Warning: going to use local time, without checking for NTP offset")
+		timestamp = (int32)(time.Now().Unix())
+	}
+	auth_addr := net.IPv4(1, 1, 1, 1)
+	ssh_addr := net.IPv4(2, 2, 2, 2)
+	server_addr := net.IPv4(3, 3, 3, 3)
+	packet, err := cm.knocker.makePacket(uname, timestamp, auth_addr, ssh_addr, server_addr)
+	if err != nil {
+		log.Println("Unable to get services:", err)
+		return globalServices, err
+	}
+
+	response, err := http.Post(services_url, "application/json", bytes.NewReader(packet))
 	if err != nil {
 		log.Println(err)
 		return globalServices, err

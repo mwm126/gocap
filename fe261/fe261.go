@@ -18,7 +18,7 @@ type Fe261Tab struct {
 
 func NewFe261Connected(
 	app fyne.App,
-	service login.Service,
+	service cap.Service,
 	conn_man *cap.ConnectionManager,
 	login_info login.LoginInfo) Fe261Tab {
 	var fe261_tab Fe261Tab

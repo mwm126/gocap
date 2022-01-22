@@ -74,17 +74,17 @@ func TestClient(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			knk := cap.NewKnocker(&FakeYubikey{}, 0)
 			conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
-			var services []login.Service
+			var services []cap.Service
 			if tc.fe261 {
-				services = append(services, login.Service{Name: "fe261"})
+				services = append(services, cap.Service{Name: "fe261"})
 			}
 			if tc.joule {
-				services = append(services, login.Service{Name: "joule"})
+				services = append(services, cap.Service{Name: "joule"})
 			}
 			if tc.watt {
-				services = append(services, login.Service{Name: "watt"})
+				services = append(services, cap.Service{Name: "watt"})
 			}
-			login.SetDemoServices(services)
+			cap.SetDemoServices(services)
 			a := test.NewApp()
 			w := test.NewWindow(nil)
 			var cfg config.Config

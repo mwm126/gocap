@@ -72,8 +72,8 @@ func TestJouleLoginButton(t *testing.T) {
 	knk := cap.NewKnocker(&StubYubikey{}, 0)
 	conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
 
-	var joule_service login.Service
-	services, _ := login.FindServices()
+	var joule_service cap.Service
+	services, _ := conn_man.FindServices("the_user")
 	for _, service := range services {
 		if service.Name == "joule" {
 			joule_service = service
