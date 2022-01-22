@@ -3,12 +3,16 @@ package login
 import (
 	_ "embed"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
+	"os"
+
+	externalip "github.com/glendc/go-external-ip"
 )
 
-//go:embed services.json
-var jsonFile []byte
+var services_url = "https://hpc.netl.doe.gov/cap/services.json"
 
 type Network struct {
 	ClientExternalAddress string `json:"client_external_address"`
@@ -48,24 +52,82 @@ type Services struct {
 }
 
 var globalServices []Service
+var demoPort uint
 
-func InitServices(init *[]Service) error {
-	if init != nil {
-		// override for testing
-		globalServices = *init
-		return nil
-	}
+func SetDemoServices(services []Service) {
+	globalServices = services
+}
 
-	var services Services
-	err := json.Unmarshal(jsonFile, &services)
-	if err != nil {
-		log.Println("Unable to parse services.json: ", err)
-		return err
+func SetDemoPort(port uint) {
+	demoPort = port
+}
+
+func defaultDemoServices() []Service {
+	sshport := demoPort
+	capport := sshport // doesn't matter; ignored anyway
+	return []Service{{
+		Name:    "joule",
+		CapPort: uint(capport),
+		SshPort: sshport,
+		Networks: map[string]Network{
+			"external": {
+				ClientExternalAddress: "127.0.0.1",
+				CapServerAddress:      "127.0.0.1",
+			},
+		},
+	},
+		{
+			Name:    "watt",
+			CapPort: uint(capport),
+			SshPort: sshport,
+			Networks: map[string]Network{
+				"external": {
+					ClientExternalAddress: "127.0.0.1",
+					CapServerAddress:      "127.0.0.1",
+				},
+			},
+		},
 	}
-	globalServices = services.Services
-	return nil
 }
 
 func FindServices() ([]Service, error) {
+	if os.Getenv("GOCAP_DEMO") != "" && globalServices == nil {
+		globalServices = defaultDemoServices()
+	}
+
+	if globalServices != nil {
+		return globalServices, nil
+	}
+
+	var services Services
+
+	response, err := http.Get(services_url)
+	if err != nil {
+		log.Println(err)
+		return globalServices, err
+	}
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Println(err)
+		return globalServices, err
+	}
+
+	err = json.Unmarshal(body, &services)
+	if err != nil {
+		log.Println("Unable to parse services.json: ", err)
+		return globalServices, err
+	}
+	globalServices = services.Services
 	return globalServices, nil
+}
+
+func GetExternalIp() net.IP {
+	consensus := externalip.DefaultConsensus(nil, nil)
+	ip, err := consensus.ExternalIP()
+	if err != nil {
+		log.Println("Warning: Could not find external IP, ", err)
+	}
+	return ip
 }

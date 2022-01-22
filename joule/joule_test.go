@@ -72,10 +72,6 @@ func TestJouleLoginButton(t *testing.T) {
 	knk := cap.NewKnocker(&StubYubikey{}, 0)
 	conn_man := cap.NewCapConnectionManager(NewFakeClient, knk)
 
-	err := login.InitServices(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 	var joule_service login.Service
 	services, _ := login.FindServices()
 	for _, service := range services {

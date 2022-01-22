@@ -5,10 +5,6 @@ import (
 )
 
 func TestParseServicesJson(t *testing.T) {
-	err := InitServices(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 	services, err := FindServices()
 	if err != nil {
 		t.Fatal("failed to find services:", err)
@@ -25,4 +21,12 @@ func TestParseServicesJson(t *testing.T) {
 		t.Error("incorrect address")
 	}
 
+}
+
+func TestGetExternalIp(t *testing.T) {
+	ip := GetExternalIp()
+
+	if ip.String() == "127.0.0.1" {
+		t.Error("Should get external IP address, not", ip)
+	}
 }
