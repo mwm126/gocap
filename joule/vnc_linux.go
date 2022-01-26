@@ -34,11 +34,13 @@ func RunVnc(otp, displayNumber string, localPort uint) {
 	cmd := VncCmd(vnc_cmd, otp, localPort)
 	log.Println("\n\n\nRunVnc: ", cmd)
 
+	var output []byte
 	if os.Getenv("GOCAP_DEMO") == "" {
-		if output, err := cmd.CombinedOutput(); err != nil {
-			log.Println("vncviewer output: ", string(output))
-			log.Println("vncviewer error: ", err)
-		}
+		output, err = cmd.CombinedOutput()
+	}
+
+	if err != nil {
+		log.Printf("vncviewer output: %s \nfrom error: %s  ", string(output), err)
 	}
 
 }
