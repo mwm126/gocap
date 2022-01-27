@@ -1,0 +1,92 @@
+* PIV exercise
+https://developers.yubico.com/PIV/Guides/PIV_Walk-Through.html
+
+** Device Setup
+Reset PIN and PUK
+
+#+BEGIN shell
+❯ ykman piv reset
+
+WARNING! This will delete all stored PIV data and restore factory settings. Proceed? [y/N]: y
+Resetting PIV data...
+Success! All PIV data have been cleared from the YubiKey.
+Your YubiKey now has the default PIN, PUK and Management Key:
+  PIN:	123456
+  PUK:	12345678
+  Management Key:	010203040506070801020304050607080102030405060708
+#+END shell
+
+** PIV Walkthru
+*** Make public.pem (public key)
+
+#  Generate ~public.pem~ in YK slot:
+
+#  #+BEGIN shell
+#  ❯ yubico-piv-tool -s 9a -a generate -o public.pem
+#  YubiKey serial number 5417550 is affected by vulnerability CVE-2017-15361 (ROCA) and should be replaced. On-chip key generation was permitted by default, but is not recommended.  The default behavior will change in a future Yubico release.  See YSA-2017-01 <https://www.yubico.com/support/security-advisories/ysa-2017-01/> for additional information on device replacement and mitigation assistance.
+#  Successfully generated a new private key.
+#  #+END
+
+# The above does not generate a RSA-2048 key that is acceptable to GitHub.
+
+# The following garbage does not work:
+#  #+BEGIN shell
+#  ❯ ssh-keygen -t rsa -m PEM -O bits=2048 -f ykpiv
+#  #+END
+
+Instead, generate the RSA-2048 key with ~openssl genrsa~:
+ #+BEGIN shell
+❯ openssl genrsa -out key.pem 2048
+Generating RSA private key, 2048 bit long modulus (2 primes)
+.....................................+++++
+...............+++++
+e is 65537 (0x010001)
+ #+END
+
+Then extract the public key as well:
+
+ #+BEGIN shell
+❯ openssl rsa -in key.pem -outform PEM -pubout -out public.pem
+ #+END
+
+*** Import key to Yubikey
+
+To import the key to the Yubikey:
+
+ #+BEGIN shell
+ ❯ yubico-piv-tool -s 9a -a import-key -i key.pem
+ #+END
+
+*** Make cert.pem (public cert)
+ Create a self-signed-certificate ~cert.pem~ from ~public.pem~
+
+ #+BEGIN shell
+ ❯ yubico-piv-tool -a verify-pin -a selfsign-certificate -s 9a -S "/CN=SSH key/" -i public.pem -o cert.pem
+ Enter PIN:
+ Successfully verified PIN.
+ Successfully generated a new self signed certificate.
+ #+END
+
+*** Put cert.pem on Yubikey
+ Load that ~cert.pem~ onto the YK
+
+ #+BEGIN shell
+ ❯ yubico-piv-tool -a import-certificate -s 9a -i cert.pem
+ Successfully imported a new certificate.
+ #+END
+
+*** Upload public key to GitHub
+ #+BEGIN shell
+ ❯ ssh-keygen -D /usr/lib/x86_64-linux-gnu/libykcs11.so -e
+ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCW9bygrYi0kx1uOlG/l2+Si3GeW4FYySp2/PuaDpqXx2xqe6TG8q5lQzY4Sl9YUt9wsviufu2mDwXpJ+fXVN+wH3/TmqR1n4wVansQqj09jst3lpOS2I0jIR1km1KVAjUaiaZnaAgTuET85TolPv4PnjKuI7Ko6C9x9RkFn5fzvqOyTomm9DilHJAYgOKJn83sQpAs35EieIqXTs9S0Zu8gv5DVxU7oov43IjmYLYqGSBdP3Li5NFxa4O0gmglMjl5/NEhUKNVvi/jSzf6d0eqccnUmnbp30A9SAJKcwKUdgZElhWlh/qPbKBym/jY1gebQMLU/eQKfjNa6VrekpiX Public key for PIV Authentication
+ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrqQsWm+8xzD6sGFotRYB1cMdYsGw/G1kNSbmJ6G/Ouydv2DxgOoUA71y8QJk9Qe7qwIF/dkjkqUy81WvhHwpgk8b+qtKNjuK3zYsr95vdWqsvz7kOVM7sjfVe13uRw6dWnNzBBoZ2NkRT+wgl2Aa5BoyB/WNnyjyouOocpsrbRHsSyrI0AX5z5DaD3+v5IwAHAWoHGYpkVp0QisVzAj0Ybq8/wwKnwPei/W1aQnZO1sAe1sDGql2nGp8Q2zBXGFy1tf0MvkkkIq8eVko0RNSq1OGulUx1wIhh9Ix+VPMT6w/lK1JgWm661+WMY9pRGrsiXDcr19FwV0wu3DU8Ipib Public key for PIV Attestation
+ #+END
+
+ Copy paste the /first/ line to https://github.com/settings/ssh/new
+
+*** Connect to GitHub
+
+ #+BEGIN shell
+❯ ssh -i key.pem -T git@github.com
+PTY allocation request failed on channel 0
+ #+END
