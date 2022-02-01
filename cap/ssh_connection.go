@@ -68,10 +68,6 @@ func (sc *sshClient) OpenSSHTunnel(
 	remote_port int,
 ) sshtunnel.SSHTunnel {
 	//     Open forward to the login SSH daemon
-	log.Println("Opening Tunnel")
-
-	// ssh_port := check_free_port(SSH_LOCAL_PORT)
-
 	tunnel := sshtunnel.NewSSHTunnel(
 		sc.client,
 		// User and host of tunnel server, it will default to port 22
@@ -99,7 +95,6 @@ func (sc *sshClient) OpenSSHTunnel(
 		}
 	}()
 	time.Sleep(100 * time.Millisecond)
-	log.Println("tunnel is ", tunnel)
 	return *tunnel
 }
 
@@ -128,9 +123,9 @@ func (client *sshClient) CheckPasswordExpired(
 func (client *sshClient) isPasswordExpired() bool {
 	out, err := client.CleanExec("echo")
 	if err != nil {
+		log.Println("outTxt=", out)
 		log.Println("errTxt=", err)
 	}
-	log.Println("outTxt=", out)
 	return strings.Contains(strings.ToLower(out), "expired")
 }
 

@@ -77,7 +77,6 @@ func (c *LoginCard) handle_login(
 		c.connect_cancelled = false
 		return nil, errors.New("Connection failed.")
 	}
-	log.Println("Made CAP Connection: ", conn)
 
 	if c.connect_cancelled {
 		log.Println("CAP Connection cancelled.")
