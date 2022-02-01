@@ -1,4 +1,4 @@
-* PIV exercise
+* CAP and Yubikey-PIV
 https://developers.yubico.com/PIV/Guides/PIV_Walk-Through.html
 
 ** Device Setup
@@ -90,3 +90,18 @@ To import the key to the Yubikey:
 ❯ ssh -i key.pem -T git@github.com
 PTY allocation request failed on channel 0
  #+END
+
+* Roadmap
+** User starts client
+** If Yubikey PIV already setup, skip to "Client prompts user for Yubikey PIN..."
+*** Client: Good news! The client now supports PIV authentication.  This provides more reliable network access and login without a password (with a Yubikey PIN instead). Use PIV? [ok/yes/sure]
+*** Client generates public/private key
+*** Client imports private key to YK
+*** Client generates cert
+*** Client imports cert to Yubikey
+*** Yubikey is now setup with PIV
+** Client prompts user for Yubikey PIN
+** Client sends CAP packet with public key to capd server
+** capd server verifies CAP packet [if first time using PIV, adds public key to authorized_keys]
+** capd server opens port like usual (but for any address, not just for the client's "external" address)
+** Client opens SSH connection using key for authentication
