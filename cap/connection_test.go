@@ -96,19 +96,22 @@ func TestCapConnection(t *testing.T) {
 
 	t.Run("Test connection username", func(t *testing.T) {
 		want := "testusername"
-		got := conn.username
+		got := conn.GetUsername()
 		if want != got {
 			t.Errorf("Did not set connection username: want %s but got %s", want, got)
 		}
 	})
 	t.Run("Test connection password", func(t *testing.T) {
 		want := "testpassword"
-		got := conn.password
+		got := conn.GetPassword()
 		if want != got {
 			t.Errorf("Did not set connection password: want %s but got %s", want, got)
 		}
 	})
 
+	t.Run("Test UpdateForwards", func(t *testing.T) {
+		conn.UpdateForwards([]string{"123,4.5.6.7,890"})
+	})
 }
 
 func TestParseVncProcesses(t *testing.T) {

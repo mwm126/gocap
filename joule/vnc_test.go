@@ -1,6 +1,7 @@
 package joule
 
 import (
+	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -205,4 +206,9 @@ func (r *SpyRunner) RunVnc(otp, display string, port uint) {
 
 func TestExtractVnc(t *testing.T) {
 	extractVncToTempDir("onetime_pwd", "1234", 8088)
+}
+
+func TestRunVnc(t *testing.T) {
+	os.Setenv("GOCAP_DEMO", "yes")
+	RunVnc("abc", "xyz", 123)
 }

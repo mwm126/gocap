@@ -1,6 +1,7 @@
 package login
 
 import (
+	"aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -16,7 +17,7 @@ type ConnectForm struct {
 // the dropdown. When submitting the form, function connect_cb() is called with
 // the entries for network, username, and password.
 func NewConnectForm(
-	service Service,
+	service cap.Service,
 	login_info LoginInfo,
 	connect_cb func(LoginInfo)) *ConnectForm {
 

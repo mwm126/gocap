@@ -23,7 +23,7 @@ type JouleTab struct {
 func NewJouleConnected(
 	app fyne.App,
 	w fyne.Window,
-	service login.Service,
+	service cap.Service,
 	conn_man *cap.ConnectionManager,
 	login_info login.LoginInfo) JouleTab {
 	var joule_tab JouleTab

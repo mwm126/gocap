@@ -25,7 +25,7 @@ type LoginCard struct {
 func NewLoginCard(
 	conn_man *cap.ConnectionManager,
 	name, desc string,
-	service Service,
+	service cap.Service,
 	loginForm *fyne.Container,
 ) *LoginCard {
 	var loginCard LoginCard
@@ -54,7 +54,7 @@ func NewLoginCard(
 }
 
 func (c *LoginCard) handle_login(
-	service Service,
+	service cap.Service,
 	login_info LoginInfo,
 	connected *fyne.Container,
 ) (*cap.Connection, error) {
