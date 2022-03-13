@@ -4,17 +4,11 @@ https://developers.yubico.com/PIV/Guides/PIV_Walk-Through.html
 ** Device Setup
 Reset PIN and PUK
 
-#+BEGIN shell
-❯ ykman piv reset
+#+begin_src shell :results output replace
+ykman piv reset
+#+end_src
 
-WARNING! This will delete all stored PIV data and restore factory settings. Proceed? [y/N]: y
-Resetting PIV data...
-Success! All PIV data have been cleared from the YubiKey.
-Your YubiKey now has the default PIN, PUK and Management Key:
-  PIN:	123456
-  PUK:	12345678
-  Management Key:	010203040506070801020304050607080102030405060708
-#+END shell
+#+RESULTS:
 
 ** PIV Walkthru
 *** Make public.pem (public key)
@@ -35,37 +29,37 @@ Your YubiKey now has the default PIN, PUK and Management Key:
 #  #+END
 
 Instead, generate the RSA-2048 key with ~openssl genrsa~:
- #+BEGIN shell
-❯ openssl genrsa -out key.pem 2048
-Generating RSA private key, 2048 bit long modulus (2 primes)
-.....................................+++++
-...............+++++
-e is 65537 (0x010001)
- #+END
+#+begin_src shell :results output replace
+openssl genrsa -out key.pem 2048
+#+end_src
+
+#+RESULTS:
 
 Then extract the public key as well:
 
- #+BEGIN shell
-❯ openssl rsa -in key.pem -outform PEM -pubout -out public.pem
- #+END
+#+begin_src shell :results output replace
+openssl rsa -in key.pem -outform PEM -pubout -out public.pem
+#+end_src
+
+#+RESULTS:
 
 *** Import key to Yubikey
 
 To import the key to the Yubikey:
 
- #+BEGIN shell
- ❯ yubico-piv-tool -s 9a -a import-key -i key.pem
- #+END
+#+begin_src shell :results output replace
+yubico-piv-tool -s 9a -a import-key -i key.pem
+#+end_src
 
 *** Make cert.pem (public cert)
  Create a self-signed-certificate ~cert.pem~ from ~public.pem~
 
- #+BEGIN shell
- ❯ yubico-piv-tool -a verify-pin -a selfsign-certificate -s 9a -S "/CN=SSH key/" -i public.pem -o cert.pem
- Enter PIN:
- Successfully verified PIN.
- Successfully generated a new self signed certificate.
- #+END
+#+BEGIN shell
+yubico-piv-tool -a verify-pin -a selfsign-certificate -s 9a -S "/CN=SSH key/" -i public.pem -o cert.pem
+Enter PIN:
+Successfully verified PIN.
+Successfully generated a new self signed certificate.
+#+END
 
 *** Put cert.pem on Yubikey
  Load that ~cert.pem~ onto the YK
