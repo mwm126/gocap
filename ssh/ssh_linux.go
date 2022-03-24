@@ -3,6 +3,7 @@ package ssh
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 
 	"aeolustec.com/capclient/cap"
@@ -39,14 +40,21 @@ func run_ssh(conn *cap.Connection) {
 
 	args = append(args,
 		"ssh",
+		"-o",
+		"UserKnownHostsFile=/dev/null",
+		"-o",
+		"StrictHostKeyChecking=no",
 		"-l",
 		conn.GetUsername(),
 		"-p",
 		fmt.Sprint(cap.SSH_LOCAL_PORT),
 		"127.0.0.1",
 	)
-	log.Println("ARGZ====", args)
 	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("SSHPASS=%s", conn.GetPassword()),
+	)
+
 	err = cmd.Run()
 	if err != nil {
 		log.Println("Error: could not start SSH session in terminal: ", err)
