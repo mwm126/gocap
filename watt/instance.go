@@ -18,7 +18,7 @@ import (
 type InstanceTab struct {
 	TabItem     *container.TabItem
 	filterEntry *widget.Entry
-	table       *widget.Table
+	list        *widget.List
 	instances   map[string][]Instance
 	inst_table  [][]string
 	connection  *cap.Connection
@@ -38,45 +38,40 @@ func (t *InstanceTab) Close() {
 func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 	t := InstanceTab{
 		TabItem:    nil,
-		table:      nil,
+		list:       nil,
 		instances:  make(map[string][]Instance),
 		connection: conn,
 		closed:     false,
 	}
-	t.table = widget.NewTable(
-		func() (int, int) {
+	t.list = widget.NewList(
+		func() int {
 			num_rows := len(t.inst_table) + 1 // add one for header
-			return num_rows, 4
+			return num_rows
 		},
 		func() fyne.CanvasObject {
 			obj := canvas.NewText("lorem ipsum", theme.PrimaryColorNamed("yellow"))
 			return obj
 		},
-		func(i widget.TableCellID, o fyne.CanvasObject) {
-			if i.Row == 0 {
-				// give me some header
-				txt := map[int]string{
-					0: "Project",
-					1: "UUID",
-					2: "Name",
-					3: "State",
-				}[i.Col]
-				o.(*canvas.Text).Text = txt
+		func(i widget.ListItemID, o fyne.CanvasObject) {
+			if i == 0 {
+				// _ := map[int]string{
+				//	0: "Project",
+				//	1: "UUID",
+				//	2: "Name",
+				//	3: "State",
+				// }
+				o.(*canvas.Text).Text = "txt"
 				o.(*canvas.Text).TextStyle.Italic = true
 				o.(*canvas.Text).Color = theme.PrimaryColorNamed("gray")
 				return
 			}
-			if i.Row-1 < len(t.inst_table) {
+			if i-1 < len(t.inst_table) {
 				o.(*canvas.Text).Color = color.White
 				o.(*canvas.Text).TextStyle.Italic = false
-				o.(*canvas.Text).Text = t.inst_table[i.Row-1][i.Col]
+				o.(*canvas.Text).Text = t.inst_table[i-1][3]
 			}
 		})
-	t.table.SetColumnWidth(0, 200)
-	t.table.SetColumnWidth(1, 500)
-	t.table.SetColumnWidth(2, 200)
-	t.table.SetColumnWidth(3, 200)
-	t.table.Resize(fyne.NewSize(1000, 1000))
+	t.list.Resize(fyne.NewSize(1000, 1000))
 
 	go func() {
 		for !t.closed {
@@ -84,7 +79,7 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 		}
 	}()
 
-	scroll := container.NewScroll(t.table)
+	scroll := container.NewScroll(t.list)
 	filter_label := widget.NewLabel("Filter:")
 	t.filterEntry = widget.NewEntry()
 	t.filterEntry.SetPlaceHolder("<case insensitive search>")
@@ -125,7 +120,7 @@ func (t *InstanceTab) refresh(txt string) {
 	}
 	t.instances = instmap
 	t.inst_table = insttab
-	t.table.Refresh()
+	t.list.Refresh()
 	time.Sleep(1 * time.Second) // TODO: configure refresh interval
 }
 
