@@ -14,23 +14,35 @@ type Instance struct {
 	State string
 }
 
-func find_instances(conn *cap.Connection) (map[string][]Instance, error) {
+type InstanceLister interface {
+	find_instances() map[string][]Instance
+}
+
+type CapInstanceLister struct {
+	connection *cap.Connection
+}
+
+func NewCapInstanceLister(conn *cap.Connection) CapInstanceLister {
+	return CapInstanceLister{conn}
+}
+
+func (lister CapInstanceLister) find_instances() map[string][]Instance {
 	instmap := make(map[string][]Instance)
-	projects, err := get_projects(conn)
+	projects, err := lister.get_projects()
 	if err != nil {
 		log.Println("Could not get projects: ", err)
-		return instmap, err
+		return instmap
 	}
 	log.Printf("Refreshing:   found %d projects.\n", len(projects))
 	for _, project := range projects {
-		instances, err := get_instances(conn, project)
+		instances, err := lister.get_instances(project)
 		if err != nil {
 			log.Printf("Could not refresh instances for project %s: %s", project, err)
 			continue
 		}
 		instmap[project] = instances
 	}
-	return instmap, nil
+	return instmap
 }
 
 func filter_instances(instmap map[string][]Instance, txt string) [][]string {
@@ -51,9 +63,9 @@ func filter_instances(instmap map[string][]Instance, txt string) [][]string {
 	return insttab_filtered
 }
 
-func get_projects(conn *cap.Connection) ([]string, error) {
-	cmd := env(conn, "openstack project list -f csv", "")
-	output, err := conn.GetClient().CleanExec(cmd)
+func (lister CapInstanceLister) get_projects() ([]string, error) {
+	cmd := lister.env("openstack project list -f csv", "")
+	output, err := lister.connection.GetClient().CleanExec(cmd)
 	if err != nil {
 		log.Println("Command ", cmd, " had error ", err)
 		return make([]string, 0), err
@@ -76,14 +88,14 @@ func parseProjects(text string) []string {
 
 const AD_HOSTNAME = "ad.science"
 
-func env(conn *cap.Connection, cmd string, project_name string) string {
+func (lister CapInstanceLister) env(cmd string, project_name string) string {
 	envvars := map[string]string{
 		"OS_AUTH_URL":             "http://192.168.101.182:5000/v3",
 		"OS_IDENTITY_API_VERSION": "3",
-		"OS_PASSWORD":             conn.GetPassword(),
+		"OS_PASSWORD":             lister.connection.GetPassword(),
 		"OS_PROJECT_DOMAIN_NAME":  AD_HOSTNAME,
 		"OS_PROJECT_NAME":         project_name,
-		"OS_USERNAME":             conn.GetUsername(),
+		"OS_USERNAME":             lister.connection.GetUsername(),
 		"OS_USER_DOMAIN_NAME":     AD_HOSTNAME,
 	}
 	for name, value := range envvars {
@@ -92,10 +104,10 @@ func env(conn *cap.Connection, cmd string, project_name string) string {
 	return cmd
 }
 
-func get_instances(conn *cap.Connection, project_name string) ([]Instance, error) {
+func (lister CapInstanceLister) get_instances(project_name string) ([]Instance, error) {
 	cmd := "openstack server list -f csv"
-	cmd = env(conn, cmd, project_name)
-	output, err := conn.GetClient().CleanExec(cmd)
+	cmd = lister.env(cmd, project_name)
+	output, err := lister.connection.GetClient().CleanExec(cmd)
 	if err != nil {
 		log.Println("Command ", cmd, " had error ", err)
 		return make([]Instance, 0), err

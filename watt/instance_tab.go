@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"aeolustec.com/capclient/cap"
+	// "aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
@@ -17,9 +17,9 @@ type InstanceTab struct {
 	TabItem     *container.TabItem
 	filterEntry *widget.Entry
 	table       *widget.Table
-	instances   map[string][]Instance
-	inst_table  [][]string
-	connection  *cap.Connection
+	instances   map[string][]Instance // All instances
+	inst_table  [][]string            // Filtered instances
+	lister      InstanceLister
 	closed      bool
 }
 
@@ -27,13 +27,13 @@ func (t *InstanceTab) Close() {
 	t.closed = true
 }
 
-func NewInstanceTab(conn *cap.Connection) *InstanceTab {
+func NewInstanceTab(lister InstanceLister) *InstanceTab {
 	t := InstanceTab{
 		TabItem: nil,
 		table:   nil,
 		// instances:  make(map[string][]Instance),
-		connection: conn,
-		closed:     false,
+		lister: lister,
+		closed: false,
 	}
 	t.table = widget.NewTable(
 		func() (int, int) {
@@ -92,13 +92,13 @@ func NewInstanceTab(conn *cap.Connection) *InstanceTab {
 }
 
 func (t *InstanceTab) refresh(txt string) {
-	instmap, err := find_instances(t.connection)
-	if err != nil {
-		log.Println("Could not refresh", err)
-		return
-	} else {
-		t.instances = instmap
-	}
+	t.instances = t.lister.find_instances()
+	// if err != nil {
+	// log.Println("Could not refresh", err)
+	// return
+	// } else {
+	// t.instances = instmap
+	// }
 	t.inst_table = filter_instances(t.instances, txt)
 	log.Printf("Refreshed: found %d instances.\n", len(t.inst_table))
 
