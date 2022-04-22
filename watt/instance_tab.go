@@ -1,26 +1,25 @@
 package watt
 
 import (
-	"image/color"
 	"log"
 	"time"
 
 	// "aeolustec.com/capclient/cap"
 	fyne "fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
 type InstanceTab struct {
-	TabItem     *container.TabItem
-	filterEntry *widget.Entry
-	table       *widget.Table
-	instances   map[string][]Instance // All instances
-	inst_table  [][]string            // Filtered instances
-	lister      InstanceLister
-	closed      bool
+	TabItem            *container.TabItem
+	filterEntry        *widget.Entry
+	list               *widget.List
+	instances          map[string][]Instance // All instances
+	filtered_instances []Instance            // Filtered instances
+	lister             InstanceLister
+	spice_client       SpiceClient
+	closed             bool
 }
 
 func (t *InstanceTab) Close() {
@@ -30,45 +29,45 @@ func (t *InstanceTab) Close() {
 func NewInstanceTab(lister InstanceLister) *InstanceTab {
 	t := InstanceTab{
 		TabItem: nil,
-		table:   nil,
+		list:    nil,
 		// instances:  make(map[string][]Instance),
 		lister: lister,
 		closed: false,
 	}
-	t.table = widget.NewTable(
-		func() (int, int) {
-			num_rows := len(t.inst_table) + 1 // add one for header
-			return num_rows, 4
+	t.list = widget.NewList(
+		func() int {
+			num_rows := len(t.filtered_instances)
+			return num_rows
 		},
 		func() fyne.CanvasObject {
-			obj := canvas.NewText("lorem ipsum", theme.PrimaryColorNamed("yellow"))
-			return obj
+			connect_btn := widget.NewButton("Connect", func() {})
+			project_lbl := widget.NewLabel("")
+			uuid_lbl := widget.NewLabel("")
+			name_lbl := widget.NewLabel("")
+			state_lbl := widget.NewLabel("")
+
+			content := container.New(layout.NewHBoxLayout(), connect_btn, project_lbl, uuid_lbl, name_lbl, state_lbl)
+
+			return content
 		},
-		func(i widget.TableCellID, o fyne.CanvasObject) {
-			if i.Row == 0 {
-				// give me some header
-				txt := map[int]string{
-					0: "Project",
-					1: "UUID",
-					2: "Name",
-					3: "State",
-				}[i.Col]
-				o.(*canvas.Text).Text = txt
-				o.(*canvas.Text).TextStyle.Italic = true
-				o.(*canvas.Text).Color = theme.PrimaryColorNamed("gray")
-				return
+		func(i int, o fyne.CanvasObject) {
+			inst := t.filtered_instances[i]
+			content := o.(*fyne.Container).Objects
+			connect_btn := content[0].(*widget.Button)
+			project_lbl := content[1].(*widget.Label)
+			uuid_lbl := content[2].(*widget.Label)
+			name_lbl := content[3].(*widget.Label)
+			state_lbl := content[4].(*widget.Label)
+
+			connect_btn.OnTapped = func() {
+				t.spice_client.connect(inst)
+				RunSpice(12345)
 			}
-			if i.Row-1 < len(t.inst_table) {
-				o.(*canvas.Text).Color = color.White
-				o.(*canvas.Text).TextStyle.Italic = false
-				o.(*canvas.Text).Text = t.inst_table[i.Row-1][i.Col]
-			}
+			project_lbl.SetText(inst.Project)
+			uuid_lbl.SetText(inst.UUID)
+			name_lbl.SetText(inst.Name)
+			state_lbl.SetText(inst.State)
 		})
-	t.table.SetColumnWidth(0, 200)
-	t.table.SetColumnWidth(1, 500)
-	t.table.SetColumnWidth(2, 200)
-	t.table.SetColumnWidth(3, 200)
-	t.table.Resize(fyne.NewSize(1000, 1000))
 
 	go func() {
 		for !t.closed {
@@ -77,13 +76,15 @@ func NewInstanceTab(lister InstanceLister) *InstanceTab {
 		}
 	}()
 
-	scroll := container.NewScroll(t.table)
+	scroll := container.NewScroll(t.list)
 	filter_label := widget.NewLabel("Filter:")
 	t.filterEntry = widget.NewEntry()
 	t.filterEntry.SetPlaceHolder("<case insensitive search>")
 	t.filterEntry.OnChanged = func(txt string) {
-		t.inst_table = filter_instances(t.instances, txt)
-		t.table.Refresh()
+		log.Println("t.instances:::: ", len(t.instances))
+		t.filtered_instances = filter_instances(t.instances, txt)
+		log.Println("t.filtered_instances:::: ", len(t.filtered_instances))
+		t.list.Refresh()
 	}
 	filter := container.NewBorder(nil, nil, filter_label, nil, t.filterEntry)
 	box := container.NewBorder(filter, nil, nil, nil, scroll)
@@ -99,8 +100,8 @@ func (t *InstanceTab) refresh(txt string) {
 	// } else {
 	// t.instances = instmap
 	// }
-	t.inst_table = filter_instances(t.instances, txt)
-	log.Printf("Refreshed: found %d instances.\n", len(t.inst_table))
+	t.filtered_instances = filter_instances(t.instances, txt)
+	log.Printf("Refreshed: found %d instances.\n", len(t.instances))
 
-	t.table.Refresh()
+	t.list.Refresh()
 }

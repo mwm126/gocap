@@ -17,7 +17,7 @@ func (lister FakeInstanceLister) find_instances() map[string][]Instance {
 
 func TestEmptyInstanceTab(t *testing.T) {
 	insttab := NewInstanceTab(FakeInstanceLister{})
-	assert.Equal(t, len(insttab.inst_table), 0)
+	assert.Equal(t, len(insttab.instances), 0)
 }
 
 func TestListInstanceTab(t *testing.T) {
@@ -29,23 +29,25 @@ func TestListInstanceTab(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, len(insttab.inst_table), 1)
+	assert.Equal(t, len(insttab.instances), 1)
 }
 
 func TestFilterInstanceTab(t *testing.T) {
 	insttab := NewInstanceTab(FakeInstanceLister{
 		map[string][]Instance{
 			"my_project": []Instance{
-				Instance{"12345", "my_instance", "RUNNING"},
+				Instance{"my_project", "12345", "my_instance", "RUNNING"},
 			},
 			"other_project": []Instance{
-				Instance{"99999", "other_instance", "OFF"},
+				Instance{"other_project", "99999", "other_instance", "OFF"},
 			},
 		},
 	})
-	assert.Equal(t, len(insttab.inst_table), 2)
+	assert.Equal(t, 2, len(insttab.filtered_instances))
+	assert.Equal(t, 2, insttab.list.Length())
 
 	insttab.filterEntry.SetText("my_")
 
-	assert.Equal(t, len(insttab.inst_table), 1)
+	assert.Equal(t, 1, len(insttab.filtered_instances))
+	assert.Equal(t, 1, insttab.list.Length())
 }

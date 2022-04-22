@@ -27,8 +27,8 @@ func TestParseInstances(t *testing.T) {
 	got := parseInstances(text)
 
 	want := []Instance{{
-		"1224e86d-f1b6-414d-ae3b-5475ebd291e4", "hopeitworks", "ERROR"},
-		{"8b65a1f3-9706-4653-ba8e-57b4307e5ad8", "UbuntuEvan", "SHUTOFF"}}
+		"", "1224e86d-f1b6-414d-ae3b-5475ebd291e4", "hopeitworks", "ERROR"},
+		{"", "8b65a1f3-9706-4653-ba8e-57b4307e5ad8", "UbuntuEvan", "SHUTOFF"}}
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Mismatch: %s", diff)

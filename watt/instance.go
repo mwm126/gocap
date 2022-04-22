@@ -9,9 +9,10 @@ import (
 )
 
 type Instance struct {
-	UUID  string
-	Name  string
-	State string
+	Project string
+	UUID    string
+	Name    string
+	State   string
 }
 
 type InstanceLister interface {
@@ -45,16 +46,15 @@ func (lister CapInstanceLister) find_instances() map[string][]Instance {
 	return instmap
 }
 
-func filter_instances(instmap map[string][]Instance, txt string) [][]string {
-	insttab_filtered := make([][]string, 0)
+func filter_instances(instmap map[string][]Instance, txt string) []Instance {
+	insttab_filtered := make([]Instance, 0)
 	for proj, insts := range instmap {
 		// instmap_filtered[proj] = make([]Instance, 0)
 		for _, inst := range insts {
 			txt = strings.ToLower(txt)
 			for _, field := range []string{proj, inst.UUID, inst.Name, inst.State} {
 				if strings.Contains(strings.ToLower(field), txt) {
-					insttab_filtered = append(insttab_filtered, []string{proj, inst.UUID, inst.Name, inst.State})
-
+					insttab_filtered = append(insttab_filtered, inst)
 					break
 				}
 			}
@@ -134,7 +134,7 @@ func parseInstances(text string) []Instance {
 		uuid := strings.Trim(fields[0], "\"")
 		name := strings.Trim(fields[1], "\"")
 		state := strings.Trim(fields[2], "\"")
-		instances = append(instances, Instance{uuid, name, state})
+		instances = append(instances, Instance{"", uuid, name, state})
 	}
 	return instances
 }
