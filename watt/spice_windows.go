@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
-	"x/sys/windows"
+
+	"golang.org/x/sys/windows/registry"
 )
 
 func SpiceCmd(localPort uint) (*exec.Cmd, error) {
@@ -24,7 +25,7 @@ func SpiceCmd(localPort uint) (*exec.Cmd, error) {
 	}
 	fmt.Printf("Windows system root is %q\n", s)
 	log.Fatal("WIP")
-	virt_viewer = s
+	virt_viewer := s
 
 	return exec.Command(
 		virt_viewer,
