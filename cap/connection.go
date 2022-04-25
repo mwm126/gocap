@@ -32,7 +32,8 @@ type Client interface {
 // A Connection represents a successful SSH connection after the port knock
 type Connection struct {
 	client       Client
-	forwards     map[string]sshtunnel.SSHTunnel
+	forwards     map[string]sshtunnel.SSHTunnel // Set by user
+	tunnels      map[string]sshtunnel.SSHTunnel // Added for SPICE
 	username     string
 	password     string
 	uid          string
@@ -87,6 +88,15 @@ func (conn *Connection) UpdateForwards(fwds []string) {
 	}
 }
 
+func (conn *Connection) Tunnel(fwd string) {
+	if _, missing := conn.forwards[fwd]; missing {
+		conn.tunnels[fwd] = conn.forward(fwd)
+		log.Println("Tunneling: ", fwd)
+		return
+	}
+	log.Println("Warning:  already tunneling: ", fwd)
+}
+
 func (conn *Connection) forward(fwd string) sshtunnel.SSHTunnel {
 
 	result := strings.Split(fwd, ",")
@@ -110,6 +120,9 @@ func (c Connection) Close() {
 	}
 	for _, fwd := range c.forwards {
 		fwd.Close()
+	}
+	for _, tun := range c.tunnels {
+		tun.Close()
 	}
 	c.client.Close()
 }

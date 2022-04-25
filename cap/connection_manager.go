@@ -98,6 +98,7 @@ func NewCapConnection(client Client, user, pass string) (*Connection, error) {
 	return &Connection{
 		client,
 		make(map[string]sshtunnel.SSHTunnel),
+		make(map[string]sshtunnel.SSHTunnel),
 		user,
 		pass,
 		uid,

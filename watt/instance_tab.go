@@ -60,8 +60,12 @@ func NewInstanceTab(lister InstanceLister) *InstanceTab {
 			state_lbl := content[4].(*widget.Label)
 
 			connect_btn.OnTapped = func() {
-				t.spice_client.connect(inst)
-				RunSpice(12345)
+				port, err := t.spice_client.connect(inst)
+				if err != nil {
+					log.Println("Unable to connect to instance")
+					return
+				}
+				RunSpice(port)
 			}
 			project_lbl.SetText(inst.Project)
 			uuid_lbl.SetText(inst.UUID)

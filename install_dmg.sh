@@ -14,7 +14,7 @@ curl -L --insecure "https://sourceforge.net/projects/turbovnc/files/2.2.7/TurboV
 listing=$(sudo hdiutil attach ${TURBO_DMG} | grep Volumes)
 
 volume=$(echo "$listing" | cut -f 3)
-package=$(grep .pkg "$volume" | head -1)
+package=TurboVNC.pkg
 
 sudo installer -pkg "$volume"/"$package" -target LocalSystem
 

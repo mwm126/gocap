@@ -1,21 +1,26 @@
 package watt
 
 import (
+	"aeolustec.com/capclient/cap"
 	"log"
-	// "time"
-	// // "aeolustec.com/capclient/cap"
-	// fyne "fyne.io/fyne/v2"
-	// "fyne.io/fyne/v2/container"
-	// "fyne.io/fyne/v2/layout"
-	// "fyne.io/fyne/v2/widget"
 )
 
 type SpiceClient interface {
-	connect(Instance)
+	connect(Instance) (uint, error)
 }
 
-type RealSpiceClient struct{}
+type RealSpiceClient struct {
+	connection cap.Connection
+	uuid2port  map[string]uint
+}
 
-func (spice RealSpiceClient) connect(inst Instance) {
-	log.Println("CONNECT TO INSTANCE ", inst.UUID)
+func (spice RealSpiceClient) connect(inst Instance) (uint, error) {
+	port, err := cap.FreePortFinder{}.FindPort()
+	if err != nil {
+		log.Println("Unable to find free port")
+		return 0, err
+	}
+	spice.uuid2port[inst.UUID] = port
+	spice.connection.Tunnel("local_p,remote_h,remote_p")
+	return port, nil
 }

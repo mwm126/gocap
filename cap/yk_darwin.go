@@ -1,7 +1,7 @@
 package cap
 
-// #cgo CFLAGS: -g -Wall -Werror -I/usr/local/include/ykpers-1 -I/usr/local/include
-// #cgo LDFLAGS: /usr/local/lib/libykpers-1.a /usr/local/lib/libyubikey.a -framework CoreServices -framework IOKit
+// #cgo CFLAGS: -g -Wall -Werror -I/opt/homebrew/opt/yubikey-personalization/include/ykpers-1 -I/opt/homebrew/include
+// #cgo LDFLAGS: /opt/homebrew/lib/libykpers-1.a /opt/homebrew/lib/libyubikey.a -framework CoreServices -framework IOKit
 // #include <stdlib.h>
 // #include "yk.h"
 import "C"
