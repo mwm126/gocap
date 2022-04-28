@@ -16,7 +16,9 @@ type RealSpiceClient struct {
 }
 
 func NewSpiceClient() SpiceClient {
-	return &RealSpiceClient{}
+	return &RealSpiceClient{
+		uuid2port: make(map[string]uint),
+	}
 }
 
 func (spice *RealSpiceClient) connect(inst Instance) (uint, error) {

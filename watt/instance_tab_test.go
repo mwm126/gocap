@@ -1,7 +1,6 @@
 package watt
 
 import (
-	"log"
 	"os/exec"
 	"testing"
 
