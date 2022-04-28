@@ -20,24 +20,25 @@ type InstanceTab struct {
 	lister             InstanceLister
 	spice_client       SpiceClient
 	closed             bool
+	buttons            map[int]*widget.Button // for testing
 }
 
 func (t *InstanceTab) Close() {
 	t.closed = true
 }
 
-func NewInstanceTab(lister InstanceLister) *InstanceTab {
+func NewInstanceTab(lister InstanceLister, client SpiceClient) *InstanceTab {
 	t := InstanceTab{
-		TabItem: nil,
-		list:    nil,
-		// instances:  make(map[string][]Instance),
-		lister: lister,
-		closed: false,
+		TabItem:      nil,
+		list:         nil,
+		lister:       lister,
+		spice_client: client,
+		closed:       false,
+		buttons:      make(map[int]*widget.Button),
 	}
 	t.list = widget.NewList(
 		func() int {
-			num_rows := len(t.filtered_instances)
-			return num_rows
+			return len(t.filtered_instances)
 		},
 		func() fyne.CanvasObject {
 			connect_btn := widget.NewButton("Connect", func() {})
@@ -51,6 +52,9 @@ func NewInstanceTab(lister InstanceLister) *InstanceTab {
 			return content
 		},
 		func(i int, o fyne.CanvasObject) {
+			if i >= len(t.filtered_instances) {
+				return
+			}
 			inst := t.filtered_instances[i]
 			content := o.(*fyne.Container).Objects
 			connect_btn := content[0].(*widget.Button)
@@ -58,6 +62,7 @@ func NewInstanceTab(lister InstanceLister) *InstanceTab {
 			uuid_lbl := content[2].(*widget.Label)
 			name_lbl := content[3].(*widget.Label)
 			state_lbl := content[4].(*widget.Label)
+			t.buttons[i] = connect_btn
 
 			connect_btn.OnTapped = func() {
 				port, err := t.spice_client.connect(inst)
@@ -65,47 +70,42 @@ func NewInstanceTab(lister InstanceLister) *InstanceTab {
 					log.Println("Unable to connect to instance")
 					return
 				}
-				RunSpice(port)
+				t.spice_client.RunSpice(port)
 			}
+
 			project_lbl.SetText(inst.Project)
 			uuid_lbl.SetText(inst.UUID)
 			name_lbl.SetText(inst.Name)
 			state_lbl.SetText(inst.State)
 		})
 
-	go func() {
-		for !t.closed {
-			t.refresh(t.filterEntry.Text)
-			time.Sleep(9 * time.Second) // TODO: configure refresh interval
-		}
-	}()
-
 	scroll := container.NewScroll(t.list)
 	filter_label := widget.NewLabel("Filter:")
 	t.filterEntry = widget.NewEntry()
 	t.filterEntry.SetPlaceHolder("<case insensitive search>")
-	t.filterEntry.OnChanged = func(txt string) {
-		log.Println("t.instances:::: ", len(t.instances))
-		t.filtered_instances = filter_instances(t.instances, txt)
-		log.Println("t.filtered_instances:::: ", len(t.filtered_instances))
-		t.list.Refresh()
-	}
+	t.filterEntry.OnChanged = t.filter
 	filter := container.NewBorder(nil, nil, filter_label, nil, t.filterEntry)
 	box := container.NewBorder(filter, nil, nil, nil, scroll)
 	t.TabItem = container.NewTabItem("Instances", box)
+
 	return &t
 }
 
-func (t *InstanceTab) refresh(txt string) {
-	t.instances = t.lister.find_instances()
-	// if err != nil {
-	// log.Println("Could not refresh", err)
-	// return
-	// } else {
-	// t.instances = instmap
-	// }
-	t.filtered_instances = filter_instances(t.instances, txt)
-	log.Printf("Refreshed: found %d instances.\n", len(t.instances))
+func (t *InstanceTab) start() {
+	go func() {
+		for !t.closed {
+			t.refresh()
+			time.Sleep(9 * time.Second) // TODO: configure refresh interval
+		}
+	}()
+}
 
+func (t *InstanceTab) refresh() {
+	t.instances = t.lister.find_instances()
+	t.filter(t.filterEntry.Text)
+}
+
+func (t *InstanceTab) filter(txt string) {
+	t.filtered_instances = filter_instances(t.instances, txt)
 	t.list.Refresh()
 }

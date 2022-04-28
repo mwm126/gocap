@@ -17,12 +17,8 @@ func TestConnInstanceTab(t *testing.T) {
 				Instance{"other_project", "99999", "other_instance", "OFF"},
 			},
 		},
-	})
+	}, NewFakeSpiceClient())
+	insttab.refresh()
 	assert.Equal(t, 2, len(insttab.filtered_instances))
 	assert.Equal(t, 2, insttab.list.Length())
-
-	// insttab.list.Objects.SetText("my_")
-
-	// assert.Equal(t, 1, len(insttab.filtered_instances))
-	// assert.Equal(t, 1, insttab.list.Length())
 }

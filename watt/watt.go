@@ -49,7 +49,8 @@ func (t *WattTab) Connect(conn *cap.Connection) {
 	})
 	sshTab := ssh.NewSsh(conn)
 
-	t.instanceTab = NewInstanceTab(NewCapInstanceLister(conn))
+	t.instanceTab = NewInstanceTab(NewCapInstanceLister(conn), NewSpiceClient())
+	t.instanceTab.start()
 	t.webTab = NewWebTab(conn)
 
 	cfg := config.GetConfig()

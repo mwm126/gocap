@@ -121,20 +121,6 @@ func TestWattLoginButton(t *testing.T) {
 		}
 	})
 
-	// t.Run("Test address selection", func(t *testing.T) {
-	//	var client FakeClient
-	//	conn, err := cap.NewCapConnection(client, "the_user", "the_pass")
-	//	if err != nil {
-	//		t.Error(err)
-	//	}
-
-	//	want := net.IPv4(199, 249, 243, 253)
-	//	got := conn.GetAddress()
-	//	if diff := cmp.Diff(want, got); diff != "" {
-	//		t.Errorf("Mismatch: %s", diff)
-	//	}
-	// })
-
 	t.Run("Test Login", func(t *testing.T) {
 		var client FakeClient
 		fake_conn, err := cap.NewCapConnection(client, "", "")

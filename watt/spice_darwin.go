@@ -16,11 +16,13 @@ func SpiceCmd(localPort uint) (*exec.Cmd, error) {
 
 	return exec.Command(
 		virt_viewer,
-		fmt.Sprintf("spice://127.0.0.1::%d", localPort),
+		"-h", "127.0.0.1",
+		"-p", fmt.Sprintf("%d", localPort),
+		"-s", fmt.Sprintf("%d", localPort),
 	), nil
 }
 
-func RunSpice(localPort uint) {
+func (spice *RealSpiceClient) RunSpice(localPort uint) {
 	cmd, err := SpiceCmd(localPort)
 	if err != nil {
 		log.Println("Could not run Spice")
@@ -30,5 +32,4 @@ func RunSpice(localPort uint) {
 		log.Println("spiceviewer output: ", string(output))
 		log.Println("spiceviewer error: ", err)
 	}
-
 }

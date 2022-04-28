@@ -7,6 +7,7 @@ import (
 
 type SpiceClient interface {
 	connect(Instance) (uint, error)
+	RunSpice(uint)
 }
 
 type RealSpiceClient struct {
@@ -14,7 +15,11 @@ type RealSpiceClient struct {
 	uuid2port  map[string]uint
 }
 
-func (spice RealSpiceClient) connect(inst Instance) (uint, error) {
+func NewSpiceClient() SpiceClient {
+	return &RealSpiceClient{}
+}
+
+func (spice *RealSpiceClient) connect(inst Instance) (uint, error) {
 	port, err := cap.FreePortFinder{}.FindPort()
 	if err != nil {
 		log.Println("Unable to find free port")
