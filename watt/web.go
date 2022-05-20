@@ -208,7 +208,3 @@ func get_sessionid_cookie(username, passwd string, port uint) *http.Cookie {
 	log.Println("===================COOKIE+++++++++++++++++++")
 	return cooookie
 }
-
-// here is your cookie [header], pinhead.  sessionid=cta2otqcb6va50xvlbspny9z64977t0u
-// 127.0.0.1 - - [09/Jan/2022 08:39:02] "GET / HTTP/1.1" 200 -
-//	Sending HTML:  b'<html><head><meta http-equiv="Refresh" content="0; url=\'http://localhost:50789/dashboard/project/instances/\'" /></head></html>'
