@@ -2,6 +2,7 @@
 
 """ This script build releasable executables for the Go CAP client """
 
+import os
 import platform
 import shutil
 import subprocess
@@ -10,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-DOCKER = "podman"
+DOCKER = "docker"
 TAG = "v22.4.21"
 TITLE = "CAP Client Release ${TAG}"
 NOTES = "Watt web interface"
@@ -58,7 +59,9 @@ def build_linux() -> Optional[Path]:
     print()
     print("Building for Linux...")
     print()
-    subprocess.run(["go", "generate", "./..."], check=True)  # env GOOS=linux
+    env = os.environ
+    env["GOOS"] = "linux"
+    subprocess.run(["go", "generate", "./..."], env=env, check=True)
     subprocess.run(
         [DOCKER, "build", ".fyne-cross/linux/", "-t", "capclient-linux"], check=True
     )
@@ -87,7 +90,9 @@ def build_mac() -> Optional[Path]:
     if UNAME_S != "Darwin":
         print("\nSkipping Mac build...(must build Mac on Mac)\n")
         return None
+    print()
     print("\nBuilding for Mac...\n")
+    print()
     turbo_home = "/Applications/TurboVNC"
     print(
         f"Note:  This script will run sudo to DELETE your {turbo_home} directory,"
@@ -97,7 +102,9 @@ def build_mac() -> Optional[Path]:
         "\nIf you don't want this, Ctrl-C to cancel.  Otherwise, Enter to continue.\n"
     )
 
-    subprocess.run(["go", "generate", "./..."], check=True)  # env GOOS=darwin
+    env = os.environ
+    env["GOOS"] = "darwin"
+    subprocess.run(["go", "generate", "./..."], env=env, check=True)
     subprocess.run(
         [
             "fyne-cross",
@@ -127,22 +134,24 @@ def build_windows() -> Optional[Path]:
     """Build on Windows"""
     print()
     print("Building for Windows...")
-    subprocess.run(["go", "generate", "./..."], check=True)  # env GOOS=windows
+    print()
+    env = os.environ
+    env["GOOS"] = "windows"
+    subprocess.run(["go", "generate", "./..."], env=env, check=True)
     subprocess.run(
         [DOCKER, "build", ".fyne-cross/windows/", "-t", "capclient-windows"],
         check=True,
     )
     subprocess.run(
         [
-            "fyne-cross"
-            "windows"
-            "-name"
-            "capclient.exe"
-            "-image"
-            "capclient-windows:latest"
+            "fyne-cross",
+            "windows",
+            "-name",
+            "capclient.exe",
+            "-image",
+            "capclient-windows:latest",
             "-env",
-            "CGO_CFLAGS=-I/usr/include/ykpers-1/",
-            "-I/usr/share/mingw-w64/include/",
+            "CGO_CFLAGS=-I/usr/include/ykpers-1/ -I/usr/share/mingw-w64/include/",
             "-env",
             "CGO_LDFLAGS=-L/usr/x86_64-w64-mingw32/lib",
         ],
